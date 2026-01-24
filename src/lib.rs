@@ -1,10 +1,9 @@
-#[pyo3::pymodule]
-mod the_search_thing {
-    use pyo3::prelude::*;
+use pyo3::prelude::*;
 
-    /// Formats the sum of two numbers as string.
-    #[pyfunction]
-    fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-        Ok((a + b).to_string())
-    }
+mod add;
+
+#[pymodule]
+fn the_search_thing(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(add::add_numbers, m)?)?;
+    Ok(())
 }
