@@ -1,0 +1,9 @@
+[package]
+name = "testing-rust"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+env_logger = "0.11.8"
+log = "0.4.29"
+notify = "8.2.0"
