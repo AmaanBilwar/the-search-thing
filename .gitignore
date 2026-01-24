@@ -1,9 +1,11 @@
 # venv
 .venv/
+
 # dist
 dist/
+
 # env vars
-.env*
+.env
 
 # rust
 target/
@@ -14,3 +16,7 @@ uv.lock
 
 # misc
 backup.txt
+
+# helix
+.helix/
+*.log
