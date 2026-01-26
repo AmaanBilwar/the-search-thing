@@ -21,3 +21,7 @@ backup.txt
 # helix
 .helix/
 *.log
+
+#electron
+node_modules/
+.webpack/
