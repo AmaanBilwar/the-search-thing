@@ -15,6 +15,7 @@
       "*": ["node_modules/*"],
     },
     "jsx": "react-jsx",
+    "types": ["node", "electron"]
   },
   "include": ["src/**/*"],
 }
