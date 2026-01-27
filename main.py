@@ -2,26 +2,18 @@ def main():
     print("Hello from the-search-thing!")
 
 
-def get_file_contents(file_path: str):
-    from the_search_thing import get_file_contents  # ty: ignore[unresolved-import]
+def walk_and_get_content(directory: str):
+    from the_search_thing import walk_and_get_content  # ty: ignore[unresolved-import]
 
-    contents = get_file_contents(file_path)
-    return contents
-
-
-def walk_dir(dir: str):
-    from the_search_thing import walk  # ty:ignore[unresolved-import]
-
-    walk(dir)
+    return walk_and_get_content(directory)
 
 
 if __name__ == "__main__":
-    # add_function(12, 13)
-
-    walk_dir("C:/Users/karth/Downloads")
     import sys
 
-    if len(sys.argv) < 2:
-        print("Usage: uv run main.py <file_path>")
+    args = sys.argv[1:]
+    if args:
+        walk_and_get_content(args[0])
     else:
-        contents = get_file_contents(sys.argv[1])
+        print("Please provide a directory path.")
+        sys.exit(1)
