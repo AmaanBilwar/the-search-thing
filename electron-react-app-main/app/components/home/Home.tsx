@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Badge } from '../ui/badge'
 import './styles.css'
 
-export default function WelcomeKit() {
+export default function Home() {
 
   return (
     <div className="welcome-content flex flex-col gap-5">
