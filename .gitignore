@@ -25,3 +25,4 @@ backup.txt
 #electron
 node_modules/
 .webpack/
+testing-parsing/
