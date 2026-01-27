@@ -1,5 +1,6 @@
-- [ ] parse files
+- [ ] check file type
+  - [ ] parse files based on type
 - [ ] chunk files
-- [ ] embed files 
+- [ ] embed files
 - [ ] ingest to helix db
 - [ ] make files searchable
