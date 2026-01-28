@@ -3,26 +3,23 @@ import axios from 'axios';
 
 export const registerSearchHandlers = () => {
   handle('search', async (query: string) => {
-    const response = await axios.post('http://localhost:3000/api/search', {
+    const response = await axios.get('http://localhost:3000/api/search', {
       params: { q: query }
     });
-    const results = response.data.results;
-    return { results };
+    return { results: response.data.results };
   });
   
   handle('check', async (query: string) => {
-    const response = await axios.post('http://localhost:3000/api/search', {
+    const response = await axios.get('http://localhost:3000/api/search', {
       params: { q: query }
     });
-    const results = response.data.results;
-    return { results };
+    return !!response.data.indexed;
   })
   
   handle('index', async (query: string) => {
     const response = await axios.post('http://localhost:3000/api/search', {
       params: { q: query }
     });
-    const results = response.data.results;
-    return { results };
+    return !!response.data.success;
   })
 }
