@@ -17,6 +17,8 @@ crate-type = ["cdylib"]
 [dependencies]
 pyo3 = { version = "0.27.2", features = ["extension-module"] }
 walkdir = "2.5.0"
+mimetype-detector = "0.3.4"
+file_type = "0.8.11"
 
 [features]
 default = ["python"]
