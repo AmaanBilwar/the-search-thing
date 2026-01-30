@@ -20,6 +20,7 @@ __pycache__/
 backup.txt
 replacements.txt
 fix-env.sh
+rewrite-env-history.ps1
 
 # helix
 .helix/
