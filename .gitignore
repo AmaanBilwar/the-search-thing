@@ -17,6 +17,8 @@ uv.lock
 
 # misc
 backup.txt
+replacements.txt
+fix-env.sh
 
 # helix
 .helix/
