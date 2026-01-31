@@ -28,7 +28,7 @@ export default function Home() {
   }
 
   return (
-    <div className="welcome-content flex flex-col gap-5">
+    <div className="welcome-content flex flex-col gap-5 h-screen">
       <div className="flex items-center basis-[15%]">
         <Searchbar
           value={query}
@@ -44,16 +44,12 @@ export default function Home() {
       </div>
       
       <div className={cn(
-        "flex items-center",
+        "flex",
         "basis-[75%]",
         "border-2 border-zinc-700/80 bg-zinc-800/60",
         "px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
       )}>
-        {!isIndexed ? (
-          <NoIndex />
-        ) : (
-          <Results results={results} query={query} />
-        )}
+        <Results results={results} query={query} />
       </div>
       
       <div className={cn(
