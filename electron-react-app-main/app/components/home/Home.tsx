@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Searchbar } from '../ui/searchbar'
 import { useConveyor } from '@/app/hooks/use-conveyor'
-import { Button } from '../ui/button'
 import Loading from '../loading'
 import { cn } from '@/lib/utils'
 import './styles.css'
 import NoIndex from '../NoIndex'
 import Results from '../Results'
+import Footer from '../Footer'
+
 
 export default function Home() {
   const [query, setQuery] = useState("")
@@ -31,7 +32,7 @@ export default function Home() {
   // Show searchbar if indexed
   return (
     <div className="welcome-content flex flex-col gap-5">
-      <div className="flex items-center h-[20%]">
+      <div className="flex items-center basis-[15%]">
         <Searchbar
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -47,7 +48,7 @@ export default function Home() {
       
       <div className={cn(
         "flex items-center",
-        "h-full",
+        "basis-[75%]",
         "border-2 border-zinc-700/80 bg-zinc-800/60",
         "px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
       )}>
@@ -56,6 +57,15 @@ export default function Home() {
         ) : (
             <Results results={results}  query={query} />
         )}
+      </div>
+      
+      <div className={cn(
+        "flex items-center",
+        "basis-[10%]",
+        "border-2 border-zinc-700/80 bg-zinc-800/60",
+        "px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
+      )}>
+        <Footer />
       </div>
     </div>
   )
