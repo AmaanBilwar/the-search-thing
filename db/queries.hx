@@ -23,6 +23,15 @@
 
 
 
+// create file node
+QUERY CreateFile (file_id: String, content: String) =>
+    file <- AddN<File>({
+    file_id: file_id,
+    content: content
+    })
+    RETURN file
+
+
 // create a video
 QUERY CreateVideo (video_id: String, no_of_chunks: U8) =>
     video <- AddN<Video>({
@@ -79,6 +88,17 @@ QUERY CreateChunkToFrameSummaryRelationship (chunk_id: String,frame_summary_id: 
     frame_summary <- N<FrameSummary>(frame_summary_id)
     HasFrameSummary <- AddE<Has>::From(chunk)::To(frame_summary)
     RETURN HasFrameSummary
+
+
+
+// create file embeddings vector and connect to file node
+QUERY CreateFileEmbeddings (file_id: String, content: String) =>
+    file <- N<File>({file_id: file_id})
+    file_embeddings <- AddV<FileEmbeddings>(Embed(content), {file_id: file_id, content: content})
+    edge <- AddE<HasFileEmbeddings>::From(file)::To(file_embeddings)
+    RETURN "Success"
+
+
 
 // create a vector and connect to chunk node for transcript embeddings
 // #[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]

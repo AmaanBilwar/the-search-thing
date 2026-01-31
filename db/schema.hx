@@ -1,3 +1,11 @@
+// file node
+// doesnt account for cases when files are too large to embed in one go
+// not sure if a limit like that exists
+N::File {
+    INDEX file_id: String,
+    content: String
+}
+
 N::Video {
     INDEX video_id: String,
     no_of_chunks: U8
@@ -48,6 +56,12 @@ E::HasFrameSummaryEmbeddings {
     To: FrameSummaryEmbeddings
 }
 
+// file to file embeddings edge
+E::FileToFileEmbeddings{
+    From: File,
+    To: FileEmbeddings
+}
+
 V::TranscriptEmbeddings {
     chunk_id: String,
     content: String
@@ -56,4 +70,10 @@ V::TranscriptEmbeddings {
 V::FrameSummaryEmbeddings {
     chunk_id: String,
     content: String
+}
+
+// file embeddings vector
+V::FileEmbeddings{
+    INDEX file_id: String,
+    content: String,
 }
