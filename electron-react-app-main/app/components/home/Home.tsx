@@ -13,10 +13,12 @@ export default function Home() {
   const search = useConveyor("search")
   const [results, setResults] = useState<string[]>([])
   const [isCheckingIndex, setIsCheckingIndex] = useState(true)
+  const [hasSearched, setHasSearched] = useState(false) //temporary logic (pls remove in the future :pray:)
   
   const { isIndexed } = useAppContext() // Read global state
   
   const handleSearch = async () => {
+    setHasSearched(true)
     const res = await search.search(query)
     setResults(res.results)
   }
@@ -31,7 +33,10 @@ export default function Home() {
       <div className="flex items-center basis-[15%]">
         <Searchbar
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value)
+            setHasSearched(false)
+          }}
           placeholder="Search for files or folders…"
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
@@ -48,7 +53,7 @@ export default function Home() {
         "border-2 border-zinc-700/80 bg-zinc-800/60",
         "px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
       )}>
-        <Results results={results} query={query} />
+        <Results results={results} query={query} hasSearched={hasSearched} />
       </div>
       
       <div className={cn(
