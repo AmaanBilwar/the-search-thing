@@ -92,9 +92,8 @@ export default function Home() {
       <div className={cn(
         "flex items-center",
         "h-full",
-        "border border-zinc-800/80 bg-zinc-950/60",
+        "border-2 border-zinc-700/80 bg-zinc-800/60",
         "px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
-        "focus-within:border-zinc-700 focus-within:ring-2 focus-within:ring-zinc-700/40",
       )}>
         Results here
       </div>
