@@ -7,7 +7,7 @@ export const searchIpcSchema = {
   },
   'index': {
     args: z.tuple([z.string()]), 
-    return: z.boolean(),
+    return: z.string(),
   },
   'search': {
     args: z.tuple([z.string()]),
@@ -18,6 +18,6 @@ export const searchIpcSchema = {
   // system operations
   'open-file-dialog': {
     args: z.tuple([]),
-    return: z.array(z.string()),
+    return: z.string(),
   }
 };
