@@ -5,9 +5,10 @@ import noFiles from "@/resources/no-files-found.svg"
 interface ResultsProps {
   results: string[]
   query: string
+  hasSearched: boolean
 }
 
-export default function Results({ results, query }: ResultsProps) {
+export default function Results({ results, query, hasSearched }: ResultsProps) {
   const { isIndexed } = useAppContext()
   
   // // No results yet
@@ -16,7 +17,7 @@ export default function Results({ results, query }: ResultsProps) {
   // }
   
   // Searched but found nothing
-  if (results.length === 0 && query) {
+  if (hasSearched && results.length === 0 && query) {
     return(
       <div className="flex flex-col items-center gap-4 w-full h-full pt-30">
         <img src={noFiles} alt="No files" className="w-15 h-15 opacity-75" />
