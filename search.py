@@ -4,11 +4,9 @@ import os
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from helix.client import Client
+from utils.clients import get_helix_client
 
 load_dotenv()
-
-client = Client(local=True, port=7002)
 
 
 def build_chunk_to_video_map(chunks: list) -> dict[str, str]:
@@ -71,7 +69,7 @@ async def search_combined(search_query: str) -> str:
     Search across transcripts and frames, return LLM-formatted response.
     """
     search_params = {"search_text": search_query}
-    response = client.query("CombinedSearch", search_params)
+    response = get_helix_client().query("CombinedSearch", search_params)
 
     # Extract the actual content from the embedding results (top 5 from each)
     transcript_contents = [
@@ -112,7 +110,7 @@ async def search_videos(search_query: str, limit: int = 5, video_id=None) -> dic
 
         # Use CombinedSearchWithVideoId to get chunks with video_id in one query
 
-        response = client.query("CombinedSearchWithVideoId", search_params)
+        response = get_helix_client().query("CombinedSearchWithVideoId", search_params)
         result_data = response[0] if response else {}
 
         transcripts = result_data.get("transcripts", [])[:limit]
@@ -126,7 +124,7 @@ async def search_videos(search_query: str, limit: int = 5, video_id=None) -> dic
     except Exception as e:
         print(f"CombinedSearchWithVideoId failed, falling back to CombinedSearch: {e}")
         # Fallback to old query
-        response = client.query("CombinedSearch", search_params)
+        response = get_helix_client().query("CombinedSearch", search_params)
         result_data = response[0] if response else {}
 
         transcripts = result_data.get("transcripts", [])[:limit]
