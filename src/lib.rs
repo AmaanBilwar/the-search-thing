@@ -14,5 +14,6 @@ fn the_search_thing(m: &Bound<'_, PyModule>) -> PyResult<()> {
         filetype_check::get_file_type_with_extension,
         m
     )?)?;
+    m.add_function(wrap_pyfunction!(read_file::get_file_contents, m)?)?;
     Ok(())
 }
