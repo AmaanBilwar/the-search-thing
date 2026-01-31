@@ -4,7 +4,6 @@ import { useConveyor } from '@/app/hooks/use-conveyor'
 import Loading from '../loading'
 import { cn } from '@/lib/utils'
 import './styles.css'
-import NoIndex from '../NoIndex'
 import Results from '../Results'
 import Footer from '../Footer'
 import { useAppContext } from '../AppContext'
@@ -55,7 +54,7 @@ export default function Home() {
       <div className={cn(
         "flex items-center",
         "basis-[10%]",
-        "border-2 border-zinc-700/80 bg-zinc-800/60",
+        " bg-zinc-800/60",
         "px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
       )}>
         <Footer />
