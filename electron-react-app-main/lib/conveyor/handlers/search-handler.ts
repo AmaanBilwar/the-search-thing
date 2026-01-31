@@ -21,15 +21,15 @@ export const registerSearchHandlers = () => {
     const response = await axios.post('http://localhost:3000/api/index', {
       dirPaths // Send to API
     });
-    return !!response.data.success;
+    return response.data.message;
   });
   
   // System operations
   handle('open-file-dialog', async () => {
     const result = await dialog.showOpenDialog({
-      properties: ['openDirectory', 'multiSelections']
+      properties: ['openDirectory']
     })
-    return result.filePaths;
+    return result.filePaths[0] ?? '';
   })
   
 }
