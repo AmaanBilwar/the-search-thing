@@ -1,16 +1,14 @@
-use crate::read_file::get_file_contents;
+// use crate::read_file::get_file_contents;
 use pyo3::prelude::*;
 use walkdir::WalkDir;
+
 #[pyfunction]
-#[allow(dead_code)]
-pub fn walk_and_get_content(dir: String) -> PyResult<()> {
+pub fn walk_and_get_files(dir: String) -> PyResult<Vec<String>> {
+    let mut paths = Vec::new();
     for entry in WalkDir::new(dir) {
         let entry =
             entry.map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("{}", e)))?;
-        if entry.file_type().is_file() {
-            let path_str = entry.path().to_string_lossy().to_string();
-            get_file_contents(path_str);
-        }
+        paths.push(entry.path().to_string_lossy().to_string());
     }
-    Ok(())
+    Ok(paths)
 }
