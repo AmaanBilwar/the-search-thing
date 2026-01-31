@@ -8,6 +8,7 @@ type SearchbarProps = React.ComponentProps<"input"> & {
 
 export function Searchbar({
   className,
+  kbd,
   ...props
 }: SearchbarProps) {
   return (
@@ -20,7 +21,6 @@ export function Searchbar({
         className
       )}
     >     
-
       <svg
         aria-hidden="true"
         viewBox="0 0 24 24"
@@ -35,14 +35,18 @@ export function Searchbar({
       
       <input
         className={cn(
-          "w-full bg-transparent text-xl  placeholder:text-zinc-500",
+          "w-full bg-transparent text-xl placeholder:text-zinc-500",
           "outline-none"
         )}
         placeholder="Search for files or folders…"
         {...props}
       />
       
-      
+      {kbd && (
+        <kbd className="px-2 py-1 text-sm text-zinc-400 bg-zinc-700/50 border border-zinc-600 rounded">
+          {kbd}
+        </kbd>
+      )}
     </div>
   )
 }
