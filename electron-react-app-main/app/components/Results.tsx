@@ -18,22 +18,23 @@ export default function Results({ results, query }: ResultsProps) {
   // Searched but found nothing
   if (results.length === 0 && query) {
     return(
-      <div className="flex items-center justify-center w-full h-full">
-        <div className="text-zinc-500">No results found for "{query}"</div>
+      <div className="flex flex-col items-center gap-4 w-full h-full pt-30">
+        <img src={noFiles} alt="No files" className="w-15 h-15 opacity-75" />
+        <div className="text-zinc-500">No results have been found for {query}</div>
       </div>
     )
   }
   
   // Show results if we have them
   return (
-    <div className="flex items-center justify-center w-full h-full">
+    <div className="flex items-center w-full h-full">
       {!isIndexed ? (
-        <div className="flex flex-col items-center justify-center gap-4 w-full h-full pt-30">
+        <div className="flex flex-col items-center gap-4 w-full h-full pt-30">
           <img src={noFiles} alt="No files" className="w-15 h-15 opacity-75" />
           <div className="text-zinc-500">No files have been indexed :(</div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center w-full h-full">
+        <div className="flex flex-col items-center w-full h-full">
           {results.map((result, idx) => (
             <div key={idx} className="result-item">
               {result}

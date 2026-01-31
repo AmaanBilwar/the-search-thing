@@ -16,7 +16,7 @@ export function Searchbar({
       className={cn(
         "flex items-center gap-3",
         "h-full w-screen ",
-        "border-2 border-zinc-800/80 bg-zinc-800/60",
+        "bg-zinc-800/60",
         "px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
         className
       )}
