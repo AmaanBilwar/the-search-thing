@@ -21,15 +21,6 @@ export function Searchbar({
       )}
     >     
 
-      <input
-        className={cn(
-          "w-full bg-transparent text-xl  placeholder:text-zinc-500",
-          "outline-none"
-        )}
-        placeholder="Search for files or folders…"
-        {...props}
-      />
-      
       <svg
         aria-hidden="true"
         viewBox="0 0 24 24"
@@ -41,6 +32,17 @@ export function Searchbar({
         <path d="m21 21-4.3-4.3" />
         <circle cx="11" cy="11" r="7" />
       </svg>
+      
+      <input
+        className={cn(
+          "w-full bg-transparent text-xl  placeholder:text-zinc-500",
+          "outline-none"
+        )}
+        placeholder="Search for files or folders…"
+        {...props}
+      />
+      
+      
     </div>
   )
 }

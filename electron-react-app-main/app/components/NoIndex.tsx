@@ -26,7 +26,7 @@ export default function NoIndex() {
   }
   
   return (
-    <div className="welcome-content flex flex-col gap-5 items-center justify-center min-h-[400px]">
+    <div className="welcome-content flex flex-col gap-5 items-center justify-center">
       <div className="loading-container">
         <h2>No Index Found</h2>
         <p>Scan your folders to enable search functionality.</p>
