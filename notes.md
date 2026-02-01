@@ -1,14 +1,3 @@
-- need to walk and get file contents 
-- need to batch 10 files at a time
-- needs to unblocking 
-- should be able to query more tasks even if some tasks are ongoing
-- add import form file_indexer omdule 
-- impleemt helper funcitons [chunk dict, filter text files, index single file,  process batch, log indexing summary, run indexing job ]
--  rewrite the api  index endpoint with concuirrent background processing 
-- rmeove dead code and comments 
-- test 
-
-
 # plan 
 
 Implementation Plan
