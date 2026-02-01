@@ -3,14 +3,9 @@ import uuid
 from pathlib import Path
 from typing import List
 
-from the_search_thing import get_file_contents  # ty:ignore[unresolved-import]
+from the_search_thing import walk_and_get_files_content  # ty:ignore[unresolved-import]
 
 from utils.clients import get_helix_client
-
-
-async def get_contents(file_path: str):
-    content = get_file_contents(file_path)
-    return content
 
 
 async def file_indexer(
@@ -23,6 +18,7 @@ async def file_indexer(
         return []
 
     results: List[dict] = []
+
     for path in file_paths:
         p = Path(path)
         if not p.exists():
@@ -32,35 +28,38 @@ async def file_indexer(
                     "path": path,
                     "file_id": None,
                     "indexed": False,
-                    "error": "file not found",
+                    "error": "path not found",
                 }
             )
             continue
-        if not p.is_file():
-            print(f"[WARN] Skipping (not a file): {path}")
-            results.append(
-                {"path": path, "file_id": None, "indexed": False, "error": "not a file"}
-            )
-            continue
+
         try:
-            content = p.read_text(encoding="utf-8", errors="replace")
+            files_content = walk_and_get_files_content(path)
         except Exception as e:
-            print(f"[WARN] Skipping (read failed): {path} — {e}")
+            print(f"[WARN] Skipping (walk failed): {path} — {e}")
             results.append(
                 {"path": path, "file_id": None, "indexed": False, "error": str(e)}
             )
             continue
-        file_id = str(uuid.uuid4())
-        try:
-            await create_file(file_id, content)
-            await create_file_embeddings(file_id, content)
-            results.append({"path": path, "file_id": file_id, "indexed": True})
-            print(f"[OK] Indexed file: {path}")
-        except Exception as e:
-            print(f"[ERROR] Indexing failed for {path}: {e}")
-            results.append(
-                {"path": path, "file_id": file_id, "indexed": False, "error": str(e)}
-            )
+
+        for file_path, content in files_content.items():
+            file_id = str(uuid.uuid4())
+            try:
+                await create_file(file_id, content)
+                await create_file_embeddings(file_id, content)
+                results.append({"path": file_path, "file_id": file_id, "indexed": True})
+                print(f"[OK] Indexed file: {file_path}")
+            except Exception as e:
+                print(f"[ERROR] Indexing failed for {file_path}: {e}")
+                results.append(
+                    {
+                        "path": file_path,
+                        "file_id": file_id,
+                        "indexed": False,
+                        "error": str(e),
+                    }
+                )
+
     return results
 
 
