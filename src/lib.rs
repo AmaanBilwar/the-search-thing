@@ -16,5 +16,6 @@ fn the_search_thing(m: &Bound<'_, PyModule>) -> PyResult<()> {
     )?)?;
     m.add_function(wrap_pyfunction!(read_file::get_file_contents, m)?)?;
     m.add_function(wrap_pyfunction!(walk::walk_and_get_files_content, m)?)?;
+    m.add_function(wrap_pyfunction!(walk::walk_and_get_text_file_batch, m)?)?;
     Ok(())
 }
