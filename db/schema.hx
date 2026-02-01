@@ -57,7 +57,7 @@ E::HasFrameSummaryEmbeddings {
 }
 
 // file to file embeddings edge
-E::FileToFileEmbeddings{
+E::HasFileEmbeddings{
     From: File,
     To: FileEmbeddings
 }

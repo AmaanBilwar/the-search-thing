@@ -117,6 +117,17 @@ QUERY CreateFrameSummaryEmbeddings (chunk_id:String, content: String) =>
     edge <- AddE<HasFrameSummaryEmbeddings>::From(chunk)::To(frame_summary_embeddings)
     RETURN "Success"
 
+
+
+
+// search transcript embeddings
+// #[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]
+QUERY SearchFileEmbeddings(query: String, limit: I64) =>
+    text <- SearchV<FileEmbeddings>(Embed(query), limit)
+    chunks <- text::In<HasFileEmbeddings>
+    RETURN text
+
+
 // search transcript embeddings
 // #[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]
 QUERY SearchTranscriptEmbeddings(query: String, limit: I64) =>
@@ -144,6 +155,12 @@ QUERY SearchFrameSummaryEmbeddingsVideo(query:String, limit: I64,video_id: Strin
     text <- SearchV<FrameSummaryEmbeddings>(Embed(query), limit)
     chunks <- text::In<HasFrameSummaryEmbeddings>::WHERE(_::{video_id}::EQ(video_id))
     RETURN text
+
+// search transcript keywords
+QUERY SearchFileKeyword(keywords: String, limit: I64) =>
+    documents <- SearchBM25<File>(keywords, limit)
+    RETURN documents
+
 
 // search transcript keywords
 QUERY SearchTranscriptKeyword(keywords: String, limit: I64) =>
