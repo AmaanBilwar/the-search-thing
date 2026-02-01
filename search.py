@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+
 from utils.clients import get_helix_client
 
 load_dotenv()
@@ -81,6 +82,38 @@ async def search_combined(search_query: str) -> str:
 
     helix_response = f"Transcripts: {transcript_contents}\n\nFrames: {frame_contents}"
     return await llm_responses_search(search_query, helix_response)
+
+
+async def search_files(search_query: str, limit: int = 10) -> dict:
+    """
+    Search file embeddings and return raw results plus LLM summary.
+    """
+    search_params = {"query": search_query, "limit": limit}
+    response = get_helix_client().query("SearchFileEmbeddings", search_params)
+
+    top_contents = []
+    for item in response or []:
+        if isinstance(item, dict) and "text" in item:
+            for entry in item.get("text", [])[:limit]:
+                if isinstance(entry, dict):
+                    content = entry.get("content", "")
+                    if content:
+                        top_contents.append(content)
+        elif isinstance(item, dict):
+            content = item.get("content", "")
+            if content:
+                top_contents.append(content)
+        if len(top_contents) >= limit:
+            break
+
+    helix_response = f"File search results: {top_contents}"
+    summary = await llm_responses_search(search_query, helix_response)
+
+    return {
+        "summary": summary,
+        # "results": response,
+        # "query": search_query,
+    }
 
 
 async def search_videos(search_query: str, limit: int = 5, video_id=None) -> dict:
