@@ -20,11 +20,10 @@ export default function Home() {
             download it if you want to try it out{" "}
             <a
               target="_blank"
+              rel="noopener noreferrer"
               className="underline underline-offset-4 hover:cursor-pointer"
               href="https://github.com/amaanbilwar/the-search-thing"
             >
-              here
-            </a>
           </div>
         </div>
       </section>
