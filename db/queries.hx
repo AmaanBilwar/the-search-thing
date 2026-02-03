@@ -1,28 +1,3 @@
-// Order of how these functions are defined in this file:
-// 1. Node Creations:
-// `CreateVideo`, `CreateChunk`, `CreateTranscript`, `CreateFrameSummary`
-//
-// 2, Relation creations:
-// `CreateVideoToChunkRelationship`, `CreateChunkToTranscriptRelationship`, `CreateChunkToFrameSummaryRelationship`, `CreateTranscriptEmbeddings`, `CreateFrameSummaryEmbeddings`
-//
-// 3. Embeddings search:
-// `SearchTranscriptEmbeddings`, `SearchTranscriptEmbeddingsVideo`, `SearchFrameSummaryEmbeddings`, `SearchFrameSummaryEmbeddingsVideo`
-//
-// 4. Keyword search:
-// `SearchTranscriptKeyword`, `SearchFrameSummaryKeyword`
-//
-// 5. Combined search:
-// `CombinedSearch`, `CombinedSearchWithVideoId`, `SearchTranscriptCombined`, `SearchFrameSummaryCombined`
-//
-// 6. Get nodes:
-// `GetAllVideos`, `GetAllChunks`, `GetChunksByChunkID`
-//
-// 7. Delete nodes:
-// delete all videos
-// `DeleteAllVideos`, `DeleteAllChunks`, `DeleteOutgoingNeighbours`, `DeleteOutgoingNeighboursChunkT`, `DeleteOutgoingNeighboursChunkF`
-
-
-
 // create file node
 QUERY CreateFile (file_id: String, content: String, path:String) =>
     file <- AddN<File>({
