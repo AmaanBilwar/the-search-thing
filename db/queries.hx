@@ -9,7 +9,7 @@ QUERY CreateFile (file_id: String, content: String, path:String) =>
 
 
 // create a video
-QUERY CreateVideo (video_id: String, no_of_chunks: U, path:String) =>
+QUERY CreateVideo (video_id: String, no_of_chunks: U8, path:String) =>
     video <- AddN<Video>({
         video_id: video_id,
         no_of_chunks: no_of_chunks,
