@@ -7,7 +7,7 @@ export const searchIpcSchema = {
   },
   'index': {
     args: z.tuple([z.string()]), 
-    return: z.string(),
+    return: z.tuple([z.boolean(), z.string()]),
   },
   'search': {
     args: z.tuple([z.string()]),
