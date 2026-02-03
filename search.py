@@ -1,5 +1,6 @@
 import asyncio
 import os
+from typing import Any, cast
 
 from dotenv import load_dotenv
 from google import genai
@@ -35,6 +36,35 @@ def get_video_ids_from_chunks(chunks: list) -> list[str]:
             if video_id:
                 video_ids.add(video_id)
     return list(video_ids)
+
+
+def _extract_list_response(response: object, key: str) -> list:
+    if isinstance(response, list) and response:
+        first = response[0]
+        if isinstance(first, dict):
+            first_dict = cast(dict[str, Any], first)
+            nested = first_dict.get(key)
+            if isinstance(nested, list):
+                return nested
+        return response
+    if isinstance(response, dict):
+        response_dict = cast(dict[str, Any], response)
+        nested = response_dict.get(key)
+        if isinstance(nested, list):
+            return nested
+    return []
+
+
+def _build_video_to_path_map(videos: list) -> dict[str, str]:
+    video_to_path: dict[str, str] = {}
+    for video in videos:
+        if not isinstance(video, dict):
+            continue
+        video_id = video.get("video_id")
+        path = video.get("path")
+        if video_id and path:
+            video_to_path[video_id] = path
+    return video_to_path
 
 
 async def llm_responses_search(query: str, helix_response: str) -> str:
@@ -142,20 +172,23 @@ async def search_videos(search_query: str, limit: int = 5) -> dict:
     chunk_to_video: dict[str, str] = {}
     video_to_path: dict[str, str] = {}
 
+    combined_videos = []
+    combined_videos.extend(result_data.get("transcript_videos", []) or [])
+    combined_videos.extend(result_data.get("frame_videos", []) or [])
+    if combined_videos:
+        video_to_path.update(_build_video_to_path_map(combined_videos))
+
     try:
-        chunks = get_helix_client().query("GetAllChunks", {})
+        chunks_response = get_helix_client().query("GetAllChunks", {})
+        chunks = _extract_list_response(chunks_response, "chunks")
         chunk_to_video = build_chunk_to_video_map(chunks or [])
     except Exception as e:
         print(f"GetAllChunks failed: {e}")
 
     try:
-        videos = get_helix_client().query("GetAllVideos", {})
-        for video in videos or []:
-            if isinstance(video, dict):
-                video_id = video.get("video_id")
-                path = video.get("path")
-                if video_id and path:
-                    video_to_path[video_id] = path
+        videos_response = get_helix_client().query("GetAllVideos", {})
+        videos = _extract_list_response(videos_response, "videos")
+        video_to_path.update(_build_video_to_path_map(videos or []))
     except Exception as e:
         print(f"GetAllVideos failed: {e}")
 
@@ -210,10 +243,12 @@ async def search_all(search_query: str, limit: int = 10) -> dict:
 
     return {
         "success": True,
-        "summary": {
-            "files": file_result.get("summary"),
-            "videos": video_result.get("summary"),
-        },
+        # llm resposne
+        # "summary": {
+        #     "files": file_result.get("summary"),
+        #     "videos": video_result.get("summary"),
+        # },
+        # helix response
         "files": file_result.get("results", []),
         "videos": video_result.get("results", []),
         "query": search_query,
