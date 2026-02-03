@@ -14,14 +14,14 @@ export const registerSearchHandlers = () => {
     const response = await axios.get('http://localhost:5000/api/check', {
       params: {}
     });
-    return !!response.data.indexed;
+    return { success: response.data.success};
   })
   
   handle('index', async (dirPaths: string) => {
     const response = await axios.post('http://localhost:5000/api/index', {
       dirPaths // Send to API
     });
-    return response.data.message;
+    return { success: response.data.success, job_id: response.data.job_id};
   });
   
   // System operations

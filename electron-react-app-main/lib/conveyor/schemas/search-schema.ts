@@ -3,7 +3,7 @@ import { z } from 'zod'
 export const searchIpcSchema = {
   'check': {
     args: z.tuple([]),
-    return: z.boolean(),
+    return: z.object({success: z.boolean()}),
   },
   'index': {
     args: z.tuple([z.string()]), 
