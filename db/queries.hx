@@ -155,7 +155,10 @@ QUERY CombinedSearch(search_text: String) =>
     frames <- SearchV<FrameSummaryEmbeddings>(Embed(search_text), 100)
         ::RerankRRF(k: 60)
         ::RANGE(0, 50)
-    RETURN transcripts, frames
+    transcript_videos <- transcripts::In<HasTranscriptEmbeddings>::In<Has>
+    frame_videos <- frames::In<HasFrameSummaryEmbeddings>::In<Has>
+
+    RETURN transcripts, frames, transcript_videos, frame_videos
 
 // combined search with video_id from parent chunk
 QUERY CombinedSearchWithVideoId(search_text: String) =>
