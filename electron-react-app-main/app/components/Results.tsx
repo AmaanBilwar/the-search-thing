@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppContext } from './AppContext'
 import noFiles from '@/resources/no-files-found.svg'
 import { ResultProps, FileObject, VideoObject } from './types/types'
@@ -17,10 +17,15 @@ const Results: React.FC<ResultProps> = ({ searchResults, query, hasSearched }) =
   const videos = searchResults?.videos || []
   const allResults = [...files, ...videos]
 
-  React.useEffect(() => {
+  useEffect(() => {
     setSelectedItem(null)
   }, [searchResults])
 
+  const handleOpen = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key == 'Enter') {
+      console.error("hello")
+    }
+  }
   // Searched but found nothing
   if (hasSearched && allResults.length === 0 && query) {
     return (
@@ -60,7 +65,9 @@ const Results: React.FC<ResultProps> = ({ searchResults, query, hasSearched }) =
               {allResults.map((result) => (
                 <div
                   key={result.file_id}
+                  tabIndex={0}
                   onClick={() => setSelectedItem(result)}
+                  onKeyDown={ (e) => handleOpen(e)}
                   className={`flex flex-row p-2 rounded-xl cursor-pointer hover:bg-zinc-800 transition-colors border-b border-zinc-800 ${
                     selectedItem?.file_id === result.file_id ? 'bg-zinc-700' : ''
                   }`}
