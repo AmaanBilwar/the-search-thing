@@ -3,12 +3,14 @@ import { useAppContext } from "./AppContext"
 import noFiles from "@/resources/no-files-found.svg"
 
 interface ResultsProps {
-  results: string[]
+  success: boolean
+  files: string[]
+  videos: string[]
   query: string
   hasSearched: boolean
 }
 
-export default function Results({ results, query, hasSearched }: ResultsProps) {
+export default function Results({ success, files, videos, query, hasSearched }: ResultsProps) {
   const { isIndexed } = useAppContext()
   
   // // No results yet

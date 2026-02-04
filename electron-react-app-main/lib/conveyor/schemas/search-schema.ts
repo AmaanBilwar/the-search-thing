@@ -17,7 +17,7 @@ export const searchIpcSchema = {
         z.object({file_id:z.string(), content: z.string(), path: z.string()})
       ),
       videos: z.array(
-        z.object({file_id:z.string(), content: z.string(), parth: z.string()})  
+        z.object({file_id:z.string(), content: z.string(), path: z.string()})  
       )
     }),
   },

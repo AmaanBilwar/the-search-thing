@@ -6,18 +6,19 @@ import { cn } from '@/lib/utils'
 import './styles.css'
 import Results from '../Results'
 import Footer from '../Footer'
+import { SearchResults } from '../types/types'
 
 export default function Home() {
   const [query, setQuery] = useState("")
   const search = useConveyor("search")
-  const [results, setResults] = useState<string[]>([])
+  const [searchResults, setSearchResults] = useState<SearchResults>()
   const [isCheckingIndex, setIsCheckingIndex] = useState(true)
   const [hasSearched, setHasSearched] = useState(false) //temporary logic (pls remove in the future :pray:)
   
   const handleSearch = async () => {
     setHasSearched(true)
     const res = await search.search(query)
-    setResults(res.results)
+    setSearchResults(res)
   }
 
   // Show loading while checking index
