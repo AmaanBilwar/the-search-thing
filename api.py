@@ -9,17 +9,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-frontend_origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
-PORT = os.getenv("PORT")
-
-@app.get("/api/check")
-async def index_exists():
-    # Matches: { success: z.boolean() }
-    return {"success": True}
-
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+frontend_origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
+PORT = os.getenv("PORT")
 
 app = FastAPI(title="the search thing")
 
@@ -32,17 +28,15 @@ app.add_middleware(
 )
 
 
+@app.get("/api/check")
+async def index_exists():
+    # Matches: { success: z.boolean() }
+    return {"success": True}
+
+
 class SearchRequest(BaseModel):
     query: str
     limit: int = 10
-
-
-@app.get("/api/check")
-# send a boolean value
-async def index_exists():
-    # check if any dirs are indexed
-    # return if any
-    return {"Hello": "World"}
 
 
 def _load_extension_to_category() -> dict[str, str]:
