@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useAppContext } from './AppContext'
 import noFiles from '@/resources/no-files-found.svg'
 import { ResultProps, FileObject, VideoObject } from './types/types'
+import * as fileIcons from "@/resources/filetype icons"
 
 
 type ResultItem = FileObject | VideoObject
@@ -60,10 +61,16 @@ const Results: React.FC<ResultProps> = ({ searchResults, query, hasSearched }) =
                 <div
                   key={result.file_id}
                   onClick={() => setSelectedItem(result)}
-                  className={`p-2 rounded-xl cursor-pointer hover:bg-zinc-800 transition-colors border-b border-zinc-800 ${
+                  className={`flex flex-row p-2 rounded-xl cursor-pointer hover:bg-zinc-800 transition-colors border-b border-zinc-800 ${
                     selectedItem?.file_id === result.file_id ? 'bg-zinc-700' : ''
                   }`}
                 >
+                  <div className='pr-2'>
+                    <img
+                      src={fileIcons[getFileExt(result.path).toLowerCase()] || fileIcons.txt}
+                      className='w-5 h-5'
+                    />
+                  </div>
                   <div className="text-white truncate" title={result.path}>
                     {getFileName(result.path)}
                   </div>
