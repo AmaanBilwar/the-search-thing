@@ -14,7 +14,7 @@ export default function Loading({ onIndexComplete }: LoadingProps) {
   const handleCheck = async () => {
     try {
       const checkRes = await search.check()
-      setIsIndexed(checkRes) // update the global state
+      setIsIndexed(checkRes.success) // update the global state
       onIndexComplete?.()
     } catch (error) {
       console.error('Error checking index:', error)
@@ -32,9 +32,7 @@ export default function Loading({ onIndexComplete }: LoadingProps) {
       <div className="loading-container">
         <div className="spinner"></div>
         <h2 className="loading-title">Checking Index...</h2>
-        <p className="loading-text">
-          Please wait while we check if your files are indexed
-        </p>
+        <p className="loading-text">Please wait while we check if your files are indexed</p>
       </div>
     </div>
   )
