@@ -10,9 +10,14 @@ export interface VideoObject {
   path: string
 }
 
-
-export interface SearchResults {
+export interface SearchResponse {
   success: boolean
   files: FileObject[]
   videos: VideoObject[]
+}
+
+export interface ResultProps {
+  searchResults?: SearchResponse
+  query: string
+  hasSearched: boolean
 }

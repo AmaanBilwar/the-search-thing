@@ -6,15 +6,15 @@ import { cn } from '@/lib/utils'
 import './styles.css'
 import Results from '../Results'
 import Footer from '../Footer'
-import { SearchResults } from '../types/types'
+import { SearchResponse } from '../types/types'
 
 export default function Home() {
-  const [query, setQuery] = useState("")
-  const search = useConveyor("search")
-  const [searchResults, setSearchResults] = useState<SearchResults>()
+  const [query, setQuery] = useState('')
+  const search = useConveyor('search')
+  const [searchResults, setSearchResults] = useState<SearchResponse>()
   const [isCheckingIndex, setIsCheckingIndex] = useState(true)
   const [hasSearched, setHasSearched] = useState(false) //temporary logic (pls remove in the future :pray:)
-  
+
   const handleSearch = async () => {
     setHasSearched(true)
     const res = await search.search(query)
@@ -44,22 +44,26 @@ export default function Home() {
           }}
         />
       </div>
-      
-      <div className={cn(
-        "flex",
-        "basis-[75%]",
-        "border-2 border-zinc-700/80 bg-zinc-800/60",
-        "px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
-      )}>
-        <Results results={results} query={query} hasSearched={hasSearched} />
+
+      <div
+        className={cn(
+          'flex',
+          'basis-[75%]',
+          'border-2 border-zinc-700/80 bg-zinc-800/60',
+          'px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
+        )}
+      >
+        <Results searchResults={searchResults} query={query} hasSearched={hasSearched} />
       </div>
-      
-      <div className={cn(
-        "flex items-center",
-        "basis-[10%]",
-        " bg-zinc-800/60",
-        "px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
-      )}>
+
+      <div
+        className={cn(
+          'flex items-center',
+          'basis-[10%]',
+          ' bg-zinc-800/60',
+          'px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
+        )}
+      >
         <Footer />
       </div>
     </div>
