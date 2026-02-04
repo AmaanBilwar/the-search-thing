@@ -7,4 +7,5 @@ export class SearchApi extends ConveyorApi {
   
   // system methods
   openFileDialog = () => this.invoke('open-file-dialog')
+  openFile = (filePath: string) => this.invoke('open-file', filePath)
 }

@@ -1,5 +1,5 @@
 import { handle } from '@/lib/main/shared'
-import { dialog } from 'electron'
+import { dialog, shell } from 'electron'
 import axios from 'axios';
 
 export const registerSearchHandlers = () => {
@@ -32,4 +32,7 @@ export const registerSearchHandlers = () => {
     return result.filePaths[0] ?? '';
   })
   
+  handle('open-file', async (filePath: string) => {
+    await shell.openPath(filePath);
+  })
 }
