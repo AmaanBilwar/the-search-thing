@@ -18,6 +18,9 @@ __pycache__/
 
 # misc
 backup.txt
+replacements.txt
+fix-env.sh
+rewrite-env-history.ps1
 
 # helix
 .helix/
@@ -27,3 +30,6 @@ backup.txt
 node_modules/
 .webpack/
 testing-parsing/
+
+.ruff_cache/
+videos/output_indexer/

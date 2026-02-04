@@ -1,19 +1,7 @@
-def main():
-    print("Hello from the-search-thing!")
+from the_search_thing import walk_and_get_files_content
 
-
-def walk_and_get_content(directory: str):
-    from the_search_thing import walk_and_get_content  # ty: ignore[unresolved-import]
-
-    return walk_and_get_content(directory)
-
-
-if __name__ == "__main__":
-    import sys
-
-    args = sys.argv[1:]
-    if args:
-        walk_and_get_content(args[0])
-    else:
-        print("Please provide a directory path.")
-        sys.exit(1)
+files_with_content = walk_and_get_files_content(
+    "C:\\Users\\amaan\\OneDrive\\Documents\\coding\\the-search-thing\\src"
+)
+for path, content in files_with_content.items():
+    print(f"{path}: {content}")

@@ -1,33 +1,19 @@
-// Order of how these functions are defined in this file:
-// 1. Node Creations:
-// `CreateVideo`, `CreateChunk`, `CreateTranscript`, `CreateFrameSummary`
-//
-// 2, Relation creations:
-// `CreateVideoToChunkRelationship`, `CreateChunkToTranscriptRelationship`, `CreateChunkToFrameSummaryRelationship`, `CreateTranscriptEmbeddings`, `CreateFrameSummaryEmbeddings`
-//
-// 3. Embeddings search:
-// `SearchTranscriptEmbeddings`, `SearchTranscriptEmbeddingsVideo`, `SearchFrameSummaryEmbeddings`, `SearchFrameSummaryEmbeddingsVideo`
-//
-// 4. Keyword search:
-// `SearchTranscriptKeyword`, `SearchFrameSummaryKeyword`
-//
-// 5. Combined search:
-// `CombinedSearch`, `CombinedSearchWithVideoId`, `SearchTranscriptCombined`, `SearchFrameSummaryCombined`
-//
-// 6. Get nodes:
-// `GetAllVideos`, `GetAllChunks`, `GetChunksByChunkID`
-//
-// 7. Delete nodes:
-// delete all videos
-// `DeleteAllVideos`, `DeleteAllChunks`, `DeleteOutgoingNeighbours`, `DeleteOutgoingNeighboursChunkT`, `DeleteOutgoingNeighboursChunkF`
-
+// create file node
+QUERY CreateFile (file_id: String, content: String, path:String) =>
+    file <- AddN<File>({
+    file_id: file_id,
+    content: content,
+    path: path,
+    })
+    RETURN file
 
 
 // create a video
-QUERY CreateVideo (video_id: String, no_of_chunks: U8) =>
+QUERY CreateVideo (video_id: String, no_of_chunks: U8, path:String) =>
     video <- AddN<Video>({
         video_id: video_id,
-        no_of_chunks: no_of_chunks
+        no_of_chunks: no_of_chunks,
+        path: path
     })
     RETURN video
 
@@ -77,8 +63,19 @@ QUERY CreateChunkToTranscriptRelationship (chunk_id: String, transcript_id: ID) 
 QUERY CreateChunkToFrameSummaryRelationship (chunk_id: String,frame_summary_id: ID) =>
     chunk <- N<Chunk>({chunk_id: chunk_id})
     frame_summary <- N<FrameSummary>(frame_summary_id)
-    HasFrameSummary <- AddE<Has>::From(chunk)::To(frame_summary)
+    HasFrameSummary <- AddE<HasFrameSummaryEmbeddings>::From(chunk)::To(frame_summary)
     RETURN HasFrameSummary
+
+
+
+// create file embeddings vector and connect to file node
+QUERY CreateFileEmbeddings (file_id: String, content: String, path:String) =>
+    file <- N<File>({file_id: file_id})
+    file_embeddings <- AddV<FileEmbeddings>(Embed(content), {file_id: file_id, content: content, path: path})
+    edge <- AddE<HasFileEmbeddings>::From(file)::To(file_embeddings)
+    RETURN "Success"
+
+
 
 // create a vector and connect to chunk node for transcript embeddings
 // #[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]
@@ -96,6 +93,15 @@ QUERY CreateFrameSummaryEmbeddings (chunk_id:String, content: String) =>
     frame_summary_embeddings <- AddV<FrameSummaryEmbeddings>(Embed(content),  {chunk_id: chunk_id, content: content })
     edge <- AddE<HasFrameSummaryEmbeddings>::From(chunk)::To(frame_summary_embeddings)
     RETURN "Success"
+
+
+// search transcript embeddings
+// #[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]
+QUERY SearchFileEmbeddings(query: String, limit: I64) =>
+    text <- SearchV<FileEmbeddings>(Embed(query), limit)
+    chunks <- text::In<HasFileEmbeddings>
+    RETURN text
+
 
 // search transcript embeddings
 // #[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]
@@ -126,6 +132,12 @@ QUERY SearchFrameSummaryEmbeddingsVideo(query:String, limit: I64,video_id: Strin
     RETURN text
 
 // search transcript keywords
+QUERY SearchFileKeyword(keywords: String, limit: I64) =>
+    documents <- SearchBM25<File>(keywords, limit)
+    RETURN documents
+
+
+// search transcript keywords
 QUERY SearchTranscriptKeyword(keywords: String, limit: I64) =>
     documents <- SearchBM25<Transcript>(keywords, limit)
     RETURN documents
@@ -143,7 +155,10 @@ QUERY CombinedSearch(search_text: String) =>
     frames <- SearchV<FrameSummaryEmbeddings>(Embed(search_text), 100)
         ::RerankRRF(k: 60)
         ::RANGE(0, 50)
-    RETURN transcripts, frames
+    transcript_videos <- transcripts::In<HasTranscriptEmbeddings>::In<Has>
+    frame_videos <- frames::In<HasFrameSummaryEmbeddings>::In<Has>
+
+    RETURN transcripts, frames, transcript_videos, frame_videos
 
 // combined search with video_id from parent chunk
 QUERY CombinedSearchWithVideoId(search_text: String) =>
@@ -179,6 +194,10 @@ QUERY SearchFrameSummaryCombined(search_string: String, keywords: String) =>
 QUERY GetAllVideos() =>
     videos <- N<Video>
     RETURN videos
+
+QUERY GetAllFiles() =>
+    files <- N<File>
+    RETURN files
 
 // get video by video id
 //QUERY GetVideoByVideoId(video_id: String) =>
@@ -223,3 +242,33 @@ QUERY DeleteOutgoingNeighboursChunkF() =>
 
 // updating nodes
 // https://docs.helix-db.com/documentation/hql/updating
+
+
+
+// testing combiend file and vidoe Search
+QUERY CombinedFileAndVideo(search_text: String) =>
+    // File search
+    file_embeddings <- SearchV<FileEmbeddings>(Embed(search_text), 100)
+
+    // Video searches
+    transcripts <- SearchV<TranscriptEmbeddings>(Embed(search_text), 100)
+    frames <- SearchV<FrameSummaryEmbeddings>(Embed(search_text), 100)
+
+    // Combine all results with RRF
+    combined <- file_embeddings
+        ::RerankRRF(k: 60)
+    combined_with_transcripts <- transcripts
+        ::RerankRRF(k: 60)
+    combined_with_frames <- frames
+        ::RerankRRF(k: 60)
+        ::RANGE(0, 50)
+
+    // Get related items
+    chunks <- file_embeddings::In<HasFileEmbeddings>
+    transcript_videos <- transcripts::In<HasTranscriptEmbeddings>::In<Has>
+    frame_videos <- frames::In<HasFrameSummaryEmbeddings>::In<Has>
+
+    RETURN combined_with_frames, chunks, transcript_videos, frame_videos
+
+
+// last resort is to have a single vector type for all fiels
