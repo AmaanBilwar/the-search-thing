@@ -1,24 +1,24 @@
 import { z } from 'zod'
 
 export const searchIpcSchema = {
-  'check': {
+  check: {
     args: z.tuple([]),
-    return: z.object({success: z.boolean()}),
+    return: z.object({ success: z.boolean() }),
   },
-  'index': {
-    args: z.tuple([z.string()]), 
-    return: z.object({ success: z.boolean(), job_id: z.string() })
+  index: {
+    args: z.tuple([z.string()]),
+    return: z.object({ success: z.boolean(), job_id: z.string() }),
   },
-  'search': {
+  search: {
     args: z.tuple([z.string()]),
     return: z.object({
-      success: z.boolean(),
-      files: z.array(
-        z.object({file_id:z.string(), content: z.string(), path: z.string()})
+      results: z.array(
+        z.object({
+          label: z.string(),
+          content: z.string().nullable().optional(),
+          path: z.string(),
+        })
       ),
-      videos: z.array(
-        z.object({file_id:z.string(), content: z.string(), path: z.string()})  
-      )
     }),
   },
   // system operations
