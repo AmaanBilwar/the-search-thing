@@ -46,24 +46,21 @@ const Results: React.FC<ResultProps> = ({ searchResults, query, hasSearched }) =
         <div className="flex w-full h-full">
           {/* Files & its paths */}
           <div className="w-1/3 min-w-[200px] max-w-[300px] h-full border-r border-zinc-700 flex flex-col">
-            <div className="p-3 border-b border-zinc-700">
-              <h3 className="text-zinc-400 text-sm font-medium">Results..</h3>
+            <div className="p-1">
+              <h3 className="text-zinc-400 text-[0.8rem] font-medium">Recently Used</h3>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex flex-col justify-center pr-2">
               {allResults.map((result) => (
                 <div
                   key={result.file_id}
                   onClick={() => setSelectedItem(result)}
-                  className={`p-3 cursor-pointer hover:bg-zinc-800 transition-colors border-b border-zinc-800 ${
-                    selectedItem?.file_id === result.file_id ? 'bg-zinc-800' : ''
+                  className={`p-2 rounded-xl cursor-pointer hover:bg-zinc-800 transition-colors border-b border-zinc-800 ${
+                    selectedItem?.file_id === result.file_id ? 'bg-zinc-700' : ''
                   }`}
                 >
-                  <p className="text-white text-sm truncate" title={result.path}>
+                  <div className="text-white truncate" title={result.path}>
                     {getFileName(result.path)}
-                  </p>
-                  <p className="text-zinc-500 text-xs truncate" title={result.path}>
-                    {result.path}
-                  </p>
+                  </div>
                 </div>
               ))}
             </div>
