@@ -4,6 +4,7 @@ import { useAppContext } from './AppContext'
 import noFiles from '@/resources/no-files-found.svg'
 import { ResultProps, FileObject, VideoObject } from './types/types'
 
+
 type ResultItem = FileObject | VideoObject
 
 const Results: React.FC<ResultProps> = ({ searchResults, query, hasSearched }) => {
@@ -33,6 +34,11 @@ const Results: React.FC<ResultProps> = ({ searchResults, query, hasSearched }) =
   const getFileName = (path: string) => {
     const parts = path.split(/[/\\]/)
     return parts[parts.length - 1] || path
+  }
+  
+  const getFileExt = (path: string) => {
+    const parts = path.split('.')
+    return parts.length > 1 ? parts[parts.length - 1] : ''
   }
 
   return (
