@@ -5,11 +5,15 @@ import { Button } from "./ui/button"
 import about from "@/resources/about.svg"
 import enter from "@/resources/enter.svg"
 
+interface IndexProps {
+  success: boolean
+  job_id: string
+}
 
 export default function Footer() {
   const search = useConveyor("search")
   const [isIndexing, setIsIndexing] = useState(false)
-  const [indexResult, setIndexResult] = useState("")
+  const [indexResult, setIndexResult] = useState<IndexProps>()
   const [errorMessage, setErrorMessage] = useState("")
   
   const {isIndexed, setIsIndexed} = useAppContext()
@@ -24,17 +28,14 @@ export default function Footer() {
     try {
       const indexRes = await search.index(res)
       console.error('Index response:', indexRes)
-      if (indexRes) {
+      if (indexRes.success) {
         setIsIndexed(true)
-        setIndexResult(indexRes)
       } else {
         setErrorMessage("No response from indexing")
-        setIndexResult("Indexing returned no data")
       }
     } catch (error) {
       console.error('Error indexing files:', error)
       setErrorMessage(`Indexing failed: ${error}`)
-      setIndexResult("")
     } finally {
       setIsIndexing(false)
     }
@@ -47,10 +48,8 @@ export default function Footer() {
       <div className="text-sm">
         {isIndexing ? (
           <span className="opacity-75">Indexing...</span>
-        ) : errorMessage ? (
-          <span className="text-red-500">{errorMessage}</span>
         ) : (
-          <span>{indexResult}</span>
+          <span className="text-red-500">{errorMessage}</span>
         )}
       </div>
       
@@ -59,7 +58,7 @@ export default function Footer() {
           Index <img src={enter} alt="About" className="w-5 h-6 opacity-75" />
         </Button>
       ) : (
-        <Button variant="transparent" onClick={handleStartIndexing}>
+        <Button variant="transparent" >
           Open <img src={enter} alt="About" className="w-5 h-6 opacity-75" />
         </Button>
       )}
