@@ -83,11 +83,9 @@ const Results: React.FC<ResultProps> = ({ searchResults, query, hasSearched }) =
           <div className="flex-1 h-full overflow-y-auto">
             {selectedItem ? (
               <div className="p-4">
-                <div className="mb-4 pb-3 border-b border-zinc-700">
-                  <h3 className="text-white font-medium">{getFileName(selectedItem.path)}</h3>
-                  <p className="text-zinc-500 text-sm">{selectedItem.path}</p>
+                <div className='p-5 rounded-2xl min-h-[320px] bg-zinc-900'>
+                  <div className="text-zinc-300 whitespace-pre-wrap">{selectedItem.content}</div>
                 </div>
-                <div className="text-zinc-300 whitespace-pre-wrap">{selectedItem.content}</div>
               </div>
             ) : (
               <div className="flex items-center justify-center h-full text-zinc-500">
