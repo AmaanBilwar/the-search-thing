@@ -10,10 +10,11 @@ export default function Home() {
             the-search-thing
           </h1>
           <p>
-            <span className="font-semibold">hi everyone</span>
+            <span className="font-semibold">hi everyone,</span>
             <br />
-            we are building 'the-search-thing' because we were tired with
-            Windows search being so ass
+            we are building "the-search-thing"
+            <br />
+            because we were tired with Windows search being so ass
             <br />
           </p>
           <div className="pt-6">
