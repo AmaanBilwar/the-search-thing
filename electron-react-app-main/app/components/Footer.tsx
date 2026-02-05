@@ -53,15 +53,9 @@ export default function Footer() {
         )}
       </div>
       
-      {!isIndexed ? (
-        <Button variant="transparent" onClick={handleStartIndexing}>
-          Index <img src={enter} alt="About" className="w-5 h-6 opacity-75" />
-        </Button>
-      ) : (
-        <Button variant="transparent" >
-          Open <img src={enter} alt="About" className="w-5 h-6 opacity-75" />
-        </Button>
-      )}
+      <Button variant="transparent" >
+        Open <img src={enter} alt="Open File" className="w-5 h-6 opacity-75" />
+      </Button>
     </div>
   )
 }
