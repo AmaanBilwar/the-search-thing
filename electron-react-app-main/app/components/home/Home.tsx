@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Searchbar } from '../ui/searchbar'
 import { useConveyor } from '@/app/hooks/use-conveyor'
-import Loading from '../loading'
 import { cn } from '@/lib/utils'
 import './styles.css'
 import Results from '../Results'
@@ -12,18 +11,12 @@ export default function Home() {
   const [query, setQuery] = useState('')
   const search = useConveyor('search')
   const [searchResults, setSearchResults] = useState<SearchResponse>()
-  const [isCheckingIndex, setIsCheckingIndex] = useState(true)
   const [hasSearched, setHasSearched] = useState(false) //temporary logic (pls remove in the future :pray:)
 
   const handleSearch = async () => {
     setHasSearched(true)
     const res = await search.search(query)
     setSearchResults(res)
-  }
-
-  // Show loading while checking index
-  if (isCheckingIndex) {
-    return <Loading onIndexComplete={() => setIsCheckingIndex(false)} />
   }
 
   return (
