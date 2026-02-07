@@ -4,12 +4,12 @@ use crate::helpers::{
 };
 use pyo3::prelude::*;
 use pyo3::{PyErr, PyResult};
-use std::fs;
+use std::io::Cursor;
+use image::ImageDecoder;
 use std::path::Path;
 
 
 #[pyfunction]
 pub fn get_bytes(image_path: String) -> PyResult<String> {
-    validate_file_exists(&image_path)?;
-    Ok(image_path)
+    
 }
