@@ -65,6 +65,9 @@ def _get_text_extensions(ext_to_category: dict[str, str]) -> list[str]:
 def _get_video_extensions(ext_to_category: dict[str, str]) -> list[str]:
     return [ext for ext, category in ext_to_category.items() if category == "video"]
 
+def _get_img_extensions(ext_to_category: dict[str, str]) -> list[str]:
+    return [ext for ext, category in ext_to_category.items() if category == "image"]
+
 
 def _collect_files_by_extension(root: str, extensions: list[str]) -> list[str]:
     ext_set = {ext.lower() for ext in extensions}
@@ -131,6 +134,8 @@ async def _run_indexing_job(dir: str, job_id: str, batch_size: int = 10) -> None
     ext_to_category = _load_extension_to_category()
     text_exts = _get_text_extensions(ext_to_category)
     video_exts = _get_video_extensions(ext_to_category)
+    img_exts = _get_img_extensions(ext_to_category)
+    
     cursor = 0
     total_found = 0
     text_indexed = 0
