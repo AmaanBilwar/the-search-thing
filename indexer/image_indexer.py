@@ -4,9 +4,43 @@ import uuid
 from pathlib import Path
 from typing import List
 
-from the_search_thing import search_images
+from the_search_thing import get_bytes
 
 from utils.clients import get_helix_client
+
+async def img_indexer(
+    file_paths: List[str] | str,
+) -> List[dict]:
+    if isinstance(file_paths, str):
+        file_paths = [file_paths]
+    if not file_paths:
+        print("No file paths provided. exiting image indexing.")
+        return []
+    
+    results: List[dict] = []
+    for path in file_paths:
+        p = Path(path)
+        if not p.exists():
+            print(f"[WARN] Skipping (not found): {path}")
+            results.append(
+                {
+                    "path": path,
+                    "file_id": None,
+                    "indexed": False,
+                    "error": "Path not found",
+                }
+            )
+            continue
+        
+        try:
+            bytes = get_bytes(path)
+        except Exception as e:
+            print(f"[WARN] Skipping (Bytes Extraction failed): {path} — {e}")
+            results.append(
+                {"path": path, "file_id": None, "indexed": False, "error": str(e)}
+            )
+            continue
+                
 
 # creating image node
 async def create_img(file_id: str, content: str, path: str) -> str:
@@ -31,7 +65,7 @@ async def create_img_embeddings(file_id: str, content: str, path: str) -> str:
         )
         
     return await asyncio.to_thread(_query)
-    
+
 async def generate_frame_summaries(
     thumbnails_data: dict[str, list[bytes]],
 ) -> dict[str, list[dict]]:

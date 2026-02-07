@@ -9,7 +9,7 @@ use std::path::Path;
 
 
 #[pyfunction]
-pub fn search_images(imagePath: String) -> PyResult<String> {
-    validate_file_exists(&imagePath)?;
-    Ok(imagePath)
+pub fn get_bytes(image_path: String) -> PyResult<String> {
+    validate_file_exists(&image_path)?;
+    Ok(image_path)
 }
