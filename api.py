@@ -144,6 +144,9 @@ async def _run_indexing_job(dir: str, job_id: str, batch_size: int = 10) -> None
     video_found = 0
     video_indexed = 0
     video_errors = 0
+    image_found = 0
+    image_indexed = 0
+    image_errors = 0
 
     logger.info("[job:%s] Started indexing job for: %s", job_id, dir)
 
@@ -197,6 +200,35 @@ async def _run_indexing_job(dir: str, job_id: str, batch_size: int = 10) -> None
                         video_path,
                         e,
                     )
+                    
+    if img_exts:
+        image_files = await asyncio.to_thread(
+            _collect_files_by_extension, dir, img_exts
+        )
+        image_found = len(image_files)
+        if image_files:
+            from indexer.image_indexer import img_indexer
+
+            for image_path in image_files:
+                try:
+                    results = await img_indexer(image_path)
+                    if results:
+                        image_indexed += sum(
+                            1 for result in results if result.get("indexed")
+                        )
+                        image_errors += sum(
+                            1 for result in results if not result.get("indexed")
+                        )
+                    else:
+                        image_errors += 1
+                except Exception as e:
+                    image_errors += 1
+                    logger.error(
+                        "[job:%s] [ERROR] Video indexing failed: %s - %s",
+                        job_id,
+                        image_path,
+                        e,
+                    )
 
     logger.info(
         "[job:%s] [SUMMARY] Job completed for %s - Found: %d, Indexed: %d, Skipped: %d, Errors: %d",
@@ -213,6 +245,13 @@ async def _run_indexing_job(dir: str, job_id: str, batch_size: int = 10) -> None
         video_found,
         video_indexed,
         video_errors,
+    )
+    logger.info(
+        "[job:%s] [IMAGE SUMMARY] Found: %d, Indexed: %d, Errors: %d",
+        job_id,
+        image_found,
+        image_indexed,
+        image_errors,
     )
 
 
