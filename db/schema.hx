@@ -7,6 +7,12 @@ N::File {
     path: String
 }
 
+N::Image {
+    INDEX image_id: String,
+    content: String,
+    path: String
+}
+
 N::Video {
     INDEX video_id: String,
     no_of_chunks: U8,
@@ -77,6 +83,12 @@ V::FrameSummaryEmbeddings {
 // file embeddings vector
 V::FileEmbeddings{
     INDEX file_id: String,
+    content: String,
+    path: String,
+}
+
+V::ImageEmbeddings{
+    INDEX image_id: String,
     content: String,
     path: String,
 }
