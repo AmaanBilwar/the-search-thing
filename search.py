@@ -234,6 +234,50 @@ async def search_videos(search_query: str, limit: int = 5) -> dict:
     }
 
 
+async def search_images(search_query: str, limit: int = 10) -> dict:
+    """
+    Search across image embeddings and return file-style results.
+    """
+    search_params = {"query": search_query, "limit": limit}
+    response = get_helix_client().query("SearchImageEmbeddings", search_params)
+
+    results: list[dict] = []
+    top_contents: list[str] = []
+
+    for item in response or []:
+        if (
+            isinstance(item, dict)
+            and "text" in item
+            and isinstance(item.get("text"), list)
+        ):
+            entries = item.get("text", [])
+        else:
+            entries = [item]
+
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            results.append(
+                {
+                    "image_id": entry.get("image_id"),
+                    "content": entry.get("content"),
+                    "path": entry.get("path"),
+                }
+            )
+            content = entry.get("content")
+            if isinstance(content, str) and content:
+                top_contents.append(content)
+            if len(results) >= limit:
+                break
+        if len(results) >= limit:
+            break
+
+    helix_response = f"Image search results: {top_contents}"
+    summary = await llm_responses_search(search_query, helix_response)
+
+    return {"summary": summary, "results": results, "query": search_query}
+
+
 async def search_file_vids_together(search_query: str) -> dict:
     """
     Search files and videos together using CombinedFileAndVideo.
@@ -310,9 +354,10 @@ async def search_all(search_query: str, limit: int = 10) -> dict:
     """
     Search files and videos in parallel and return grouped results.
     """
-    file_result, video_result = await asyncio.gather(
+    file_result, video_result, image_result = await asyncio.gather(
         search_files(search_query, limit=limit),
         search_videos(search_query, limit=limit),
+        search_images(search_query, limit=limit),
     )
 
     return {
@@ -325,6 +370,7 @@ async def search_all(search_query: str, limit: int = 10) -> dict:
         # helix response
         "files": file_result.get("results", []),
         "videos": video_result.get("results", []),
+        "images": image_result.get("results", []),
         # "query": search_query,
     }
 
