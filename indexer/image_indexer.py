@@ -26,7 +26,7 @@ async def img_indexer(
             results.append(
                 {
                     "path": path,
-                    "file_id": None,
+                    "image_id": None,
                     "indexed": False,
                     "error": "Path not found",
                 }
@@ -38,62 +38,64 @@ async def img_indexer(
         except Exception as e:
             print(f"[WARN] Skipping (Bytes Extraction failed): {path} — {e}")
             results.append(
-                {"path": path, "file_id": None, "indexed": False, "error": str(e)}
+                {"path": path, "image_id": None, "indexed": False, "error": str(e)}
             )
             continue
-            
+
         try:
             summary_payload, embedding_text = await generate_summary(img_base64)
         except Exception as e:
             print(f"[WARN] Skipping (Summary failed): {path} — {e}")
             results.append(
-                {"path": path, "file_id": None, "indexed": False, "error": str(e)}
+                {"path": path, "image_id": None, "indexed": False, "error": str(e)}
             )
             continue
-            
-        file_id = str(uuid.uuid4())
+
+        image_id = uuid.uuid4().hex
         try:
-            await create_img(file_id, json.dumps(summary_payload), path=path)
-            await create_img_embeddings(file_id, embedding_text, path=path)
-            results.append({"path": path, "file_id": file_id, "indexed": True})
+            await create_img(image_id, json.dumps(summary_payload), path=path)
+            await create_img_embeddings(image_id, embedding_text, path=path)
+            results.append({"path": path, "image_id": image_id, "indexed": True})
             print(f"[OK] Indexed image: {path}")
         except Exception as e:
             print(f"[ERROR] Indexing failed for {path}: {e}")
             results.append(
-                {"path": path, "file_id": file_id, "indexed": False, "error": str(e)}
+                {"path": path, "image_id": image_id, "indexed": False, "error": str(e)}
             )
-            
+
     return results
 
-    
+
 # creating image node
-async def create_img(file_id: str, content: str, path: str) -> str:
-    # here content is a raw json summary
-    file_params = {"file_id": file_id, "content": content, "path": path}
+async def create_img(image_id: str, content: str, path: str) -> str:
+    # here content is a raw summary
+    image_params = {"image_id": image_id, "content": content, "path": path}
 
     def _query() -> str:
         helix_client = get_helix_client()
-        return json.dumps(helix_client.query("CreateImage", file_params))
+        return json.dumps(helix_client.query("CreateImage", image_params))
 
     return await asyncio.to_thread(_query)
 
 
-async def create_img_embeddings(file_id: str, content: str, path: str) -> str:
-    file_params = {"file_id": file_id, "content": content, "path": path}
+async def create_img_embeddings(image_id: str, content: str, path: str) -> str:
+    image_params = {"image_id": image_id, "content": content, "path": path}
 
     def _query() -> str:
         helix_client = get_helix_client()
         return json.dumps(
             helix_client.query(
                 "CreateImageEmbeddings",
-                file_params,
+                image_params,
             )
         )
 
     return await asyncio.to_thread(_query)
 
-def _base64_to_uri(img_base64: str, mime_hint: str = "jpeg" ) -> str:
+
+def _base64_to_uri(img_base64: str, mime_hint: str = "jpeg") -> str:
     return f"data:image/{mime_hint};base64,{img_base64}"
+
 
 def _normalize_summary_content(content_str: str) -> dict:
     """
@@ -135,9 +137,7 @@ def _normalize_summary_content(content_str: str) -> dict:
     setting = (
         parsed_obj.get("setting") if isinstance(parsed_obj.get("setting"), str) else ""
     )
-    ocr = (
-        parsed_obj.get("ocr") if isinstance(parsed_obj.get("ocr"), str) else ""
-    )
+    ocr = parsed_obj.get("ocr") if isinstance(parsed_obj.get("ocr"), str) else ""
     quality = (
         parsed_obj.get("quality") if isinstance(parsed_obj.get("quality"), str) else ""
     )
@@ -153,10 +153,11 @@ def _normalize_summary_content(content_str: str) -> dict:
         "ocr": ocr,
         "quality": quality,
     }
-    
+
+
 def _build_embedding_text(summary: dict) -> str:
     parts: list[str] = []
-    
+
     def add(label: str, value: object) -> None:
         if value is None:
             return
@@ -166,15 +167,16 @@ def _build_embedding_text(summary: dict) -> str:
             value = value.strip()
         if value:
             parts.append(f"{label}: {value}")
-    
+
     add("summary", summary.get("summary"))
     add("objects", summary.get("objects"))
     add("actions", summary.get("actions"))
     add("setting", summary.get("setting"))
     add("ocr", summary.get("ocr"))
     add("quality", summary.get("quality"))
-    
+
     return " | ".join(parts)
+
 
 async def generate_summary(
     image_base64: str,
@@ -186,24 +188,24 @@ async def generate_summary(
     """
     if not image_base64:
         print("[WARN] No bytes data provided")
-        return {},""
+        return {}, ""
 
     client = get_groq_client()
     data_uri = _base64_to_uri(image_base64, "jpeg")
-    
+
     prompt = (
         "You are an expert vision assistant. Provide a concise JSON summary for "
         "the provided image. Respond with JSON only (no code fences). Use the schema: "
         '{"summary": "<1-2 sentences>", "objects": ["..."], "actions": ["..."], '
         '"setting": "<location or scene>", "ocr": "<visible text or empty>", "quality": "<good|low>"}'
     )
-    
+
     response = client.chat.completions.create(
         model="meta-llama/llama-4-maverick-17b-128e-instruct",
         messages=[
             {
                 "role": "user",
-                "content" : [
+                "content": [
                     {"type": "text", "text": prompt},
                     {"type": "image_url", "image_url": {"url": data_uri}},
                 ],
@@ -227,6 +229,5 @@ async def generate_summary(
         else {"summary": str(content)}
     )
     embedding_text = _build_embedding_text(summary_payload)
-    
+
     return summary_payload, embedding_text
-    
