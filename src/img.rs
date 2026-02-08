@@ -1,18 +1,19 @@
 use crate::helpers::{
-    ensure_output_dir, get_audio_encoding_params, normalize_path, validate_file_exists,
-    validate_times,
+    validate_file_exists
 };
+use base64::engine::general_purpose::STANDARD;
+use base64::Engine;
+use image::ImageReader;
 use pyo3::prelude::*;
 use pyo3::{PyErr, PyResult};
-use std::io::Cursor;
-use image::{ImageDecoder, ImageFormat};
-use std::path::Path;
-
 
 #[pyfunction]
-pub fn get_bytes(image_path: String) -> PyResult<Vec<u8>> {
-    let mut bytes: Vec<u8> = Vec::new();
-    let img = image::ImageReader::open(image_path)?.decode();
-    img.write_to(&mut Cursor::new(&mut bytes), image::ImageFormat::Png)?;
-    Ok(bytes)
+pub fn get_base64_bytes(image_path: String) -> PyResult<String> {
+    validate_file_exists(&image_path);
+    let img = ImageReader::open(&image_path)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?
+        .decode()
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+    let encoded = STANDARD.encode(img.into_bytes());
+    Ok(encoded)
 }
