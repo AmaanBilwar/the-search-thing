@@ -96,7 +96,63 @@ def _base64_to_uri(img_base64: str, mime_hint: str = "jpeg" ) -> str:
     return f"data:image/{mime_hint};base64,{img_base64}"
 
 def _normalize_summary_content(content_str: str) -> dict:
-    
+    """
+    Normalize model output into a JSON-friendly dict without code fences.
+    Accepts raw text (possibly with ```json fences) and tries to JSON-parse.
+    Falls back to wrapping the text under 'summary'.
+    """
+    text = content_str.strip()
+
+    if text.startswith("```"):
+        lines = text.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip().startswith("```"):
+            lines = lines[:-1]
+        text = "\n".join(lines).strip()
+
+    parsed_obj = None
+    try:
+        parsed_obj = json.loads(text)
+    except Exception:
+        parsed_obj = None
+
+    if not isinstance(parsed_obj, dict):
+        return {"summary": text}
+
+    summary_text = parsed_obj.get("summary")
+    if isinstance(summary_text, str) and summary_text.strip().startswith("```"):
+        nested = _normalize_summary_content(summary_text)
+        if isinstance(nested, dict):
+            summary_text = nested.get("summary", summary_text)
+
+    objects = (
+        parsed_obj.get("objects") if isinstance(parsed_obj.get("objects"), list) else []
+    )
+    actions = (
+        parsed_obj.get("actions") if isinstance(parsed_obj.get("actions"), list) else []
+    )
+    setting = (
+        parsed_obj.get("setting") if isinstance(parsed_obj.get("setting"), str) else ""
+    )
+    ocr = (
+        parsed_obj.get("ocr") if isinstance(parsed_obj.get("ocr"), str) else ""
+    )
+    quality = (
+        parsed_obj.get("quality") if isinstance(parsed_obj.get("quality"), str) else ""
+    )
+
+    if summary_text is None:
+        summary_text = text
+
+    return {
+        "summary": summary_text,
+        "objects": objects,
+        "actions": actions,
+        "setting": setting,
+        "ocr": ocr,
+        "quality": quality,
+    }
     
 def _build_embedding_text(summary: dict) -> str:
     
@@ -114,7 +170,7 @@ async def generate_summary(
         return {},""
 
     client = get_groq_client()
-    data_uri = base64_to_uri(image_base64, "jpeg")
+    data_uri = _base64_to_uri(image_base64, "jpeg")
     
     prompt = (
         "You are an expert vision assistant. Provide a concise JSON summary for "
@@ -151,7 +207,7 @@ async def generate_summary(
         if isinstance(content, str)
         else {"summary": str(content)}
     )
-    embedding_text = _build_embedding_text(summay_payload)
+    embedding_text = _build_embedding_text(summary_payload)
     
     return summary_payload, embedding_text
     
