@@ -20,6 +20,7 @@ walkdir = "2.5.0"
 rayon = "1.11.0"
 file_type = "0.8.11"
 image = "0.25.9"
+base64 = "0.22.1"
 [features]
 default = ["python"]
 python = []
