@@ -4,9 +4,10 @@ import uuid
 from pathlib import Path
 from typing import List
 
-from the_search_thing import get_bytes
+from the_search_thing import get_base64_bytes
 
-from utils.clients import get_helix_client
+from utils.clients import get_groq_client, get_helix_client
+
 
 async def img_indexer(
     file_paths: List[str] | str,
@@ -16,7 +17,7 @@ async def img_indexer(
     if not file_paths:
         print("No file paths provided. exiting image indexing.")
         return []
-    
+
     results: List[dict] = []
     for path in file_paths:
         p = Path(path)
@@ -31,30 +32,55 @@ async def img_indexer(
                 }
             )
             continue
-        
+
         try:
-            bytes = get_bytes(path)
+            img_base64 = get_base64_bytes(path)
         except Exception as e:
             print(f"[WARN] Skipping (Bytes Extraction failed): {path} — {e}")
             results.append(
                 {"path": path, "file_id": None, "indexed": False, "error": str(e)}
             )
             continue
-                
+            
+        try:
+            summary_payload, embedding_text = await generate_summary(img_base64)
+        except Exception as e:
+            print(f"[WARN] Skipping (Summary failed): {path} — {e}")
+            results.append(
+                {"path": path, "file_id": None, "indexed": False, "error": str(e)}
+            )
+            continue
+            
+        file_id = str(uuid.uuid4())
+        try:
+            await create_img(file_id, json.dumps(summary_payload), path=path)
+            await create_img_embeddings(file_id, embedding_text, path=path)
+            results.append({"path": path, "file_id": file_id, "indexed": True})
+            print(f"[OK] Indexed image: {path}")
+        except Exception as e:
+            print(f"[ERROR] Indexing failed for {path}: {e}")
+            results.append(
+                {"path": path, "file_id": file_id, "indexed": False, "error": str(e)}
+            )
+            
+    return results
 
+    
 # creating image node
 async def create_img(file_id: str, content: str, path: str) -> str:
+    # here content is a raw json summary
     file_params = {"file_id": file_id, "content": content, "path": path}
-    
+
     def _query() -> str:
         helix_client = get_helix_client()
         return json.dumps(helix_client.query("CreateImage", file_params))
-        
+
     return await asyncio.to_thread(_query)
+
 
 async def create_img_embeddings(file_id: str, content: str, path: str) -> str:
     file_params = {"file_id": file_id, "content": content, "path": path}
-    
+
     def _query() -> str:
         helix_client = get_helix_client()
         return json.dumps(
@@ -63,35 +89,23 @@ async def create_img_embeddings(file_id: str, content: str, path: str) -> str:
                 file_params,
             )
         )
-        
+
     return await asyncio.to_thread(_query)
 
-async def generate_frame_summaries(
-    thumbnails_data: dict[str, list[bytes]],
-) -> dict[str, list[dict]]:
+
+async def generate_summary(
+    image_base64: str,
+) -> tuple[dict, str]:
     """
-    Summarize thumbnails from in-memory dict (chunk_key -> list of image bytes).
-    Returns dict mapping chunk_key to list of summary entries. No file I/O.
+    Summarize a single image (base64) and return both:
+    - structured JSON payload
+    - normalized text string for embeddings
     """
-    if not thumbnails_data:
-        print("[WARN] No thumbnails data provided")
-        return {}
+    if not image_base64:
+        print("[WARN] No bytes data provided")
+        return {},""
 
     client = get_groq_client()
-    batch_size = 5
-    max_workers = 4
-
-    # Flatten to (chunk_key, image_index, image_bytes) for batching
-    flat_items: list[tuple[str, int, bytes]] = []
-    for chunk_key, images in thumbnails_data.items():
-        for i, img_bytes in enumerate(images):
-            flat_items.append((chunk_key, i, img_bytes))
-
-    total_images = len(flat_items)
-    print(
-        f"Found {total_images} thumbnails across {len(thumbnails_data)} chunk(s). "
-        f"Processing {batch_size} images per request across {max_workers} threads."
-    )
 
     def summarize_image_bytes(
         image_id: str, image_bytes: bytes, mime_hint: str = "jpeg"
