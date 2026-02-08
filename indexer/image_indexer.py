@@ -155,7 +155,26 @@ def _normalize_summary_content(content_str: str) -> dict:
     }
     
 def _build_embedding_text(summary: dict) -> str:
+    parts: list[str] = []
     
+    def add(label: str, value: object) -> None:
+        if value is None:
+            return
+        if isinstance(value, list):
+            value = ", ".join([str(v) for v in value if v])
+        if isinstance(value, str):
+            value = value.strip()
+        if value:
+            parts.append(f"{label}: {value}")
+    
+    add("summary", summary.get("summary"))
+    add("objects", summary.get("objects"))
+    add("actions", summary.get("actions"))
+    add("setting", summary.get("setting"))
+    add("ocr", summary.get("ocr"))
+    add("quality", summary.get("quality"))
+    
+    return " | ".join(parts)
 
 async def generate_summary(
     image_base64: str,
