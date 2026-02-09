@@ -7,6 +7,14 @@ QUERY CreateFile (file_id: String, content: String, path:String) =>
     })
     RETURN file
 
+// create image node
+QUERY CreateImage (image_id: String, content: String, path:String) =>
+    image <- AddN<Image>({
+        image_id: image_id,
+        content: content,
+        path: path,
+    })
+    RETURN image
 
 // create a video
 QUERY CreateVideo (video_id: String, no_of_chunks: U8, path:String) =>
@@ -76,6 +84,13 @@ QUERY CreateFileEmbeddings (file_id: String, content: String, path:String) =>
     RETURN "Success"
 
 
+// create image embeddings vector and connect to image node
+QUERY CreateImageEmbeddings (image_id: String, content: String, path: String) =>
+    image <- N<Image>({image_id: image_id})
+    image_embeddings <- AddV<ImageEmbeddings>(Embed(content), {image_id: image_id, content: content, path: path})
+    edge <- AddE<HasImageEmbeddings>::From(image)::To(image_embeddings)
+    RETURN "Success"
+
 
 // create a vector and connect to chunk node for transcript embeddings
 // #[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]
@@ -100,6 +115,12 @@ QUERY CreateFrameSummaryEmbeddings (chunk_id:String, content: String) =>
 QUERY SearchFileEmbeddings(query: String, limit: I64) =>
     text <- SearchV<FileEmbeddings>(Embed(query), limit)
     chunks <- text::In<HasFileEmbeddings>
+    RETURN text
+
+// search image embeddings
+QUERY SearchImageEmbeddings(query: String, limit: I64) =>
+    text <- SearchV<ImageEmbeddings>(Embed(query), limit)
+    images <- text::In<HasImageEmbeddings>
     RETURN text
 
 
