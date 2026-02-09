@@ -70,6 +70,11 @@ E::HasFileEmbeddings{
     To: FileEmbeddings
 }
 
+E::HasImageEmbeddings{
+    From: Image,
+    To: ImageEmbeddings
+}
+
 V::TranscriptEmbeddings {
     chunk_id: String,
     content: String
