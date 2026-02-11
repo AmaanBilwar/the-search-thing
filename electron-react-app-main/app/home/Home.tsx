@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { Searchbar } from '../ui/searchbar'
+import { Searchbar } from '../components/ui/searchbar'
 import { useConveyor } from '@/app/hooks/use-conveyor'
 import { cn } from '@/lib/utils'
 import './styles.css'
-import Results from '../Results'
-import Footer from '../Footer'
+import Results from '../components/Results'
+import Footer from '../components/Footer'
 import { SearchResponse } from '../types/types'
 
 export default function Home() {
