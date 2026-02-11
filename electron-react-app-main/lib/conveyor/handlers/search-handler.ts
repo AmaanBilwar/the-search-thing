@@ -27,5 +27,6 @@ export const registerSearchHandlers = () => {
 
   handle('open-file', async (filePath: string) => {
     await shell.openPath(filePath)
+    return null
   })
 }

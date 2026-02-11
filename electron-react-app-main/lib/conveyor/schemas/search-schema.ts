@@ -24,6 +24,6 @@ export const searchIpcSchema = {
   },
   'open-file': {
     args: z.tuple([z.string()]),
-    result: z.null(),
+    return: z.null(),
   },
 }
