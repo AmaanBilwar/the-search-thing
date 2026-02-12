@@ -13,12 +13,14 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<SearchResponse>()
   const [hasSearched, setHasSearched] = useState(false) //temporary logic (pls remove in the future :pray:)
   const [isLoading, setIsLoading] = useState(false)
+  const [awaitingIndexing, setAwaitingIndexing] = useState(false)
 
   const handleSearch = async () => {
     setIsLoading(true)
     const res = await search.search(query)
     setSearchResults(res)
     setHasSearched(true)
+    setAwaitingIndexing((res?.results?.length ?? 0) === 0)
     setIsLoading(false)
   }
 
@@ -30,6 +32,7 @@ export default function Home() {
           onChange={(e) => {
             setQuery(e.target.value)
             setHasSearched(false)
+            setAwaitingIndexing(false)
           }}
           placeholder="Search for files or folders…"
           onKeyDown={(e) => {
@@ -51,7 +54,12 @@ export default function Home() {
         {isLoading ? (
           <div className="flex items-center justify-center w-full text-zinc-400">Searching...</div>
         ) : (
-          <Results searchResults={searchResults} query={query} hasSearched={hasSearched} />
+          <Results
+            searchResults={searchResults}
+            query={query}
+            hasSearched={hasSearched}
+            awaitingIndexing={awaitingIndexing}
+          />
         )}
       </div>
 
