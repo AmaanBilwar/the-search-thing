@@ -11,8 +11,8 @@ export const registerSearchHandlers = () => {
   })
 
   handle('index', async (dirPaths: string) => {
-    const response = await axios.post('http://localhost:8000/api/index', {
-      dirPaths, // Send to API
+    const response = await axios.get('http://localhost:8000/api/index', {
+      params: { dir: dirPaths },
     })
     return { success: response.data.success, job_id: response.data.job_id }
   })
