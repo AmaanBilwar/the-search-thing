@@ -278,13 +278,81 @@ async def search_images(search_query: str, limit: int = 10) -> dict:
     return {"summary": summary, "results": results, "query": search_query}
 
 
-async def search_file_vids_imgs_together(search_query: str) -> dict:
+async def search_file_vids_together(search_query: str) -> dict:
     """
-    Search files images and videos together using CombinedFileAndVideo.
+    Search files and videos together using CombinedFileAndVideo.
     Returns a combined results list without file/video grouping.
     """
     search_params = {"search_text": search_query}
-    response = get_helix_client().query("CombinedFileAndVideo", search_params)
+    response = get_helix_client().query("helixCombinedFileVideo", search_params)
+
+    file_items: list[dict] = []
+    video_items: list[dict] = []
+
+    def normalize_item(item: dict) -> None:
+        label = item.get("label")
+        if not isinstance(label, str) or not label:
+            return
+        path = item.get("path")
+        if not isinstance(path, str) or not path:
+            return
+        content = item.get("content")
+        if label.lower() == "video":
+            content = None
+        normalized = {"label": label, "content": content, "path": path}
+        if label.lower() == "file":
+            file_items.append(normalized)
+        else:
+            video_items.append(normalized)
+
+    def handle_value(value: object) -> None:
+        if isinstance(value, list):
+            for entry in value:
+                handle_value(entry)
+            return
+        if isinstance(value, dict):
+            normalize_item(value)
+
+    if isinstance(response, list):
+        for item in response:
+            if isinstance(item, dict):
+                for value in item.values():
+                    handle_value(value)
+            else:
+                handle_value(item)
+    elif isinstance(response, dict):
+        for value in response.values():
+            handle_value(value)
+
+    keywords = re.findall(r"\w+", search_query.lower())
+    has_file_match = False
+    if keywords:
+        for item in file_items:
+            content = item.get("content")
+            if not isinstance(content, str) or not content:
+                continue
+            content_lower = content.lower()
+            if any(keyword in content_lower for keyword in keywords):
+                has_file_match = True
+                break
+
+    ordered = file_items + video_items if has_file_match else video_items + file_items
+
+    deduped: list[dict] = []
+    seen: set[tuple] = set()
+    for item in ordered:
+        key = (item.get("label"), item.get("content"), item.get("path"))
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(item)
+
+    return {"results": deduped}
+
+
+async def search_file_vids_imgs_together(search_query: str) -> dict:
+    search_params = {"search_text": search_query}
+    response = get_helix_client().query("CombinedFileVidAndImage", search_params)
 
     file_items: list[dict] = []
     video_items: list[dict] = []
@@ -369,16 +437,9 @@ async def search_all(search_query: str, limit: int = 10) -> dict:
 
     return {
         "success": True,
-        # llm resposne
-        # "summary": {
-        #     "files": file_result.get("summary"),
-        #     "videos": video_result.get("summary"),
-        # },
-        # helix response
         "files": file_result.get("results", []),
         "videos": video_result.get("results", []),
         "images": image_result.get("results", []),
-        # "query": search_query,
     }
 
 
