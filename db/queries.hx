@@ -334,3 +334,43 @@ QUERY CombinedFileVidAndImage(search_text: String) =>
 QUERY GetAllImagemebeddings()=>
     images <- N<Image>
     RETURN images
+
+
+QUERY TestFileSearch(search_text: String) =>
+    results <- SearchV<FileEmbeddings>(Embed(search_text), 10)
+    RETURN results
+
+QUERY TestTranscriptSearch(search_text: String) =>
+    results <- SearchV<TranscriptEmbeddings>(Embed(search_text), 10)
+    RETURN results
+
+QUERY TestFrameSearch(search_text: String) =>
+    results <- SearchV<FrameSummaryEmbeddings>(Embed(search_text), 10)
+    RETURN results
+
+
+
+QUERY helixCombinedFileVideo(search_text: String) =>
+    // File search
+    file_embeddings <- SearchV<FileEmbeddings>(Embed(search_text), 100)
+        ::RerankRRF(k: 60.0)
+        ::RANGE(0, 50)
+
+    // Video transcript search
+    transcripts <- SearchV<TranscriptEmbeddings>(Embed(search_text), 100)
+        ::RerankRRF(k: 60.0)
+        ::RANGE(0, 50)
+
+    // Video frame search
+    frames <- SearchV<FrameSummaryEmbeddings>(Embed(search_text), 100)
+        ::RerankRRF(k: 60.0)
+        ::RANGE(0, 50)
+
+    // Get related items via edge traversals
+    chunks <- file_embeddings::In<HasFileEmbeddings>
+    transcript_chunks <- transcripts::In<HasTranscriptEmbeddings>
+    transcript_videos <- transcript_chunks::In<Has>
+    frame_chunks <- frames::In<HasFrameSummaryEmbeddings>
+    frame_videos <- frame_chunks::In<Has>
+
+    RETURN file_embeddings, chunks, transcripts, transcript_videos, frames, frame_videos
