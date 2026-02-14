@@ -278,9 +278,9 @@ async def search_images(search_query: str, limit: int = 10) -> dict:
     return {"summary": summary, "results": results, "query": search_query}
 
 
-async def search_file_vids_together(search_query: str) -> dict:
+async def search_file_vids_imgs_together(search_query: str) -> dict:
     """
-    Search files and videos together using CombinedFileAndVideo.
+    Search files images and videos together using CombinedFileAndVideo.
     Returns a combined results list without file/video grouping.
     """
     search_params = {"search_text": search_query}
@@ -288,20 +288,24 @@ async def search_file_vids_together(search_query: str) -> dict:
 
     file_items: list[dict] = []
     video_items: list[dict] = []
+    img_items: list[dict] = []
 
     def normalize_item(item: dict) -> None:
         label = item.get("label")
         if not isinstance(label, str) or not label:
             return
+        label_lower = label.lower()
         path = item.get("path")
         if not isinstance(path, str) or not path:
             return
         content = item.get("content")
-        if label.lower() == "video":
+        if label_lower == "video":
             content = None
         normalized = {"label": label, "content": content, "path": path}
-        if label.lower() == "file":
+        if label_lower == "file":
             file_items.append(normalized)
+        elif label_lower == "image":
+            img_items.append(normalized)
         else:
             video_items.append(normalized)
 
@@ -336,7 +340,10 @@ async def search_file_vids_together(search_query: str) -> dict:
                 has_file_match = True
                 break
 
-    ordered = file_items + video_items if has_file_match else video_items + file_items
+    if has_file_match:
+        ordered = file_items + video_items + img_items
+    else:
+        ordered = video_items + file_items + img_items
 
     deduped: list[dict] = []
     seen: set[tuple] = set()
@@ -378,8 +385,8 @@ async def search_all(search_query: str, limit: int = 10) -> dict:
 if __name__ == "__main__":
     search_query = sys.argv[1] if len(sys.argv) > 1 else "zed industries"
 
-    print("=== Testing search_file_vids_together ===")
-    result = asyncio.run(search_file_vids_together(search_query))
+    print("=== Testing search_file_vids_imgs_together ===")
+    result = asyncio.run(search_file_vids_imgs_together(search_query))
     print(f"Results count: {len(result.get('results', []))}")
     for item in result.get("results", [])[:10]:
         print(item)
