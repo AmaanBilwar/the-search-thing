@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import noFiles from '@/resources/no-files-found.svg'
 import { ResultProps, SearchResultItem } from '../types/types'
 import * as fileIcons from '@/resources/filetype icons'
@@ -45,7 +45,7 @@ const Results: React.FC<ResultProps> = ({ searchResults, query, hasSearched, awa
     return parts.length > 1 ? parts[parts.length - 1] : ''
   }
 
-  const handleStartIndexing = async () => {
+  const handleStartIndexing = useCallback(async () => {
     const res = await search.openFileDialog()
     if (!res || res.length === 0) return // check to prevent indexing null
 
@@ -61,15 +61,16 @@ const Results: React.FC<ResultProps> = ({ searchResults, query, hasSearched, awa
     } finally {
       setIsIndexing(false)
     }
-  }
+  }, [search])
 
   useEffect(() => {
-    if (awaitingIndexing && !hasInitiatedIndexing && !hasOpenedDialogRef.current) { //temporary guardrail for development strict mode
+    if (awaitingIndexing && !hasInitiatedIndexing && !hasOpenedDialogRef.current) {
+      //temporary guardrail for development strict mode
       hasOpenedDialogRef.current = true
       setHasInitiatedIndexing(true)
       handleStartIndexing()
     }
-  }, [awaitingIndexing, hasInitiatedIndexing])
+  }, [awaitingIndexing, hasInitiatedIndexing, handleStartIndexing])
 
   if (awaitingIndexing) {
     return (
