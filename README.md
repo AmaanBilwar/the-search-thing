@@ -146,4 +146,4 @@ We will ship a Windows `.exe` release so users can try it without a dev setup.
 
 ## License
 
-TBD
+GPL-3.0-only. See `LICENSE` for details.
