@@ -3,42 +3,19 @@ import json
 import logging
 import os
 import uuid
+from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-
-logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
-
-frontend_origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
-PORT = os.getenv("PORT")
-
-app = FastAPI(title="the search thing")
-
-app.add_middleware(
-    CORSMiddleware,  # type: ignore[ arg-type ]
-    allow_origins=[frontend_origin],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-class SearchRequest(BaseModel):
-    query: str
-    limit: int = 10
+CONFIG_DIR = Path(__file__).resolve().parents[2] / "config"
 
 
 def _load_extension_to_category() -> dict[str, str]:
     """Load file_types.json; returns mapping ext -> category e.g. {'.mp4': 'video'}.
     Expects extensions to be lowercase with a leading '.'."""
-    path = os.path.join(os.path.dirname(__file__), "json", "file_types.json")
+    path = CONFIG_DIR / "file_types.json"
     try:
-        with open(path, encoding="utf-8") as f:
+        with path.open(encoding="utf-8") as f:
             data = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError) as e:
         logger.warning("Could not load file_types.json: %s", e)
@@ -120,10 +97,10 @@ def _normalize_extension(ext: str) -> str:
 
 
 def _load_ignore_config() -> tuple[set[str], set[str]]:
-    path = os.path.join(os.path.dirname(__file__), "json", "ignore.json")
+    path = CONFIG_DIR / "ignore.json"
 
     try:
-        with open(path, encoding="utf-8") as f:
+        with path.open(encoding="utf-8") as f:
             data = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError) as e:
         logger.warning("Could not load ignore.json: %s", e)
@@ -151,15 +128,8 @@ def _load_ignore_config() -> tuple[set[str], set[str]]:
     return ignore_exts, ignore_files
 
 
-def _log_task_exception(task: "asyncio.Task[None]", job_id: str) -> None:
-    try:
-        task.result()
-    except Exception:
-        logger.exception("[job:%s] Indexing job failed", job_id)
-
-
 async def index_single_file(path: str, content: str, job_id: str) -> bool:
-    from indexer.file_indexer import create_file, create_file_embeddings
+    from backend.indexer.file_indexer import create_file, create_file_embeddings
 
     file_id = str(uuid.uuid4())
     try:
@@ -193,7 +163,7 @@ async def _process_batch(batch: list[tuple[str, str]], job_id: str) -> dict[str,
     return {"indexed": indexed, "errors": errors}
 
 
-async def _run_indexing_job(dir: str, job_id: str, batch_size: int = 10) -> None:
+async def run_indexing_job(dir: str, job_id: str, batch_size: int = 10) -> None:
     from the_search_thing import (
         walk_and_get_text_file_batch,  # ty: ignore[unresolved-import]
     )
@@ -308,7 +278,7 @@ async def _run_indexing_job(dir: str, job_id: str, batch_size: int = 10) -> None
         )
         video_found = len(video_files)
         if video_files:
-            from indexer.indexer import indexer_function
+            from backend.indexer.indexer import indexer_function
 
             for video_path in video_files:
                 video_id = uuid.uuid4().hex
@@ -338,7 +308,7 @@ async def _run_indexing_job(dir: str, job_id: str, batch_size: int = 10) -> None
         )
         image_found = len(image_files)
         if image_files:
-            from indexer.image_indexer import img_indexer
+            from backend.indexer.image_indexer import img_indexer
 
             try:
                 results = await img_indexer(image_files)
@@ -383,36 +353,3 @@ async def _run_indexing_job(dir: str, job_id: str, batch_size: int = 10) -> None
         image_indexed,
         image_errors,
     )
-
-
-# all indexing tasks need to be non blocking btw
-@app.get("/api/index")
-async def index(dir: str):
-    job_id = uuid.uuid4().hex
-    task = asyncio.create_task(_run_indexing_job(dir, job_id))
-    task.add_done_callback(lambda t: _log_task_exception(t, job_id))
-    return {"success": True, "job_id": job_id}
-
-
-@app.get("/api/search")
-async def api_search(q: str):
-    # from search import search_files_vids_together
-    from search import goated_search
-
-    try:
-        # result = await search_file_vids_together(q)
-        result = await goated_search(q)
-        return JSONResponse(result)
-    except Exception as e:
-        logger.error("Error searching videos: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    try:
-        port_value = int(PORT) if PORT is not None else 8000
-    except ValueError:
-        port_value = 8000
-    uvicorn.run(app, host="0.0.0.0", port=port_value)

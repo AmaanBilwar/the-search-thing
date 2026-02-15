@@ -5,7 +5,7 @@ import uuid
 from pathlib import Path
 from typing import List
 
-from utils.clients import get_groq_client, get_helix_client
+from backend.utils.clients import get_groq_client, get_helix_client
 
 
 def _bytes_to_data_uri(image_bytes: bytes, mime_hint: str = "jpeg") -> str:
