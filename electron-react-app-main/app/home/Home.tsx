@@ -18,15 +18,20 @@ export default function Home() {
 
   const handleSearch = async () => {
     setIsLoading(true)
-    const res = await search.search(query)
-    setSearchResults(res)
-    setHasSearched(true)
-    const newPressedEnter = pressedEnter + 1
-    setPressedEnter(newPressedEnter)
-    if (newPressedEnter >= 2 && (res?.results?.length ?? 0) === 0) {
-      setAwaitingIndexing(true)
+    try {
+      const res = await search.search(query)
+      setSearchResults(res)
+      setHasSearched(true)
+      const newPressedEnter = pressedEnter + 1
+      setPressedEnter(newPressedEnter)
+      if (newPressedEnter >= 2 && (res?.results?.length ?? 0) === 0) {
+        setAwaitingIndexing(true)
+      }
+    } catch (error) {
+      console.error('Search failed:', error)
+    } finally {
+      setIsLoading(false)
     }
-    setIsLoading(false)
   }
 
   return (
@@ -65,6 +70,7 @@ export default function Home() {
             query={query}
             hasSearched={hasSearched}
             awaitingIndexing={awaitingIndexing}
+            onIndexingCancelled={() => setAwaitingIndexing(false)}
           />
         )}
       </div>
