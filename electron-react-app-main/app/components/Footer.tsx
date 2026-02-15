@@ -1,21 +1,13 @@
 import { useState } from 'react'
 import { useConveyor } from '../hooks/use-conveyor'
-import { useAppContext } from '../AppContext'
 import { Button } from './ui/button'
 import about from '@/resources/about.svg'
 import enter from '@/resources/enter.svg'
-
-interface IndexProps {
-  success: boolean
-  job_id: string
-}
 
 export default function Footer() {
   const search = useConveyor('search')
   const [isIndexing, setIsIndexing] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-
-  const { isIndexed, setIsIndexed } = useAppContext()
 
   const handleStartIndexing = async () => {
     const res = await search.openFileDialog()
@@ -27,9 +19,7 @@ export default function Footer() {
     try {
       const indexRes = await search.index(res)
       console.error('Index response:', indexRes)
-      if (indexRes.success && indexRes.job_id) {
-        setIsIndexed(true)
-      } else if (indexRes.success && !indexRes.job_id) {
+      if (!indexRes.success && !indexRes.job_id) {
         setErrorMessage('Indexing started but no job ID was returned')
       } else {
         setErrorMessage('No response from indexing')
