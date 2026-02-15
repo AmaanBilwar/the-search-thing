@@ -47,11 +47,9 @@ const Results: React.FC<ResultProps> = ({ searchResults, query, hasSearched, awa
 
   const handleStartIndexing = async () => {
     const res = await search.openFileDialog()
-
     if (!res || res.length === 0) return // check to prevent indexing null
 
     setIsIndexing(true)
-    //setErrorMessage("")
     try {
       const indexRes = await search.index(res)
       console.error('Index response:', indexRes)
@@ -60,9 +58,8 @@ const Results: React.FC<ResultProps> = ({ searchResults, query, hasSearched, awa
       }
     } catch (error) {
       console.error('Error indexing files:', error)
-      //setErrorMessage(`Indexing failed: ${error}`)
     } finally {
-      //setIsIndexing(false)
+      setIsIndexing(false)
     }
   }
 
