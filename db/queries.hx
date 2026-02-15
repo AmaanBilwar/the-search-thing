@@ -7,6 +7,14 @@ QUERY CreateFile (file_id: String, content: String, path:String) =>
     })
     RETURN file
 
+// create image node
+QUERY CreateImage (image_id: String, content: String, path:String) =>
+    image <- AddN<Image>({
+        image_id: image_id,
+        content: content,
+        path: path,
+    })
+    RETURN image
 
 // create a video
 QUERY CreateVideo (video_id: String, no_of_chunks: U8, path:String) =>
@@ -76,6 +84,13 @@ QUERY CreateFileEmbeddings (file_id: String, content: String, path:String) =>
     RETURN "Success"
 
 
+// create image embeddings vector and connect to image node
+QUERY CreateImageEmbeddings (image_id: String, content: String, path: String) =>
+    image <- N<Image>({image_id: image_id})
+    image_embeddings <- AddV<ImageEmbeddings>(Embed(content), {image_id: image_id, content: content, path: path})
+    edge <- AddE<HasImageEmbeddings>::From(image)::To(image_embeddings)
+    RETURN "Success"
+
 
 // create a vector and connect to chunk node for transcript embeddings
 // #[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]
@@ -97,10 +112,16 @@ QUERY CreateFrameSummaryEmbeddings (chunk_id:String, content: String) =>
 
 // search file embeddings separate
 // #[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]
-QUERY SearchFileEmbeddings(search_text: String, limit: I64) =>
+QUERY SearchFileEmbeddings(search_text: String) =>
     file_embeddings <- SearchV<FileEmbeddings>(Embed(search_text), 100)
     chunks <- file_embeddings::In<HasFileEmbeddings>
     RETURN chunks
+
+// search image embeddings
+QUERY SearchImageEmbeddings(search_text: String) =>
+    image_embeddings <- SearchV<ImageEmbeddings>(Embed(search_text), 100)
+    images <- image_embeddings::In<HasImageEmbeddings>
+    RETURN images
 
 
 // search transcript & frame embeddings
@@ -217,6 +238,57 @@ QUERY CombinedFileAndVideo(search_text: String) =>
     RETURN combined_with_frames, chunks, transcript_videos, frame_videos
 
 
+// testing combiend file and vidoe Search
+QUERY CombinedFileVidAndImage(search_text: String) =>
+    // File search
+    file_embeddings <- SearchV<FileEmbeddings>(Embed(search_text), 100)
+
+    // Video searches
+    transcripts <- SearchV<TranscriptEmbeddings>(Embed(search_text), 100)
+    frames <- SearchV<FrameSummaryEmbeddings>(Embed(search_text), 100)
+
+    // image search
+    image_embeddings <- SearchV<ImageEmbeddings>(Embed(search_text), 100)
+
+    // Combine all results with RRF
+    combined <- file_embeddings
+        ::RerankRRF(k: 60)
+    combined_with_transcripts <- transcripts
+        ::RerankRRF(k: 60)
+    combined_with_frames <- frames
+        ::RerankRRF(k: 60)
+    combined_with_images <- image_embeddings
+        ::RerankRRF(k: 60)
+        ::RANGE(0, 50)
+
+    // Get related items
+    chunks <- file_embeddings::In<HasFileEmbeddings>
+    transcript_videos <- transcripts::In<HasTranscriptEmbeddings>::In<Has>
+    frame_videos <- frames::In<HasFrameSummaryEmbeddings>::In<Has>
+    images <- image_embeddings::In<HasImageEmbeddings>
+
+    RETURN combined_with_frames, chunks, transcript_videos, frame_videos, images
+
+
+
+QUERY GetAllImagemebeddings()=>
+    images <- N<Image>
+    RETURN images
+
+
+QUERY TestFileSearch(search_text: String) =>
+    results <- SearchV<FileEmbeddings>(Embed(search_text), 10)
+    RETURN results
+
+QUERY TestTranscriptSearch(search_text: String) =>
+    results <- SearchV<TranscriptEmbeddings>(Embed(search_text), 10)
+    RETURN results
+
+QUERY TestFrameSearch(search_text: String) =>
+    results <- SearchV<FrameSummaryEmbeddings>(Embed(search_text), 10)
+    RETURN results
+=======
+>>>>>>> a9aea95c5610f6fd5d649b3492ff48d6d2bb19fe
 // last resort is to have a single vector type for all fields
 
 // combined search

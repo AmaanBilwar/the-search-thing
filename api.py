@@ -36,7 +36,7 @@ class SearchRequest(BaseModel):
 def _load_extension_to_category() -> dict[str, str]:
     """Load file_types.json; returns mapping ext -> category e.g. {'.mp4': 'video'}.
     Expects extensions to be lowercase with a leading '.'."""
-    path = os.path.join(os.path.dirname(__file__), "file_types.json")
+    path = os.path.join(os.path.dirname(__file__), "json", "file_types.json")
     try:
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
@@ -58,6 +58,10 @@ def _get_text_extensions(ext_to_category: dict[str, str]) -> list[str]:
 
 def _get_video_extensions(ext_to_category: dict[str, str]) -> list[str]:
     return [ext for ext, category in ext_to_category.items() if category == "video"]
+
+
+def _get_img_extensions(ext_to_category: dict[str, str]) -> list[str]:
+    return [ext for ext, category in ext_to_category.items() if category == "image"]
 
 
 def _collect_files_by_extension(root: str, extensions: list[str]) -> list[str]:
@@ -116,7 +120,8 @@ def _normalize_extension(ext: str) -> str:
 
 
 def _load_ignore_config() -> tuple[set[str], set[str]]:
-    path = os.path.join(os.path.dirname(__file__), "ignore.json")
+    path = os.path.join(os.path.dirname(__file__), "json", "ignore.json")
+
     try:
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
@@ -196,6 +201,8 @@ async def _run_indexing_job(dir: str, job_id: str, batch_size: int = 10) -> None
     ext_to_category = _load_extension_to_category()
     text_exts = _get_text_extensions(ext_to_category)
     video_exts = _get_video_extensions(ext_to_category)
+    img_exts = _get_img_extensions(ext_to_category)
+
     ignore_exts, ignore_files = _load_ignore_config()
     ignore_exts_sorted = sorted(ignore_exts)
     ignore_files_sorted = sorted(ignore_files)
@@ -207,6 +214,9 @@ async def _run_indexing_job(dir: str, job_id: str, batch_size: int = 10) -> None
     video_found = 0
     video_indexed = 0
     video_errors = 0
+    image_found = 0
+    image_indexed = 0
+    image_errors = 0
 
     logger.info("[job:%s] Started indexing job for: %s", job_id, dir)
 
@@ -322,6 +332,33 @@ async def _run_indexing_job(dir: str, job_id: str, batch_size: int = 10) -> None
                         e,
                     )
 
+    if img_exts:
+        image_files = await asyncio.to_thread(
+            _collect_files_by_extension, dir, img_exts
+        )
+        image_found = len(image_files)
+        if image_files:
+            from indexer.image_indexer import img_indexer
+
+            try:
+                results = await img_indexer(image_files)
+                if results:
+                    image_indexed += sum(
+                        1 for result in results if result.get("indexed")
+                    )
+                    image_errors += sum(
+                        1 for result in results if not result.get("indexed")
+                    )
+                else:
+                    image_errors += 1
+            except Exception as e:
+                image_errors += 1
+                logger.error(
+                    "[job:%s] [ERROR] Image indexing failed: %s",
+                    job_id,
+                    e,
+                )
+
     logger.info(
         "[job:%s] [SUMMARY] Job completed for %s - Found: %d, Indexed: %d, Skipped: %d, Errors: %d",
         job_id,
@@ -339,6 +376,14 @@ async def _run_indexing_job(dir: str, job_id: str, batch_size: int = 10) -> None
         video_errors,
     )
 
+    logger.info(
+        "[job:%s] [IMAGE SUMMARY] Found: %d, Indexed: %d, Errors: %d",
+        job_id,
+        image_found,
+        image_indexed,
+        image_errors,
+    )
+
 
 # all indexing tasks need to be non blocking btw
 @app.get("/api/index")
@@ -351,10 +396,12 @@ async def index(dir: str):
 
 @app.get("/api/search")
 async def api_search(q: str):
-    from search import search_file_vids_together
+    # from search import search_files_vids_together
+    from search import goated_search
 
     try:
-        result = await search_file_vids_together(q)
+        # result = await search_file_vids_together(q)
+        result = await goated_search(q)
         return JSONResponse(result)
     except Exception as e:
         logger.error("Error searching videos: %s", e)
