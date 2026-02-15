@@ -1,6 +1,4 @@
-# the-search-thing
-
-Fast, semantic search across your local files, videos, and images.
+<h1 align="center">the-search-thing</h1>
 
 <div align="center">
   <img src="branding/logo-white-bg.webp" alt="the-search-thing" width="400" />
