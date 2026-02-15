@@ -97,24 +97,6 @@ async def llm_responses_search(query: str, helix_response: str) -> str:
         return helix_response
 
 
-async def search_combined(search_query: str) -> str:
-    """
-    Search across transcripts and frames, return LLM-formatted response.
-    """
-    search_params = {"search_text": search_query}
-    response = get_helix_client().query("CombinedSearch", search_params)
-
-    # Extract the actual content from the embedding results (top 5 from each)
-    transcript_contents = [
-        item.get("content", "") for item in response[0].get("transcripts", [])[:5]
-    ]
-    frame_contents = [
-        item.get("content", "") for item in response[0].get("frames", [])[:5]
-    ]
-
-    helix_response = f"Transcripts: {transcript_contents}\n\nFrames: {frame_contents}"
-    return await llm_responses_search(search_query, helix_response)
-
 
 async def search_files(search_query: str, limit: int = 10) -> dict:
     """
