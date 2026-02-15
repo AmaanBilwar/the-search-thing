@@ -218,3 +218,16 @@ QUERY CombinedFileAndVideo(search_text: String) =>
 
 
 // last resort is to have a single vector type for all fields
+
+// combined search
+QUERY CombinedSearch(search_text: String) =>
+    transcripts <- SearchV<TranscriptEmbeddings>(Embed(search_text), 100)
+        ::RerankRRF(k: 60)
+        ::RANGE(0, 50)
+    frames <- SearchV<FrameSummaryEmbeddings>(Embed(search_text), 100)
+        ::RerankRRF(k: 60)
+        ::RANGE(0, 50)
+    transcript_videos <- transcripts::In<HasTranscriptEmbeddings>::In<Has>
+    frame_videos <- frames::In<HasFrameSummaryEmbeddings>::In<Has>
+
+    RETURN transcripts, frames, transcript_videos, frame_videos
