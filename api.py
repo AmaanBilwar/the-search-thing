@@ -121,6 +121,7 @@ def _normalize_extension(ext: str) -> str:
 
 def _load_ignore_config() -> tuple[set[str], set[str]]:
     path = os.path.join(os.path.dirname(__file__), "json", "ignore.json")
+
     try:
         with open(path, encoding="utf-8") as f:
             data = json.load(f)

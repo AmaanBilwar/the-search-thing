@@ -557,7 +557,7 @@ async def goated_search(search_query: str) -> dict:
     }
 
 
-async def search_files_vids_together(search_query: str) -> dict:
+async def search_file_vids_together(search_query: str) -> dict:
     """
     Search files and videos together using CombinedFileAndVideo.
     Returns a combined results list without file/video grouping.

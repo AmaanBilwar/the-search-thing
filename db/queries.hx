@@ -212,6 +212,7 @@ QUERY DeleteOutgoingNeighboursChunkF() =>
 // https://docs.helix-db.com/documentation/hql/updating
 
 
+// testing combiend file and vidoe Search
 QUERY CombinedFileAndVideo(search_text: String) =>
     // File search
     file_embeddings <- SearchV<FileEmbeddings>(Embed(search_text), 100)
@@ -235,12 +236,6 @@ QUERY CombinedFileAndVideo(search_text: String) =>
     frame_videos <- frames::In<HasFrameSummaryEmbeddings>::In<Has>
 
     RETURN combined_with_frames, chunks, transcript_videos, frame_videos
-
-
-// last resort is to have a single vector type for all fiels
-
-
-
 
 
 // testing combiend file and vidoe Search
@@ -292,6 +287,8 @@ QUERY TestTranscriptSearch(search_text: String) =>
 QUERY TestFrameSearch(search_text: String) =>
     results <- SearchV<FrameSummaryEmbeddings>(Embed(search_text), 10)
     RETURN results
+=======
+>>>>>>> a9aea95c5610f6fd5d649b3492ff48d6d2bb19fe
 // last resort is to have a single vector type for all fields
 
 // combined search
