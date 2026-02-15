@@ -246,11 +246,10 @@ async def search_videos(search_query: str, limit: int = 5) -> dict:
         append_results(frames)
 
     helix_response = f"Video search results: {top_contents}"
-    summary = await llm_responses_search(search_query, helix_response)
 
     return {
         "success": True,
-        "summary": summary,
+        "response": helix_response,
         "results": results,
         "query": search_query,
     }
@@ -295,9 +294,8 @@ async def search_images(search_query: str, limit: int = 10) -> dict:
             break
 
     helix_response = f"Image search results: {top_contents}"
-    summary = await llm_responses_search(search_query, helix_response)
 
-    return {"summary": summary, "results": results, "query": search_query}
+    return {"response": helix_response, "results": results, "query": search_query}
 
 
 # async def search_file_vids_together(search_query: str) -> dict:
