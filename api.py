@@ -36,7 +36,7 @@ class SearchRequest(BaseModel):
 def _load_extension_to_category() -> dict[str, str]:
     """Load file_types.json; returns mapping ext -> category e.g. {'.mp4': 'video'}.
     Expects extensions to be lowercase with a leading '.'."""
-    path = os.path.join(os.path.dirname(__file__), "file_types.json")
+    path = os.path.join(os.path.dirname(__file__), "json", "file_types.json")
     try:
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
@@ -120,7 +120,7 @@ def _normalize_extension(ext: str) -> str:
 
 
 def _load_ignore_config() -> tuple[set[str], set[str]]:
-    path = os.path.join(os.path.dirname(__file__), "ignore.json")
+    path = os.path.join(os.path.dirname(__file__), "json", "ignore.json")
     try:
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
@@ -395,10 +395,12 @@ async def index(dir: str):
 
 @app.get("/api/search")
 async def api_search(q: str):
-    from search import search_file_vids_together
+    # from search import search_files_vids_together
+    from search import goated_search
 
     try:
-        result = await search_file_vids_together(q)
+        # result = await search_file_vids_together(q)
+        result = await goated_search(q)
         return JSONResponse(result)
     except Exception as e:
         logger.error("Error searching videos: %s", e)

@@ -112,7 +112,7 @@ QUERY CreateFrameSummaryEmbeddings (chunk_id:String, content: String) =>
 
 // search file embeddings separate
 // #[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]
-QUERY SearchFileEmbeddings(search_text: String, limit: I64) =>
+QUERY SearchFileEmbeddings(search_text: String) =>
     file_embeddings <- SearchV<FileEmbeddings>(Embed(search_text), 100)
     chunks <- file_embeddings::In<HasFileEmbeddings>
     RETURN chunks
@@ -212,7 +212,6 @@ QUERY DeleteOutgoingNeighboursChunkF() =>
 // https://docs.helix-db.com/documentation/hql/updating
 
 
-// testing combiend file and vidoe Search
 QUERY CombinedFileAndVideo(search_text: String) =>
     // File search
     file_embeddings <- SearchV<FileEmbeddings>(Embed(search_text), 100)

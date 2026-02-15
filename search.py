@@ -300,11 +300,202 @@ async def search_images(search_query: str, limit: int = 10) -> dict:
     return {"summary": summary, "results": results, "query": search_query}
 
 
-async def search_file_vids_together(search_query: str) -> dict:
+# async def search_file_vids_together(search_query: str) -> dict:
+async def goated_search(search_query: str) -> dict:
+    file_search_params = {"search_text": search_query}
+    file_search_results = get_helix_client().query(
+        "SearchFileEmbeddings", file_search_params
+    )
+
+    video_search_params = {"search_text": search_query}
+    video_search_results = get_helix_client().query(
+        "SearchTranscriptAndFrameEmbeddings", video_search_params
+    )
+
+    file_items: list[dict] = []
+    video_items: list[dict] = []
+
+    def normalize_file_results(response: object) -> None:
+        if not response:
+            return
+        items: list[object] = []
+        if isinstance(response, dict) and "chunks" in response:
+            chunks = response.get("chunks")
+            if isinstance(chunks, list):
+                items = chunks
+            else:
+                return
+        elif isinstance(response, list):
+            for entry in response:
+                if isinstance(entry, dict) and "chunks" in entry:
+                    chunks = entry.get("chunks")
+                    if isinstance(chunks, list):
+                        items.extend(chunks)
+                    continue
+                items.append(entry)
+        else:
+            items = [response]
+        for item in items:
+            if (
+                isinstance(item, dict)
+                and "text" in item
+                and isinstance(item.get("text"), list)
+            ):
+                entries = item.get("text", [])
+            else:
+                entries = [item]
+            for entry in entries:
+                if not isinstance(entry, dict):
+                    continue
+                file_id = entry.get("file_id") or entry.get("id")
+                content = entry.get("content")
+                path = entry.get("path")
+                if not (file_id or content or path):
+                    continue
+                normalized = {
+                    "label": "file",
+                    "file_id": file_id,
+                    "content": content,
+                    "path": path,
+                }
+                file_items.append(normalized)
+
+    def collect_video_entries(value: object, entries: list[dict]) -> None:
+        if isinstance(value, list):
+            for entry in value:
+                collect_video_entries(entry, entries)
+            return
+        if isinstance(value, dict):
+            if any(
+                key in value
+                for key in ("chunk_id", "video_id", "file_id", "path", "content")
+            ):
+                entries.append(value)
+                return
+            for nested in value.values():
+                collect_video_entries(nested, entries)
+
+    def normalize_video_results(response: object) -> None:
+        if not response:
+            return
+        entries: list[dict] = []
+        if isinstance(response, dict):
+            transcript_videos = response.get("transcript_videos")
+            frame_videos = response.get("frame_videos")
+            if isinstance(transcript_videos, list):
+                entries.extend(transcript_videos)
+            if isinstance(frame_videos, list):
+                entries.extend(frame_videos)
+            if not entries:
+                collect_video_entries(response, entries)
+        elif isinstance(response, list):
+            collect_video_entries(response, entries)
+        else:
+            return
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            chunk_id = entry.get("chunk_id")
+            video_id = entry.get("video_id")
+            file_id = entry.get("file_id") or entry.get("id")
+            content = entry.get("content")
+            path = entry.get("path")
+            if not (chunk_id or video_id or file_id or content or path):
+                continue
+            normalized = {
+                "label": "video",
+                "chunk_id": chunk_id,
+                "video_id": video_id,
+                "file_id": file_id,
+                "content": content,
+                "path": path,
+            }
+            video_items.append(normalized)
+
+        if not video_items:
+            return
+        deduped: list[dict] = []
+        seen: set[tuple] = set()
+        for item in video_items:
+            key = (
+                item.get("video_id"),
+                item.get("chunk_id"),
+                item.get("file_id"),
+                item.get("path"),
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(item)
+        video_items.clear()
+        video_items.extend(deduped)
+
+    print("file search results", file_search_results)
+
+    normalize_file_results(file_search_results)
+    normalize_video_results(video_search_results)
+
+    keywords = re.findall(r"\w+", search_query.lower())
+
+    def has_keyword_match(item: dict) -> bool:
+        if not keywords:
+            return False
+        content = item.get("content")
+        path = item.get("path")
+        content_lower = content.lower() if isinstance(content, str) else ""
+        path_lower = path.lower() if isinstance(path, str) else ""
+        return any(
+            keyword in content_lower or keyword in path_lower for keyword in keywords
+        )
+
+    def attach_rank_score(items: list[dict], source: str) -> None:
+        for rank, item in enumerate(items, start=1):
+            item["rank"] = rank
+            score = 1 / (rank + 60)
+            if has_keyword_match(item):
+                score *= 1.2
+            item["score"] = score
+            item["source"] = source
+
+    attach_rank_score(file_items, "file")
+    attach_rank_score(video_items, "video")
+
+    combined = file_items + video_items
+    combined.sort(
+        key=lambda item: (
+            item.get("score", 0),
+            1 if item.get("source") == "video" else 0,
+        ),
+        reverse=True,
+    )
+
+    deduped: list[dict] = []
+    seen: set[tuple] = set()
+    for item in combined:
+        key = (
+            item.get("label"),
+            item.get("file_id") or item.get("chunk_id"),
+            item.get("video_id"),
+            item.get("path"),
+            item.get("content"),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(item)
+
+    return {
+        "query": search_query,
+        "results": deduped,
+    }
+
+
+async def search_files_vids_together(search_query: str) -> dict:
     """
     Search files and videos together using CombinedFileAndVideo.
     Returns a combined results list without file/video grouping.
     """
+
     search_params = {"search_text": search_query}
     response = get_helix_client().query("helixCombinedFileVideo", search_params)
 
@@ -468,8 +659,8 @@ async def search_all(search_query: str, limit: int = 10) -> dict:
 if __name__ == "__main__":
     search_query = sys.argv[1] if len(sys.argv) > 1 else "zed industries"
 
-    print("=== Testing search_file_vids_imgs_together ===")
-    result = asyncio.run(search_file_vids_imgs_together(search_query))
+    print("=== Testing goated_search (RRF) ===")
+    result = asyncio.run(goated_search(search_query))
     print(f"Results count: {len(result.get('results', []))}")
     for item in result.get("results", [])[:10]:
         print(item)
