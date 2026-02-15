@@ -1,69 +1,17 @@
 import asyncio
 import re
 import sys
-from typing import Any, cast
 
 from dotenv import load_dotenv
 
-from utils.clients import get_helix_client
+from backend.services.search import (
+    _build_video_to_path_map,
+    _extract_list_response,
+    build_chunk_to_video_map,
+)
+from backend.utils.clients import get_helix_client
 
 load_dotenv()
-
-
-def build_chunk_to_video_map(chunks: list) -> dict[str, str]:
-    """
-    Build a mapping from chunk_id to video_id from the chunk results.
-    """
-    mapping = {}
-    for chunk in chunks:
-        if isinstance(chunk, dict):
-            chunk_id = chunk.get("chunk_id", "")
-            video_id = chunk.get("video_id", "")
-            if chunk_id and video_id:
-                mapping[chunk_id] = video_id
-    return mapping
-
-
-def get_video_ids_from_chunks(chunks: list) -> list[str]:
-    """
-    Extract unique video_ids from chunk results.
-    """
-    video_ids = set()
-    for chunk in chunks:
-        if isinstance(chunk, dict):
-            video_id = chunk.get("video_id", "")
-            if video_id:
-                video_ids.add(video_id)
-    return list(video_ids)
-
-
-def _extract_list_response(response: object, key: str) -> list:
-    if isinstance(response, list) and response:
-        first = response[0]
-        if isinstance(first, dict):
-            first_dict = cast(dict[str, Any], first)
-            nested = first_dict.get(key)
-            if isinstance(nested, list):
-                return nested
-        return response
-    if isinstance(response, dict):
-        response_dict = cast(dict[str, Any], response)
-        nested = response_dict.get(key)
-        if isinstance(nested, list):
-            return nested
-    return []
-
-
-def _build_video_to_path_map(videos: list) -> dict[str, str]:
-    video_to_path: dict[str, str] = {}
-    for video in videos:
-        if not isinstance(video, dict):
-            continue
-        video_id = video.get("video_id")
-        path = video.get("path")
-        if video_id and path:
-            video_to_path[video_id] = path
-    return video_to_path
 
 
 async def search_videos(search_query: str, limit: int = 5) -> dict:
@@ -180,79 +128,6 @@ async def search_files(search_query: str, limit: int = 10) -> dict:
     helix_response = f"File search results: {top_contents}"
 
     return {"response": helix_response, "results": results, "query": search_query}
-
-
-async def search_videos(search_query: str, limit: int = 5) -> dict:
-    """
-    Search across transcript + frame summary embeddings and return file-style results.
-    """
-    search_params = {"search_text": search_query}
-    response = get_helix_client().query("CombinedSearch", search_params)
-    result_data = response[0] if response else {}
-
-    transcripts = result_data.get("transcripts", [])
-    frames = result_data.get("frames", [])
-
-    chunk_to_video: dict[str, str] = {}
-    video_to_path: dict[str, str] = {}
-
-    combined_videos = []
-    combined_videos.extend(result_data.get("transcript_videos", []) or [])
-    combined_videos.extend(result_data.get("frame_videos", []) or [])
-    if combined_videos:
-        video_to_path.update(_build_video_to_path_map(combined_videos))
-
-    try:
-        chunks_response = get_helix_client().query("GetAllChunks", {})
-        chunks = _extract_list_response(chunks_response, "chunks")
-        chunk_to_video = build_chunk_to_video_map(chunks or [])
-    except Exception as e:
-        print(f"GetAllChunks failed: {e}")
-
-    try:
-        videos_response = get_helix_client().query("GetAllVideos", {})
-        videos = _extract_list_response(videos_response, "videos")
-        video_to_path.update(_build_video_to_path_map(videos or []))
-    except Exception as e:
-        print(f"GetAllVideos failed: {e}")
-
-    results: list[dict] = []
-    top_contents: list[str] = []
-
-    def append_results(items: list) -> None:
-        for entry in items:
-            if not isinstance(entry, dict):
-                continue
-            chunk_id = entry.get("chunk_id")
-            if not isinstance(chunk_id, str) or not chunk_id:
-                continue
-            video_id = chunk_to_video.get(chunk_id)
-            path = video_to_path.get(video_id) if isinstance(video_id, str) else None
-            results.append(
-                {
-                    "file_id": chunk_id,
-                    "content": None,
-                    "path": path,
-                }
-            )
-            content = entry.get("content")
-            if isinstance(content, str) and content:
-                top_contents.append(content)
-            if len(results) >= limit:
-                break
-
-    append_results(transcripts)
-    if len(results) < limit:
-        append_results(frames)
-
-    helix_response = f"Video search results: {top_contents}"
-
-    return {
-        "success": True,
-        "response": helix_response,
-        "results": results,
-        "query": search_query,
-    }
 
 
 async def search_images(search_query: str, limit: int = 10) -> dict:

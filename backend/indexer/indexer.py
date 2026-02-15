@@ -12,7 +12,7 @@ from typing import List, Literal
 from dotenv import load_dotenv
 from the_search_thing import rust_indexer  # ty:ignore[unresolved-import]
 
-from utils.clients import get_groq_client, get_helix_client
+from backend.utils.clients import get_groq_client, get_helix_client
 
 load_dotenv()
 
@@ -496,7 +496,7 @@ async def indexer_function(
     video_id,
     video_paths: List[str] | str,
 ) -> List[dict]:
-    backend_dir = Path(__file__).parent.parent
+    repo_root = Path(__file__).resolve().parents[2]
 
     # Normalize input to list
     if isinstance(video_paths, str):
@@ -518,7 +518,7 @@ async def indexer_function(
         )
 
     # Setup output directories
-    output_dir = Path(backend_dir / "videos/output_indexer")
+    output_dir = repo_root / "videos" / "output_indexer"
     chunks_dir = output_dir / "chunks"
     audio_dir = output_dir / "audio"
     thumbnails_dir = output_dir / "thumbnails"
@@ -731,8 +731,8 @@ def _build_thumbnails_data_from_dir(thumbnails_dir: Path) -> dict[str, list[byte
 
 async def test_frame_only():
     print("=== Testing frame summaries only ===")
-    backend_dir = Path(__file__).parent.parent
-    thumbnails_dir = backend_dir / "videos" / "output_indexer" / "thumbnails"
+    repo_root = Path(__file__).resolve().parents[2]
+    thumbnails_dir = repo_root / "videos" / "output_indexer" / "thumbnails"
     if not thumbnails_dir.exists():
         print(f"[WARN] Thumbnails directory not found: {thumbnails_dir}")
         return
@@ -745,8 +745,8 @@ async def test_frame_only():
 
 async def test_transcriptions_only():
     print("=== Testing Transcriptions Only ===")
-    backend_dir = Path(__file__).parent.parent
-    audio_dir = backend_dir / "videos" / "output_indexer" / "audio"
+    repo_root = Path(__file__).resolve().parents[2]
+    audio_dir = repo_root / "videos" / "output_indexer" / "audio"
     if not audio_dir.exists():
         print(f"[WARN] Audio directory not found: {audio_dir}")
         return

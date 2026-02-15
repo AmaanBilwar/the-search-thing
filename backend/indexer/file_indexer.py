@@ -6,7 +6,7 @@ from typing import List
 
 from the_search_thing import walk_and_get_files_content  # ty:ignore[unresolved-import]
 
-from utils.clients import get_helix_client
+from backend.utils.clients import get_helix_client
 
 
 async def file_indexer(
