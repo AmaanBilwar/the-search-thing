@@ -29,7 +29,6 @@ rewrite-env-history.ps1
 #electron
 node_modules/
 .webpack/
-testing-parsing/
 
 .ruff_cache/
 videos/output_indexer/
