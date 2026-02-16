@@ -45,9 +45,9 @@ cp .env.example .env
 # set GROQ_API_KEY, HELIX_LOCAL=true, HELIX_PORT=7002 (or whatever port you like).
 ```
 
-4) Setup Helix Docker Image to run locally
+4) Setup Helix Docker image to run locally
 
-Make sure you have docker running
+Make sure you have docker running before proceeding
 
 ```bash
 helix push dev
