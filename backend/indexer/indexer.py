@@ -382,10 +382,43 @@ async def generate_frame_summaries(
 
 
 # create video node
-async def create_video(video_id: str, no_of_chunks: int, path: str) -> str:
+async def create_video(
+    video_id: str, content_hash: str, no_of_chunks: int, path: str
+) -> str:
     helix_client = get_helix_client()
-    video_params = {"video_id": video_id, "no_of_chunks": no_of_chunks, "path": path}
+    video_params = {
+        "video_id": video_id,
+        "content_hash": content_hash,
+        "no_of_chunks": no_of_chunks,
+        "path": path,
+    }
     return json.dumps(helix_client.query("CreateVideo", video_params))
+
+
+async def get_video_by_hash(content_hash: str) -> dict | None:
+    helix_client = get_helix_client()
+
+    def _query() -> list:
+        return helix_client.query("GetVideoByHash", {"content_hash": content_hash})
+
+    response = await asyncio.to_thread(_query)
+    if isinstance(response, str):
+        try:
+            response = json.loads(response)
+        except json.JSONDecodeError:
+            return None
+
+    if isinstance(response, dict):
+        video = response.get("video")
+        if isinstance(video, list):
+            return video[0] if video else None
+        if isinstance(video, dict):
+            return video
+        return None
+
+    if isinstance(response, list):
+        return response[0] if response else None
+    return None
 
 
 # create chunk node
@@ -494,6 +527,7 @@ async def create_frame_summary_embeddings(chunk_id: str, content: str) -> str:
 
 async def indexer_function(
     video_id,
+    content_hash,
     video_paths: List[str] | str,
 ) -> List[dict]:
     repo_root = Path(__file__).resolve().parents[2]
@@ -585,7 +619,7 @@ async def indexer_function(
         video_path = item["path"]
 
         # Create video node
-        await create_video(video_id, num_of_chunks, path=video_path)
+        await create_video(video_id, content_hash, num_of_chunks, path=video_path)
         print(f"[OK] Created video node: {video_id} with {num_of_chunks} chunks")
 
         # Create chunk nodes for this video
