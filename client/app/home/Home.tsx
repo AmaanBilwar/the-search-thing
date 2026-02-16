@@ -13,13 +13,25 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<SearchResponse>()
   const [hasSearched, setHasSearched] = useState(false) //temporary logic (pls remove in the future :pray:)
   const [isLoading, setIsLoading] = useState(false)
+  const [awaitingIndexing, setAwaitingIndexing] = useState(false)
+  const [pressedEnter, setPressedEnter] = useState(0)
 
   const handleSearch = async () => {
     setIsLoading(true)
-    const res = await search.search(query)
-    setSearchResults(res)
-    setHasSearched(true)
-    setIsLoading(false)
+    try {
+      const res = await search.search(query)
+      setSearchResults(res)
+      setHasSearched(true)
+      const newPressedEnter = pressedEnter + 1
+      setPressedEnter(newPressedEnter)
+      if (newPressedEnter >= 2 && (res?.results?.length ?? 0) === 0) {
+        setAwaitingIndexing(true)
+      }
+    } catch (error) {
+      console.error('Search failed:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -30,6 +42,8 @@ export default function Home() {
           onChange={(e) => {
             setQuery(e.target.value)
             setHasSearched(false)
+            setAwaitingIndexing(false)
+            setPressedEnter(0)
           }}
           placeholder="Search for files or folders…"
           onKeyDown={(e) => {
@@ -51,7 +65,13 @@ export default function Home() {
         {isLoading ? (
           <div className="flex items-center justify-center w-full text-zinc-400">Searching...</div>
         ) : (
-          <Results searchResults={searchResults} query={query} hasSearched={hasSearched} />
+          <Results
+            searchResults={searchResults}
+            query={query}
+            hasSearched={hasSearched}
+            awaitingIndexing={awaitingIndexing}
+            onIndexingCancelled={() => setAwaitingIndexing(false)}
+          />
         )}
       </div>
 
