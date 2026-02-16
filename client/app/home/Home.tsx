@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { Searchbar } from '../ui/searchbar'
+import { Searchbar } from '../components/ui/searchbar'
 import { useConveyor } from '@/app/hooks/use-conveyor'
 import { cn } from '@/lib/utils'
 import './styles.css'
-import Results from '../Results'
-import Footer from '../Footer'
+import Results from '../components/Results'
+import Footer from '../components/Footer'
 import { SearchResponse } from '../types/types'
 
 export default function Home() {
@@ -12,11 +12,26 @@ export default function Home() {
   const search = useConveyor('search')
   const [searchResults, setSearchResults] = useState<SearchResponse>()
   const [hasSearched, setHasSearched] = useState(false) //temporary logic (pls remove in the future :pray:)
+  const [isLoading, setIsLoading] = useState(false)
+  const [awaitingIndexing, setAwaitingIndexing] = useState(false)
+  const [pressedEnter, setPressedEnter] = useState(0)
 
   const handleSearch = async () => {
-    setHasSearched(true)
-    const res = await search.search(query)
-    setSearchResults(res)
+    setIsLoading(true)
+    try {
+      const res = await search.search(query)
+      setSearchResults(res)
+      setHasSearched(true)
+      const newPressedEnter = pressedEnter + 1
+      setPressedEnter(newPressedEnter)
+      if (newPressedEnter >= 2 && (res?.results?.length ?? 0) === 0) {
+        setAwaitingIndexing(true)
+      }
+    } catch (error) {
+      console.error('Search failed:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -27,6 +42,8 @@ export default function Home() {
           onChange={(e) => {
             setQuery(e.target.value)
             setHasSearched(false)
+            setAwaitingIndexing(false)
+            setPressedEnter(0)
           }}
           placeholder="Search for files or folders…"
           onKeyDown={(e) => {
@@ -45,7 +62,17 @@ export default function Home() {
           'px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
         )}
       >
-        <Results searchResults={searchResults} query={query} hasSearched={hasSearched} />
+        {isLoading ? (
+          <div className="flex items-center justify-center w-full text-zinc-400">Searching...</div>
+        ) : (
+          <Results
+            searchResults={searchResults}
+            query={query}
+            hasSearched={hasSearched}
+            awaitingIndexing={awaitingIndexing}
+            onIndexingCancelled={() => setAwaitingIndexing(false)}
+          />
+        )}
       </div>
 
       <div

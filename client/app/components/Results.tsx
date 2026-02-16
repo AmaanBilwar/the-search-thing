@@ -1,19 +1,25 @@
 import * as React from 'react'
-import { useState, useEffect } from 'react'
-import { useAppContext } from './AppContext'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import noFiles from '@/resources/no-files-found.svg'
-import { ResultProps, SearchResultItem } from './types/types'
-import * as fileIcons from "@/resources/filetype icons"
-import { useConveyor } from "../hooks/use-conveyor"
-
+import { ResultProps, SearchResultItem } from '../types/types'
+import * as fileIcons from '@/resources/filetype icons'
+import { useConveyor } from '../hooks/use-conveyor'
 
 type ResultItem = SearchResultItem
 
-
-const Results: React.FC<ResultProps> = ({ searchResults, query, hasSearched }) => {
-  // const { isIndexed } = useAppContext()
+const Results: React.FC<ResultProps & { onIndexingCancelled?: () => void }> = ({
+  searchResults,
+  query,
+  hasSearched,
+  awaitingIndexing,
+  onIndexingCancelled,
+}) => {
   const [selectedItem, setSelectedItem] = useState<ResultItem | null>(null)
-  const search = useConveyor("search")
+  const [isIndexing, setIsIndexing] = useState(false)
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null)
+  const [hasInitiatedIndexing, setHasInitiatedIndexing] = useState(false)
+  const hasOpenedDialogRef = useRef(false)
+  const search = useConveyor('search')
 
   const allResults = searchResults?.results || []
 
@@ -21,17 +27,17 @@ const Results: React.FC<ResultProps> = ({ searchResults, query, hasSearched }) =
     setSelectedItem(null)
   }, [searchResults])
 
+  useEffect(() => {
+    if (!hasSearched) {
+      setHasInitiatedIndexing(false)
+      setCurrentJobId(null)
+      setIsIndexing(false)
+      hasOpenedDialogRef.current = false
+    }
+  }, [hasSearched, query])
+
   const handleOpen = (filePath: string) => {
     search.openFile(filePath)
-  }
-  // Searched but found nothing
-  if (hasSearched && allResults.length === 0 && query) {
-    return (
-      <div className="flex flex-col items-center gap-4 w-full h-full pt-30">
-        <img src={noFiles} alt="No files" className="w-15 h-15 opacity-75" />
-        <div className="text-zinc-500">No results have been found for "{query}"</div>
-      </div>
-    )
   }
 
   // Extract filename from path
@@ -39,10 +45,63 @@ const Results: React.FC<ResultProps> = ({ searchResults, query, hasSearched }) =
     const parts = path.split(/[/\\]/)
     return parts[parts.length - 1] || path
   }
-  
+
   const getFileExt = (path: string) => {
     const parts = path.split('.')
     return parts.length > 1 ? parts[parts.length - 1] : ''
+  }
+
+  const handleStartIndexing = useCallback(async () => {
+    const res = await search.openFileDialog()
+    if (!res || res.length === 0) {
+      // User cancelled the file dialog - reset the awaiting state
+      onIndexingCancelled?.()
+      return
+    }
+
+    setIsIndexing(true)
+    try {
+      const indexRes = await search.index(res)
+      console.error('Index response:', indexRes)
+      if (indexRes.success && indexRes.job_id) {
+        setCurrentJobId(indexRes.job_id)
+      }
+    } catch (error) {
+      console.error('Error indexing files:', error)
+    } finally {
+      setIsIndexing(false)
+    }
+  }, [search, onIndexingCancelled])
+
+  useEffect(() => {
+    if (awaitingIndexing && !hasInitiatedIndexing && !hasOpenedDialogRef.current) {
+      //temporary guardrail for development strict mode
+      hasOpenedDialogRef.current = true
+      setHasInitiatedIndexing(true)
+      handleStartIndexing()
+    }
+  }, [awaitingIndexing, hasInitiatedIndexing, handleStartIndexing])
+
+  if (awaitingIndexing) {
+    return (
+      <div className="flex flex-col w-full h-full p-6 gap-4">
+        <div className="text-zinc-300 text-lg font-medium">Indexing directories</div>
+        {currentJobId && <div className="text-zinc-500 text-sm font-mono">Job ID: {currentJobId}</div>}
+      </div>
+    )
+  }
+
+  // Searched but found nothing
+  if (hasSearched && allResults.length === 0 && query) {
+    return (
+      <div className="flex flex-col items-center gap-4 w-full h-full pt-30">
+        <img src={noFiles} alt="No files" className="w-15 h-15 opacity-75" />
+        <div className="flex flex-col items-center">
+          <div className="text-zinc-500">No results for "{query}"</div>
+          <div className="text-zinc-500">Press Enter to index directories.</div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -73,15 +132,12 @@ const Results: React.FC<ResultProps> = ({ searchResults, query, hasSearched }) =
                   selectedItem?.path === result.path ? 'bg-zinc-700' : ''
                 }`}
               >
-                <div className='pr-2'>
-                  <img
-                    src={fileIcons[getFileExt(result.path).toLowerCase()] || fileIcons.txt}
-                    className='w-5 h-5'
-                  />
+                <div className="pr-2">
+                  <img src={fileIcons[getFileExt(result.path).toLowerCase()] || fileIcons.txt} className="w-5 h-5" />
                 </div>
-                  <div className="text-white truncate" title={result.path}>
-                    {getFileName(result.path)}
-                  </div>
+                <div className="text-white truncate" title={result.path}>
+                  {getFileName(result.path)}
+                </div>
               </div>
             ))}
           </div>
@@ -89,14 +145,14 @@ const Results: React.FC<ResultProps> = ({ searchResults, query, hasSearched }) =
 
         {/* Content preview */}
         <div className="flex-1 h-full ">
-            {selectedItem ? (
-              <div className="p-4 h-full">
-                <div className='p-5 rounded-2xl min-h-[320px] bg-zinc-900 overflow-hidden'>
-                  <div className="text-zinc-300 whitespace-pre-wrap overflow-y-auto max-h-[calc(100vh-200px)]">
-                    {selectedItem.content ?? 'No preview available for this result.'}
-                  </div>
+          {selectedItem ? (
+            <div className="p-4 h-full">
+              <div className="p-5 rounded-2xl min-h-[320px] bg-zinc-900 overflow-hidden">
+                <div className="text-zinc-300 whitespace-pre-wrap overflow-y-auto max-h-[calc(100vh-200px)]">
+                  {selectedItem.content ?? 'No preview available for this result.'}
                 </div>
               </div>
+            </div>
           ) : (
             <div className="flex items-center justify-center h-full text-zinc-500">
               {allResults.length > 0 ? 'Select a file to view its content' : 'Search for something to see results'}

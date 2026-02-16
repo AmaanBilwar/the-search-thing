@@ -1,37 +1,30 @@
-import { useState } from "react"
-import { useConveyor } from "../hooks/use-conveyor"
-import { useAppContext } from "./AppContext"
-import { Button } from "./ui/button"
-import about from "@/resources/about.svg"
-import enter from "@/resources/enter.svg"
-
-interface IndexProps {
-  success: boolean
-  job_id: string
-}
+import { useState } from 'react'
+import { useConveyor } from '../hooks/use-conveyor'
+import { Button } from './ui/button'
+import about from '@/resources/about.svg'
+import enter from '@/resources/enter.svg'
 
 export default function Footer() {
-  const search = useConveyor("search")
+  const search = useConveyor('search')
   const [isIndexing, setIsIndexing] = useState(false)
-  const [indexResult, setIndexResult] = useState<IndexProps>()
-  const [errorMessage, setErrorMessage] = useState("")
-  
-  const {isIndexed, setIsIndexed} = useAppContext()
-  
+  const [errorMessage, setErrorMessage] = useState('')
+
   const handleStartIndexing = async () => {
     const res = await search.openFileDialog()
-    
-    if (!res || res.length === 0) return // check to prevent indexing null 
-    
+
+    if (!res || res.length === 0) return // check to prevent indexing null
+
     setIsIndexing(true)
-    setErrorMessage("")
+    setErrorMessage('')
     try {
       const indexRes = await search.index(res)
       console.error('Index response:', indexRes)
-      if (indexRes.success) {
-        setIsIndexed(true)
+      if (indexRes.success && indexRes.job_id) {
+        setErrorMessage('') // Success - clear any error message
+      } else if (!indexRes.job_id) {
+        setErrorMessage('Indexing started but no job ID was returned')
       } else {
-        setErrorMessage("No response from indexing")
+        setErrorMessage('No response from indexing')
       }
     } catch (error) {
       console.error('Error indexing files:', error)
@@ -40,11 +33,11 @@ export default function Footer() {
       setIsIndexing(false)
     }
   }
-  
+
   return (
     <div className="flex flex-row justify-between items-center w-full h-full">
       <img src={about} alt="About" className="w-5 h-5 opacity-75" />
-      
+
       <div className="text-sm">
         {isIndexing ? (
           <span className="opacity-75">Indexing...</span>
@@ -52,9 +45,9 @@ export default function Footer() {
           <span className="text-red-500">{errorMessage}</span>
         )}
       </div>
-      
-      <Button variant="transparent" >
-        Open <img src={enter} alt="Open File" className="w-5 h-6 opacity-75" />
+
+      <Button variant="transparent" onClick={handleStartIndexing} disabled={isIndexing}>
+        Index <img src={enter} alt="index File" className="w-5 h-6 opacity-75" />
       </Button>
     </div>
   )
