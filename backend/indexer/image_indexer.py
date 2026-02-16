@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List
 
 from backend.utils.clients import get_groq_client, get_helix_client
+from backend.utils.content_hash import compute_bytes_hash
 
 
 def _bytes_to_data_uri(image_bytes: bytes, mime_hint: str = "jpeg") -> str:
@@ -54,13 +55,41 @@ async def img_indexer(
         try:
             image_bytes = p.read_bytes()
             mime_hint = _mime_hint_from_path(p)
-            data_uri = _bytes_to_data_uri(image_bytes, mime_hint)
         except Exception as e:
             print(f"[WARN] Skipping (Bytes Extraction failed): {path} — {e}")
             results.append(
                 {"path": path, "image_id": None, "indexed": False, "error": str(e)}
             )
             continue
+
+        try:
+            content_hash = compute_bytes_hash(image_bytes)
+        except Exception as e:
+            print(f"[WARN] Skipping (hash failed): {path} — {e}")
+            results.append(
+                {"path": path, "image_id": None, "indexed": False, "error": str(e)}
+            )
+            continue
+
+        try:
+            existing = await get_image_by_hash(content_hash)
+        except Exception as e:
+            print(f"[WARN] Hash lookup failed: {path} — {e}")
+            existing = None
+
+        if existing:
+            results.append(
+                {
+                    "path": path,
+                    "image_id": existing.get("image_id"),
+                    "indexed": False,
+                    "error": "Duplicate content hash",
+                }
+            )
+            print(f"[SKIP] Already indexed image: {path}")
+            continue
+
+        data_uri = _bytes_to_data_uri(image_bytes, mime_hint)
 
         try:
             summary_payload, embedding_text = await generate_summary(data_uri)
@@ -75,7 +104,9 @@ async def img_indexer(
 
         image_id = uuid.uuid4().hex
         try:
-            await create_img(image_id, json.dumps(summary_payload), path=path)
+            await create_img(
+                image_id, content_hash, json.dumps(summary_payload), path=path
+            )
             await create_img_embeddings(image_id, embedding_text, path=path)
             results.append({"path": path, "image_id": image_id, "indexed": True})
             print(f"[OK] Indexed image: {path}")
@@ -89,9 +120,14 @@ async def img_indexer(
 
 
 # creating image node
-async def create_img(image_id: str, content: str, path: str) -> str:
+async def create_img(image_id: str, content_hash: str, content: str, path: str) -> str:
     # here content is a raw summary
-    image_params = {"image_id": image_id, "content": content, "path": path}
+    image_params = {
+        "image_id": image_id,
+        "content_hash": content_hash,
+        "content": content,
+        "path": path,
+    }
 
     def _query() -> str:
         helix_client = get_helix_client()
@@ -100,6 +136,31 @@ async def create_img(image_id: str, content: str, path: str) -> str:
         return json.dumps(response)
 
     return await asyncio.to_thread(_query)
+
+
+async def get_image_by_hash(content_hash: str) -> dict | None:
+    def _query() -> list:
+        helix_client = get_helix_client()
+        return helix_client.query("GetImageByHash", {"content_hash": content_hash})
+
+    response = await asyncio.to_thread(_query)
+    if isinstance(response, str):
+        try:
+            response = json.loads(response)
+        except json.JSONDecodeError:
+            return None
+
+    if isinstance(response, dict):
+        image = response.get("image")
+        if isinstance(image, list):
+            return image[0] if image else None
+        if isinstance(image, dict):
+            return image
+        return None
+
+    if isinstance(response, list):
+        return response[0] if response else None
+    return None
 
 
 # creating img vector nodes
@@ -253,6 +314,9 @@ async def generate_summary(
 
 
 if __name__ == "__main__":
-    results = asyncio.run(img_indexer("C:\\Users\\amaan\\Downloads\\testing\\woody.jpg"))
+    results = asyncio.run(
+        img_indexer("C:\\Users\\amaan\\Downloads\\testing\\woody.jpg")
+    )
     import json
+
     print(json.dumps(results, indent=2))
