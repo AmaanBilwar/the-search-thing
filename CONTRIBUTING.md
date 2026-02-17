@@ -75,6 +75,8 @@ npm run dev
 
 ### Index a directory (API)
 
+macOS / Linux:
+
 ```bash
 curl "http://localhost:8000/api/index?dir=/path/to/folder"
 ```
