@@ -1,5 +1,5 @@
 appId: com.guasam.era
-productName: ElectronReactApp
+productName: the-search-thing
 directories:
   buildResources: resources/build
 files:
@@ -12,7 +12,8 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: ElectronReactApp
+  executableName: the-search-thing
+  icon: resources/build/logo-white-bg.ico
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}

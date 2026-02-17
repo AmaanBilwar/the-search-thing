@@ -1,6 +1,6 @@
 import { BrowserWindow, shell, app } from 'electron'
 import { join } from 'path'
-import appIcon from '@/resources/build/electron.png?asset'
+import appIcon from '@/resources/build/logo-white-bg.webp'
 import { registerResourcesProtocol } from './protocols'
 import { registerWindowHandlers } from '@/lib/conveyor/handlers/window-handler'
 import { registerAppHandlers } from '@/lib/conveyor/handlers/app-handler'
