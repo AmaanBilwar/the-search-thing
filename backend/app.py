@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from backend.services.indexing import run_indexing_job
+from backend.services.indexing_status import get_job
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
@@ -48,6 +49,14 @@ async def index(dir: str):
     task = asyncio.create_task(run_indexing_job(dir, job_id))
     task.add_done_callback(lambda t: _log_task_exception(t, job_id))
     return {"success": True, "job_id": job_id}
+
+
+@app.get("/api/index/status")
+async def index_status(job_id: str):
+    record = get_job(job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return record
 
 
 @app.get("/api/search")
