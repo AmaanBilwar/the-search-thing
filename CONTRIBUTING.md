@@ -81,6 +81,12 @@ macOS / Linux:
 curl "http://localhost:8000/api/index?dir=/path/to/folder"
 ```
 
+Windows (PowerShell):
+
+```powershell
+curl.exe --get "http://localhost:8000/api/index" --data-urlencode "dir=C:\path with spaces"
+```
+
 ### Search (API)
 
 ```bash
