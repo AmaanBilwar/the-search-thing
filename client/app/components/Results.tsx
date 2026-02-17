@@ -56,6 +56,8 @@ const Results: React.FC<ResultProps & { onIndexingCancelled?: () => void }> = ({
     if (!res || res.length === 0) {
       // User cancelled the file dialog - reset the awaiting state
       onIndexingCancelled?.()
+      setHasInitiatedIndexing(false)
+      hasOpenedDialogRef.current = false
       return
     }
 
