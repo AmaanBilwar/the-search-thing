@@ -86,8 +86,8 @@ const Results: React.FC<ResultProps & { onIndexingCancelled?: () => void }> = ({
 
   if (awaitingIndexing) {
     return (
-      <div className="flex flex-col w-full h-full p-6 gap-4">
-        <div className="text-zinc-300 text-lg font-medium">Indexing directories</div>
+      <div className="flex flex-col w-full h-full items-center justify-center p-6 gap-4">
+        <div className="text-zinc-300 text-lg font-sm">Indexing directories...</div>
         {currentJobId && <div className="text-zinc-500 text-sm font-mono">Job ID: {currentJobId}</div>}
       </div>
     )
