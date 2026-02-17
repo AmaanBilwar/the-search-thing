@@ -36,7 +36,9 @@ export default function Footer() {
 
   return (
     <div className="flex flex-row justify-between items-center w-full h-full">
-      <img src={about} alt="About" className="w-5 h-5 opacity-75" />
+      <Button variant="transparent" size="sm" className='rounded-full'>
+        <img src={about} alt="About" className="w-5 h-5 opacity-75" />
+      </Button>
 
       <div className="text-sm">
         {isIndexing ? (
@@ -46,7 +48,7 @@ export default function Footer() {
         )}
       </div>
 
-      <Button variant="transparent" onClick={handleStartIndexing} disabled={isIndexing}>
+      <Button variant="transparent" size="sm" onClick={handleStartIndexing} disabled={isIndexing}>
         Index <img src={enter} alt="index File" className="w-5 h-6 opacity-75" />
       </Button>
     </div>
