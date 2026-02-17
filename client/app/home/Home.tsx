@@ -15,6 +15,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
   const [awaitingIndexing, setAwaitingIndexing] = useState(false)
   const [hasInteracted, setHasInteracted] = useState(false)
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null)
 
   const handleSearch = async () => {
     const lastResultsEmpty = (searchResults?.results?.length ?? 0) === 0
@@ -58,7 +59,6 @@ export default function Home() {
         />
       </div>
 
-      
       {hasInteracted ? (
         <div
           className={cn(
@@ -75,6 +75,8 @@ export default function Home() {
               query={query}
               hasSearched={hasSearched}
               awaitingIndexing={awaitingIndexing}
+              currentJobId={currentJobId}
+              setCurrentJobId={setCurrentJobId}
               onIndexingCancelled={() => setAwaitingIndexing(false)}
             />
           )}
