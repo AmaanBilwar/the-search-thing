@@ -14,6 +14,7 @@ export default function Home() {
   const [hasSearched, setHasSearched] = useState(false) //temporary logic (pls remove in the future :pray:)
   const [isLoading, setIsLoading] = useState(false)
   const [awaitingIndexing, setAwaitingIndexing] = useState(false)
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null)
   const [hasInteracted, setHasInteracted] = useState(false)
 
   const handleSearch = async () => {
@@ -45,7 +46,10 @@ export default function Home() {
           onChange={(e) => {
             setQuery(e.target.value)
             setHasSearched(false)
-            setAwaitingIndexing(false)
+            if (!currentJobId) {
+              setAwaitingIndexing(false)
+              setCurrentJobId(null)
+            }
             setHasInteracted(true)
           }}
           placeholder="Search for files or folders…"
@@ -58,39 +62,38 @@ export default function Home() {
         />
       </div>
 
-      
-      {hasInteracted ? (
-        <div
-          className={cn(
-            'flex flex-1 min-h-0',
-            'border-2 border-zinc-700/80 bg-zinc-800/60',
-            'px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
-          )}
-        >
-          {isLoading ? (
-            <div className="flex items-center justify-center w-full text-zinc-400">Searching...</div>
-          ) : (
-            <Results
-              searchResults={searchResults}
-              query={query}
-              hasSearched={hasSearched}
-              awaitingIndexing={awaitingIndexing}
-              onIndexingCancelled={() => setAwaitingIndexing(false)}
-            />
-          )}
-        </div>
-      ) : (
-        <div
-          className={cn(
-            'flex flex-1 min-h-0 gap-1 flex-col items-center justify-center',
-            'border-2 border-zinc-700/80 bg-zinc-800/60',
-            'px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
-          )}
-        >
-          <div className="text-lg">Welcome to the-search-thing!</div>
-          <div className="text-sm text-zinc-500">Please start searching to get started...</div>
-        </div>
-      )}
+      <div
+        className={cn(
+          'flex flex-1 min-h-0',
+          'border-2 border-zinc-700/80 bg-zinc-800/60',
+          'px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
+        )}
+      >
+        {isLoading ? (
+          <div className="flex items-center justify-center w-full text-zinc-400">Searching...</div>
+        ) : hasInteracted || awaitingIndexing ? (
+          <Results
+            searchResults={searchResults}
+            query={query}
+            hasSearched={hasSearched}
+            awaitingIndexing={awaitingIndexing}
+            currentJobId={currentJobId}
+            setCurrentJobId={setCurrentJobId}
+            onIndexingCancelled={() => setAwaitingIndexing(false)}
+          />
+        ) : (
+          <div
+            className={cn(
+              'flex flex-1 min-h-0 gap-1 flex-col items-center justify-center',
+              'border-2 border-zinc-700/80 bg-zinc-800/60',
+              'px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
+            )}
+          >
+            <div className="text-lg">Welcome to the-search-thing!</div>
+            <div className="text-sm text-zinc-500">Please start searching to get started...</div>
+          </div>
+        )}
+      </div>
 
       <div
         className={cn(
@@ -99,7 +102,13 @@ export default function Home() {
           'px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
         )}
       >
-        <Footer />
+        <Footer
+          onIndexStarted={(jobId) => {
+            setCurrentJobId(jobId)
+            setAwaitingIndexing(true)
+            setHasInteracted(true)
+          }}
+        />
       </div>
     </div>
   )

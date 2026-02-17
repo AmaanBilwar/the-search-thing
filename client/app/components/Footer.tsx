@@ -4,7 +4,11 @@ import { Button } from './ui/button'
 import about from '@/resources/about.svg'
 import enter from '@/resources/enter.svg'
 
-export default function Footer() {
+type FooterProps = {
+  onIndexStarted?: (jobId: string) => void
+}
+
+export default function Footer({ onIndexStarted }: FooterProps) {
   const search = useConveyor('search')
   const [isIndexing, setIsIndexing] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
@@ -39,7 +43,8 @@ export default function Footer() {
       const indexRes = await search.index(res)
       console.error('Index response:', indexRes)
       if (indexRes.success && indexRes.job_id) {
-        setErrorMessage('')
+        setErrorMessage('') // Success - clear any error message
+        onIndexStarted?.(indexRes.job_id)
       } else if (!indexRes.job_id) {
         setErrorMessage('Indexing started but no job ID was returned')
       } else {

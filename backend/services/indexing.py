@@ -5,6 +5,12 @@ import os
 import uuid
 from pathlib import Path
 
+from backend.services.indexing_status import (
+    create_job,
+    fail_job,
+    finish_job,
+    update_job,
+)
 from backend.utils.content_hash import compute_file_hash
 
 logger = logging.getLogger(__name__)
@@ -190,36 +196,83 @@ async def run_indexing_job(dir: str, job_id: str, batch_size: int = 10) -> None:
         walk_and_get_text_file_batch,  # ty: ignore[unresolved-import]
     )
 
-    ext_to_category = _load_extension_to_category()
-    text_exts = _get_text_extensions(ext_to_category)
-    video_exts = _get_video_extensions(ext_to_category)
-    img_exts = _get_img_extensions(ext_to_category)
+    create_job(job_id, dir, batch_size)
 
-    ignore_exts, ignore_files = _load_ignore_config()
-    ignore_exts_sorted = sorted(ignore_exts)
-    ignore_files_sorted = sorted(ignore_files)
-    cursor = 0
-    total_found = 0
-    text_indexed = 0
-    non_text_skipped = 0
-    errors = 0
-    video_found = 0
-    video_indexed = 0
-    video_errors = 0
-    video_skipped = 0
-    image_found = 0
-    image_indexed = 0
-    image_errors = 0
-    image_skipped = 0
+    try:
+        ext_to_category = _load_extension_to_category()
+        text_exts = _get_text_extensions(ext_to_category)
+        video_exts = _get_video_extensions(ext_to_category)
+        img_exts = _get_img_extensions(ext_to_category)
 
-    logger.info("[job:%s] Started indexing job for: %s", job_id, dir)
+        ignore_exts, ignore_files = _load_ignore_config()
+        ignore_exts_sorted = sorted(ignore_exts)
+        ignore_files_sorted = sorted(ignore_files)
+        cursor = 0
+        total_found = 0
+        text_indexed = 0
+        non_text_skipped = 0
+        errors = 0
+        video_found = 0
+        video_indexed = 0
+        video_errors = 0
+        video_skipped = 0
+        image_found = 0
+        image_indexed = 0
+        image_errors = 0
+        image_skipped = 0
 
-    supports_ignore = True
+        logger.info("[job:%s] Started indexing job for: %s", job_id, dir)
+        update_job(job_id, phase="scan_text")
 
-    while True:
-        try:
-            if supports_ignore:
-                try:
+        supports_ignore = True
+
+        while True:
+            try:
+                if supports_ignore:
+                    try:
+                        (
+                            batch,
+                            cursor,
+                            done,
+                            scanned_count,
+                            skipped_count,
+                        ) = await asyncio.to_thread(
+                            walk_and_get_text_file_batch,
+                            dir,
+                            text_exts,
+                            ignore_exts_sorted,
+                            ignore_files_sorted,
+                            cursor,
+                            batch_size,
+                        )
+                    except TypeError as e:
+                        # Only fall back for the legacy arity mismatch case.
+                        # Do not swallow real TypeErrors raised by the walk implementation.
+                        msg = str(e)
+                        arity_mismatch = (
+                            "positional argument" in msg
+                            and "takes" in msg
+                            and "given" in msg
+                            and "but" in msg
+                        )
+                        if not arity_mismatch:
+                            raise
+
+                        supports_ignore = False
+                        (
+                            batch,
+                            cursor,
+                            done,
+                            scanned_count,
+                            skipped_count,
+                        ) = await asyncio.to_thread(
+                            walk_and_get_text_file_batch,
+                            dir,
+                            text_exts,
+                            cursor,
+                            batch_size,
+                        )
+                else:
                     (
                         batch,
                         cursor,
@@ -230,195 +283,198 @@ async def run_indexing_job(dir: str, job_id: str, batch_size: int = 10) -> None:
                         walk_and_get_text_file_batch,
                         dir,
                         text_exts,
-                        ignore_exts_sorted,
-                        ignore_files_sorted,
                         cursor,
                         batch_size,
                     )
-                except TypeError as e:
-                    # Only fall back for the legacy arity mismatch case.
-                    # Do not swallow real TypeErrors raised by the walk implementation.
-                    msg = str(e)
-                    arity_mismatch = (
-                        "positional argument" in msg
-                        and "takes" in msg
-                        and "given" in msg
-                        and "but" in msg
-                    )
-                    if not arity_mismatch:
-                        raise
+            except Exception as e:
+                logger.exception("[job:%s] Walk failed: %s", job_id, e)
+                errors += 1
+                fail_job(job_id, f"Walk failed: {e}")
+                return
 
-                    supports_ignore = False
-                    (
-                        batch,
-                        cursor,
-                        done,
-                        scanned_count,
-                        skipped_count,
-                    ) = await asyncio.to_thread(
-                        walk_and_get_text_file_batch,
-                        dir,
-                        text_exts,
-                        cursor,
-                        batch_size,
-                    )
-            else:
-                (
-                    batch,
-                    cursor,
-                    done,
-                    scanned_count,
-                    skipped_count,
-                ) = await asyncio.to_thread(
-                    walk_and_get_text_file_batch,
-                    dir,
-                    text_exts,
-                    cursor,
-                    batch_size,
-                )
-        except Exception as e:
-            logger.exception("[job:%s] Walk failed: %s", job_id, e)
-            errors += 1
-            break
+            total_found += scanned_count
+            non_text_skipped += skipped_count
 
-        total_found += scanned_count
-        non_text_skipped += skipped_count
+            if batch:
+                update_job(job_id, phase="index_text")
+                batch_results = await _process_batch(batch, job_id)
+                text_indexed += batch_results["indexed"]
+                errors += batch_results["errors"]
 
-        if batch:
-            batch_results = await _process_batch(batch, job_id)
-            text_indexed += batch_results["indexed"]
-            errors += batch_results["errors"]
+            update_job(
+                job_id,
+                text_found=total_found,
+                text_indexed=text_indexed,
+                text_errors=errors,
+                text_skipped=non_text_skipped,
+            )
 
-        if done:
-            break
+            if done:
+                break
 
-    if video_exts:
-        video_files = await asyncio.to_thread(
-            _collect_files_by_extension_with_ignore,
-            dir,
-            video_exts,
-            ignore_exts,
-            ignore_files,
-        )
-        video_found = len(video_files)
-        if video_files:
-            from backend.indexer.indexer import get_video_by_hash, indexer_function
+        if video_exts:
+            update_job(job_id, phase="index_video")
+            video_files = await asyncio.to_thread(
+                _collect_files_by_extension_with_ignore,
+                dir,
+                video_exts,
+                ignore_exts,
+                ignore_files,
+            )
+            video_found = len(video_files)
+            update_job(job_id, video_found=video_found)
+            if video_files:
+                from backend.indexer.indexer import get_video_by_hash, indexer_function
 
-            for video_path in video_files:
-                try:
-                    content_hash = compute_file_hash(video_path)
-                except Exception as e:
-                    video_errors += 1
-                    logger.error(
-                        "[job:%s] [ERROR] Video hash failed: %s - %s",
+                for video_path in video_files:
+                    try:
+                        content_hash = compute_file_hash(video_path)
+                    except Exception as e:
+                        video_errors += 1
+                        logger.error(
+                            "[job:%s] [ERROR] Video hash failed: %s - %s",
+                            job_id,
+                            video_path,
+                            e,
+                        )
+                        update_job(
+                            job_id,
+                            video_indexed=video_indexed,
+                            video_errors=video_errors,
+                            video_skipped=video_skipped,
+                        )
+                        continue
+
+                    try:
+                        existing = await get_video_by_hash(content_hash)
+                    except Exception as e:
+                        logger.error(
+                            "[job:%s] [ERROR] Video hash lookup failed: %s - %s",
+                            job_id,
+                            video_path,
+                            e,
+                        )
+                        existing = None
+
+                    if existing:
+                        video_skipped += 1
+                        logger.info(
+                            "[job:%s] [SKIP] Video already indexed: %s",
+                            job_id,
+                            video_path,
+                        )
+                        update_job(
+                            job_id,
+                            video_indexed=video_indexed,
+                            video_errors=video_errors,
+                            video_skipped=video_skipped,
+                        )
+                        continue
+
+                    video_id = uuid.uuid4().hex
+                    try:
+                        results = await indexer_function(
+                            video_id, content_hash, video_path
+                        )
+                        if results:
+                            video_indexed += sum(
+                                1 for result in results if result.get("indexed")
+                            )
+                            video_errors += sum(
+                                1 for result in results if not result.get("indexed")
+                            )
+                        else:
+                            video_errors += 1
+                    except Exception as e:
+                        video_errors += 1
+                        logger.error(
+                            "[job:%s] [ERROR] Video indexing failed: %s - %s",
+                            job_id,
+                            video_path,
+                            e,
+                        )
+
+                    update_job(
                         job_id,
-                        video_path,
-                        e,
+                        video_indexed=video_indexed,
+                        video_errors=video_errors,
+                        video_skipped=video_skipped,
                     )
-                    continue
+
+        if img_exts:
+            update_job(job_id, phase="index_image")
+            image_files = await asyncio.to_thread(
+                _collect_files_by_extension, dir, img_exts
+            )
+            image_found = len(image_files)
+            update_job(job_id, image_found=image_found)
+            if image_files:
+                from backend.indexer.image_indexer import img_indexer
 
                 try:
-                    existing = await get_video_by_hash(content_hash)
-                except Exception as e:
-                    logger.error(
-                        "[job:%s] [ERROR] Video hash lookup failed: %s - %s",
-                        job_id,
-                        video_path,
-                        e,
-                    )
-                    existing = None
-
-                if existing:
-                    video_skipped += 1
-                    logger.info(
-                        "[job:%s] [SKIP] Video already indexed: %s",
-                        job_id,
-                        video_path,
-                    )
-                    continue
-
-                video_id = uuid.uuid4().hex
-                try:
-                    results = await indexer_function(
-                        video_id, content_hash, video_path
-                    )
+                    results = await img_indexer(image_files)
                     if results:
-                        video_indexed += sum(
+                        image_indexed += sum(
                             1 for result in results if result.get("indexed")
                         )
-                        video_errors += sum(
-                            1 for result in results if not result.get("indexed")
+                        image_skipped += sum(
+                            1
+                            for result in results
+                            if not result.get("indexed")
+                            and result.get("error") == "Duplicate content hash"
+                        )
+                        image_errors += sum(
+                            1
+                            for result in results
+                            if not result.get("indexed")
+                            and result.get("error") != "Duplicate content hash"
                         )
                     else:
-                        video_errors += 1
+                        image_errors += 1
                 except Exception as e:
-                    video_errors += 1
+                    image_errors += 1
                     logger.error(
-                        "[job:%s] [ERROR] Video indexing failed: %s - %s",
+                        "[job:%s] [ERROR] Image indexing failed: %s",
                         job_id,
-                        video_path,
                         e,
                     )
 
-    if img_exts:
-        image_files = await asyncio.to_thread(
-            _collect_files_by_extension, dir, img_exts
-        )
-        image_found = len(image_files)
-        if image_files:
-            from backend.indexer.image_indexer import img_indexer
-
-            try:
-                results = await img_indexer(image_files)
-                if results:
-                    image_indexed += sum(
-                        1 for result in results if result.get("indexed")
-                    )
-                    image_skipped += sum(
-                        1
-                        for result in results
-                        if not result.get("indexed")
-                        and result.get("error") == "Duplicate content hash"
-                    )
-                    image_errors += sum(
-                        1
-                        for result in results
-                        if not result.get("indexed")
-                        and result.get("error") != "Duplicate content hash"
-                    )
-                else:
-                    image_errors += 1
-            except Exception as e:
-                image_errors += 1
-                logger.error(
-                    "[job:%s] [ERROR] Image indexing failed: %s",
+                update_job(
                     job_id,
-                    e,
+                    image_indexed=image_indexed,
+                    image_skipped=image_skipped,
+                    image_errors=image_errors,
                 )
 
-    logger.info(
-        "[job:%s] [SUMMARY] Job completed for %s - Found: %d, Indexed: %d, Skipped: %d, Errors: %d",
-        job_id,
-        dir,
-        total_found,
-        text_indexed,
-        non_text_skipped,
-        errors,
-    )
-    logger.info(
-        "[job:%s] [VIDEO SUMMARY] Found: %d, Indexed: %d, Skipped: %d, Errors: %d",
-        job_id,
-        video_found,
-        video_indexed,
-        video_skipped,
-        video_errors,
-    )
+        logger.info(
+            "[job:%s] [SUMMARY] Job completed for %s - Found: %d, Indexed: %d, Skipped: %d, Errors: %d",
+            job_id,
+            dir,
+            total_found,
+            text_indexed,
+            non_text_skipped,
+            errors,
+        )
+        logger.info(
+            "[job:%s] [VIDEO SUMMARY] Found: %d, Indexed: %d, Skipped: %d, Errors: %d",
+            job_id,
+            video_found,
+            video_indexed,
+            video_skipped,
+            video_errors,
+        )
 
-    logger.info(
-        "[job:%s] [IMAGE SUMMARY] Found: %d, Indexed: %d, Skipped: %d, Errors: %d",
-        job_id,
-        image_found,
-        image_indexed,
-        image_skipped,
-        image_errors,
-    )
+        logger.info(
+            "[job:%s] [IMAGE SUMMARY] Found: %d, Indexed: %d, Skipped: %d, Errors: %d",
+            job_id,
+            image_found,
+            image_indexed,
+            image_skipped,
+            image_errors,
+        )
+
+        finish_job(job_id)
+    except Exception as e:
+        logger.exception("[job:%s] Indexing job failed: %s", job_id, e)
+        fail_job(job_id, str(e))
+        raise
