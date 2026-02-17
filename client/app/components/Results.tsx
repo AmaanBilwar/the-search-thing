@@ -1,36 +1,11 @@
 import * as React from 'react'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import noFiles from '@/resources/no-files-found.svg'
-import { ResultProps, SearchResultItem } from '../types/types'
+import { ResultProps, SearchResultItem, IndexJobStatus } from '../types/types'
 import * as fileIcons from '@/resources/filetype icons'
 import { useConveyor } from '../hooks/use-conveyor'
 
 type ResultItem = SearchResultItem
-
-type IndexJobStatus = {
-  job_id: string
-  dir: string
-  status: string
-  phase: string
-  batch_size: number
-  text_found: number
-  text_indexed: number
-  text_errors: number
-  text_skipped: number
-  video_found: number
-  video_indexed: number
-  video_errors: number
-  video_skipped: number
-  image_found: number
-  image_indexed: number
-  image_errors: number
-  image_skipped: number
-  message: string
-  error: string
-  started_at: string
-  updated_at: string
-  finished_at: string | null
-}
 
 const Results: React.FC<
   ResultProps & {
