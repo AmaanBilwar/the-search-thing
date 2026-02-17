@@ -78,7 +78,7 @@ export default function Footer() {
 
       <div className="text-sm">
         {isIndexing ? (
-          <span className="opacity-75">Indexing...</span>
+          <span className="opacity-75 text-white">Indexing...</span>
         ) : (
           errorMessage && <span className="text-red-500">{errorMessage}</span>
         )}
