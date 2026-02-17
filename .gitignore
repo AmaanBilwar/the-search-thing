@@ -32,3 +32,5 @@ node_modules/
 
 .ruff_cache/
 videos/output_indexer/
+
+lazygit
