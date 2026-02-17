@@ -7,16 +7,47 @@ import { useConveyor } from '../hooks/use-conveyor'
 
 type ResultItem = SearchResultItem
 
-const Results: React.FC<ResultProps & { onIndexingCancelled?: () => void }> = ({
+type IndexJobStatus = {
+  job_id: string
+  dir: string
+  status: string
+  phase: string
+  batch_size: number
+  text_found: number
+  text_indexed: number
+  text_errors: number
+  text_skipped: number
+  video_found: number
+  video_indexed: number
+  video_errors: number
+  video_skipped: number
+  image_found: number
+  image_indexed: number
+  image_errors: number
+  image_skipped: number
+  message: string
+  error: string
+  started_at: string
+  updated_at: string
+  finished_at: string | null
+}
+
+const Results: React.FC<ResultProps & {
+  currentJobId: string | null
+  setCurrentJobId: (jobId: string | null) => void
+  onIndexingCancelled?: () => void
+}> = ({
   searchResults,
   query,
   hasSearched,
   awaitingIndexing,
+  currentJobId,
+  setCurrentJobId,
   onIndexingCancelled,
 }) => {
   const [selectedItem, setSelectedItem] = useState<ResultItem | null>(null)
   const [isIndexing, setIsIndexing] = useState(false)
-  const [currentJobId, setCurrentJobId] = useState<string | null>(null)
+  const [jobStatus, setJobStatus] = useState<IndexJobStatus | null>(null)
   const [dirIndexed, setDirIndexed] = useState<string | null>(null)
   const [hasInitiatedIndexing, setHasInitiatedIndexing] = useState(false)
   const hasOpenedDialogRef = useRef(false)
@@ -33,9 +64,38 @@ const Results: React.FC<ResultProps & { onIndexingCancelled?: () => void }> = ({
       setHasInitiatedIndexing(false)
       setCurrentJobId(null)
       setIsIndexing(false)
+      setJobStatus(null)
       hasOpenedDialogRef.current = false
     }
   }, [hasSearched, query])
+  
+  useEffect(() => {
+    if (!currentJobId) {
+      setJobStatus(null)
+      return
+    }
+
+    let isActive = true
+    const fetchStatus = async () => {
+      try {
+        const status = await search.indexStatus(currentJobId)
+        if (!isActive) return
+        setJobStatus(status)
+        if (status.status === 'completed' || status.status === 'failed') {
+          clearInterval(intervalId)
+        }
+      } catch (error) {
+        console.error('Error fetching index status:', error)
+      }
+    }
+
+    fetchStatus()
+    const intervalId = window.setInterval(fetchStatus, 1500)
+    return () => {
+      isActive = false
+      clearInterval(intervalId)
+    }
+  }, [currentJobId, search])
 
   const handleOpen = (filePath: string) => {
     search.openFile(filePath)
@@ -79,13 +139,18 @@ const Results: React.FC<ResultProps & { onIndexingCancelled?: () => void }> = ({
   }, [search, onIndexingCancelled])
 
   useEffect(() => {
-    if (awaitingIndexing && !hasInitiatedIndexing && !hasOpenedDialogRef.current) {
+    if (
+      awaitingIndexing &&
+      !currentJobId &&
+      !hasInitiatedIndexing &&
+      !hasOpenedDialogRef.current
+    ) {
       //temporary guardrail for development strict mode
       hasOpenedDialogRef.current = true
       setHasInitiatedIndexing(true)
       handleStartIndexing()
     }
-  }, [awaitingIndexing, hasInitiatedIndexing, handleStartIndexing])
+  }, [awaitingIndexing, currentJobId, hasInitiatedIndexing, handleStartIndexing])
 
   if (awaitingIndexing) {
     return (
