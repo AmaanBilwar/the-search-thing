@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useConveyor } from '../hooks/use-conveyor'
 import { Button } from './ui/button'
 import about from '@/resources/about.svg'
@@ -70,7 +70,7 @@ export default function Footer() {
     }
   }, [currentJobId, search])
 
-  const handleStartIndexing = async () => {
+  const handleStartIndexing = useCallback(async () => {
     const res = await search.openFileDialog()
 
     if (!res || res.length === 0) return
@@ -94,7 +94,25 @@ export default function Footer() {
     } finally {
       setIsIndexing(false)
     }
-  }
+  }, [search])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key.toLowerCase() === 'f') {
+        const target = e.target as HTMLElement | null
+        const tagName = target?.tagName?.toLowerCase()
+        const isEditable = tagName === 'input' || tagName === 'textarea' || target?.isContentEditable
+
+        if (isEditable || isIndexing) return
+
+        e.preventDefault()
+        handleStartIndexing()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleStartIndexing, isIndexing])
 
   const renderStatus = () => {
     if (jobStatus && currentJobId) {
