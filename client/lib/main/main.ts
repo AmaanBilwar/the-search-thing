@@ -1,6 +1,6 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, globalShortcut } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
-import { createAppWindow } from './app'
+import { createAppWindow, getMainWindow } from './app'
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -10,7 +10,16 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.electron')
   // Create app window
   createAppWindow()
-
+  
+  globalShortcut.register('Alt+Space', () => {
+    const win = getMainWindow() ?? createAppWindow()
+    if (win.isVisible()) {
+      win.hide()
+    } else {
+      win.show()
+      win.focus()
+    }
+  })
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
   // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
@@ -30,6 +39,11 @@ app.whenReady().then(() => {
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll()
+})
+
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
