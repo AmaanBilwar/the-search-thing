@@ -2,7 +2,6 @@ import asyncio
 import os
 import re
 import sys
-from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -12,6 +11,7 @@ from backend.services.search import (
     build_chunk_to_video_map,
 )
 from backend.utils.clients import get_helix_client
+from backend.services.thumbnails_cache import has_thumbnail
 
 load_dotenv()
 
@@ -465,8 +465,6 @@ async def goated_search(search_query: str) -> dict:
         seen.add(key)
         deduped.append(item)
 
-    repo_root = Path(__file__).resolve().parents[1]
-    thumbnails_dir = repo_root / "videos" / "thumbnails"
     backend_origin = os.getenv("BACKEND_ORIGIN", "http://localhost:8000")
 
     for item in deduped:
@@ -474,8 +472,7 @@ async def goated_search(search_query: str) -> dict:
             continue
         content_hash = item.get("content_hash")
         if isinstance(content_hash, str) and content_hash:
-            thumb_path = thumbnails_dir / f"{content_hash}.jpg"
-            if thumb_path.exists():
+            if has_thumbnail(content_hash):
                 item["thumbnail_url"] = f"{backend_origin}/api/thumbnails/{content_hash}"
 
     return {
