@@ -4,6 +4,7 @@ import { Button } from './ui/button'
 import about from '@/resources/about.svg'
 import enter from '@/resources/enter.svg'
 import { IndexJobStatus } from '../types/types'
+import { useAppContext } from '../AppContext'
 
 const phaseLabels: Record<string, string> = {
   scan_text: 'Scanning text files',
@@ -21,8 +22,16 @@ export default function Footer() {
   const [errorMessage, setErrorMessage] = useState('')
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
   const [jobStatus, setJobStatus] = useState<IndexJobStatus | null>(null)
-  const [currentJobId, setCurrentJobId] = useState<string | null>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
+  
+  const { 
+    currentJobId, 
+    setCurrentJobId, 
+    indexingLocation, 
+    setIndexingLocation,
+    setDirIndexed,
+    dirIndexed
+  } = useAppContext()
 
   // Close popover when clicking outside
   useEffect(() => {
@@ -41,7 +50,7 @@ export default function Footer() {
     }
   }, [isPopoverOpen])
 
-  // Poll job status every 2 seconds
+  // Poll job status every 2 seconds 
   useEffect(() => {
     if (!currentJobId) {
       setJobStatus(null)
@@ -56,6 +65,14 @@ export default function Footer() {
         setJobStatus(status)
         if (status.status === 'completed' || status.status === 'failed') {
           clearInterval(intervalId)
+          // Clear job state after completion
+          if (status.status === 'completed') {
+            setTimeout(() => {
+              setCurrentJobId(null)
+              setIndexingLocation(null)
+              setDirIndexed(null)
+            }, 3000)
+          }
         }
       } catch (error) {
         console.error('Error fetching index status:', error)
@@ -68,7 +85,7 @@ export default function Footer() {
       isActive = false
       clearInterval(intervalId)
     }
-  }, [currentJobId, search])
+  }, [currentJobId, search, setCurrentJobId, setIndexingLocation, setDirIndexed])
 
   const handleStartIndexing = async () => {
     const res = await search.openFileDialog()
@@ -82,6 +99,8 @@ export default function Footer() {
       console.error('Index response:', indexRes)
       if (indexRes.success && indexRes.job_id) {
         setCurrentJobId(indexRes.job_id)
+        setDirIndexed(res)
+        setIndexingLocation('footer')
         setErrorMessage('')
       } else if (!indexRes.job_id) {
         setErrorMessage('Indexing started but no job ID was returned')
@@ -97,7 +116,8 @@ export default function Footer() {
   }
 
   const renderStatus = () => {
-    if (jobStatus && currentJobId) {
+    // Show simple status when job is in results or just status message
+    if (indexingLocation === 'footer' && jobStatus && currentJobId) {
       const phaseText = phaseLabels[jobStatus.phase] || jobStatus.phase
 
       if (jobStatus.status === 'failed') {
@@ -152,9 +172,9 @@ export default function Footer() {
         )}
       </div>
 
-      <div className="text-sm flex items-center">{renderStatus()}</div>
+      <div className="text-sm flex items-center flex-1 justify-center px-4">{renderStatus()}</div>
 
-      <Button variant="transparent" size="sm" onClick={handleStartIndexing} disabled={isIndexing}>
+      <Button variant="transparent" size="sm" onClick={handleStartIndexing} disabled={isIndexing || !!currentJobId}>
         Index <img src={enter} alt="index File" className="w-5 h-6 opacity-75" />
       </Button>
     </div>
