@@ -195,6 +195,7 @@ async def goated_search(search_query: str) -> dict:
         asyncio.to_thread(
             helix_client.query, "SearchImageEmbeddings", image_search_params
         ),
+        return_exceptions=True,
     )
 
     file_items: list[dict] = []
