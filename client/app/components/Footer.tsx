@@ -58,6 +58,7 @@ export default function Footer() {
     }
 
     let isActive = true
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
     const fetchStatus = async () => {
       try {
         const status = await search.indexStatus(currentJobId)
@@ -67,7 +68,8 @@ export default function Footer() {
           clearInterval(intervalId)
           // Clear job state after completion or failure
           const delay = status.status === 'completed' ? 3000 : 5000
-          setTimeout(() => {
+          timeoutId = setTimeout(() => {
+            if (!isActive) return
             setCurrentJobId(null)
             setIndexingLocation(null)
             setDirIndexed(null)
@@ -85,6 +87,9 @@ export default function Footer() {
     return () => {
       isActive = false
       clearInterval(intervalId)
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId)
+      }
     }
   }, [currentJobId, search, setCurrentJobId, setIndexingLocation, setDirIndexed, setJobStatus, setAwaitingIndexing])
 
