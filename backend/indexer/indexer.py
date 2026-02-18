@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from the_search_thing import rust_indexer  # ty:ignore[unresolved-import]
 
 from backend.utils.clients import get_groq_client, get_helix_client
+from backend.services.thumbnails_cache import add_thumbnail
 
 load_dotenv()
 
@@ -382,6 +383,48 @@ async def generate_frame_summaries(
     return grouped
 
 
+def _matches_video_chunk(
+    chunk_path: str, video_path: str, base_name: str, chunks_root: str
+) -> bool:
+    normalized_chunk = chunk_path.replace("\\", "/")
+    normalized_video = video_path.replace("\\", "/")
+    if normalized_chunk == normalized_video:
+        return True
+    if normalized_chunk.startswith(f"{chunks_root}/"):
+        chunk_stem = Path(normalized_chunk).stem
+        return chunk_stem.startswith(f"{base_name}_chunk_")
+    return False
+
+
+def _select_video_thumbnail_path(
+    rust_results: list[str], video_path: str, chunks_root: str
+) -> Path | None:
+    base_name = Path(video_path).stem
+    for entry in rust_results:
+        try:
+            chunk_path, _audio_path, thumbnails_str = entry.split("|")
+        except ValueError:
+            continue
+        if not _matches_video_chunk(chunk_path, video_path, base_name, chunks_root):
+            continue
+        thumb_paths = [p.strip() for p in thumbnails_str.split(",") if p.strip()]
+        if len(thumb_paths) >= 2:
+            return Path(thumb_paths[1])
+        if thumb_paths:
+            return Path(thumb_paths[0])
+    return None
+
+
+def _cache_thumbnail(source: Path, dest: Path) -> bool:
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, dest)
+        return True
+    except Exception as exc:
+        print(f"[WARN] Failed to cache thumbnail: {source} -> {dest}: {exc}")
+        return False
+
+
 # create video node
 async def create_video(
     video_id: str, content_hash: str, no_of_chunks: int, path: str
@@ -592,45 +635,6 @@ async def indexer_function(
         traceback.print_exc()
         raise
 
-    def _matches_video_chunk(
-        chunk_path: str, video_path: str, base_name: str, chunks_root: str
-    ) -> bool:
-        normalized_chunk = chunk_path.replace("\\", "/")
-        normalized_video = video_path.replace("\\", "/")
-        if normalized_chunk == normalized_video:
-            return True
-        if normalized_chunk.startswith(f"{chunks_root}/"):
-            chunk_stem = Path(normalized_chunk).stem
-            return chunk_stem.startswith(f"{base_name}_chunk_")
-        return False
-
-    def _select_video_thumbnail_path(
-        rust_results: list[str], video_path: str, chunks_root: str
-    ) -> Path | None:
-        base_name = Path(video_path).stem
-        for entry in rust_results:
-            try:
-                chunk_path, _audio_path, thumbnails_str = entry.split("|")
-            except ValueError:
-                continue
-            if not _matches_video_chunk(chunk_path, video_path, base_name, chunks_root):
-                continue
-            thumb_paths = [p.strip() for p in thumbnails_str.split(",") if p.strip()]
-            if len(thumb_paths) >= 2:
-                return Path(thumb_paths[1])
-            if thumb_paths:
-                return Path(thumb_paths[0])
-        return None
-
-    def _cache_thumbnail(source: Path, dest: Path) -> bool:
-        try:
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(source, dest)
-            return True
-        except Exception as exc:
-            print(f"[WARN] Failed to cache thumbnail: {source} -> {dest}: {exc}")
-            return False
-
     # Build in-memory dicts from Rust output (one-time read)
     audio_data: dict[str, bytes] = {}
     thumbnails_data: dict[str, list[bytes]] = {}
@@ -668,6 +672,7 @@ async def indexer_function(
             if chunk_thumb and chunk_thumb.exists():
                 thumb_dest = thumbnails_cache_dir / f"{content_hash}.jpg"
                 if _cache_thumbnail(chunk_thumb, thumb_dest):
+                    add_thumbnail(content_hash)
                     print(f"[OK] Cached thumbnail: {thumb_dest}")
 
         # Create video node
