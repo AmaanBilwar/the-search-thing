@@ -173,7 +173,6 @@ async def search_images(search_query: str, limit: int = 10) -> dict:
     return {"response": helix_response, "results": results, "query": search_query}
 
 
-# async def search_file_vids_together(search_query: str) -> dict:
 async def goated_search(search_query: str) -> dict:
     file_search_params = {"search_text": search_query}
     video_search_params = {"search_text": search_query}
