@@ -21,16 +21,16 @@ export default function Footer() {
   const [errorMessage, setErrorMessage] = useState('')
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
   const popoverRef = useRef<HTMLDivElement>(null)
-  
-  const { 
-    currentJobId, 
-    setCurrentJobId, 
-    indexingLocation, 
+
+  const {
+    currentJobId,
+    setCurrentJobId,
+    indexingLocation,
     setIndexingLocation,
     setDirIndexed,
-    dirIndexed,
     jobStatus,
-    setJobStatus
+    setJobStatus,
+    setAwaitingIndexing,
   } = useAppContext()
 
   // Close popover when clicking outside
@@ -50,7 +50,7 @@ export default function Footer() {
     }
   }, [isPopoverOpen])
 
-  // Poll job status every 2 seconds 
+  // Poll job status every 2 seconds
   useEffect(() => {
     if (!currentJobId) {
       setJobStatus(null)
@@ -65,15 +65,15 @@ export default function Footer() {
         setJobStatus(status)
         if (status.status === 'completed' || status.status === 'failed') {
           clearInterval(intervalId)
-          // Clear job state after completion
-          if (status.status === 'completed') {
-            setTimeout(() => {
-              setCurrentJobId(null)
-              setIndexingLocation(null)
-              setDirIndexed(null)
-              setJobStatus(null)
-            }, 3000)
-          }
+          // Clear job state after completion or failure
+          const delay = status.status === 'completed' ? 3000 : 5000
+          setTimeout(() => {
+            setCurrentJobId(null)
+            setIndexingLocation(null)
+            setDirIndexed(null)
+            setJobStatus(null)
+            setAwaitingIndexing(false)
+          }, delay)
         }
       } catch (error) {
         console.error('Error fetching index status:', error)
@@ -86,7 +86,7 @@ export default function Footer() {
       isActive = false
       clearInterval(intervalId)
     }
-  }, [currentJobId, search, setCurrentJobId, setIndexingLocation, setDirIndexed, setJobStatus])
+  }, [currentJobId, search, setCurrentJobId, setIndexingLocation, setDirIndexed, setJobStatus, setAwaitingIndexing])
 
   const handleStartIndexing = async () => {
     const res = await search.openFileDialog()
