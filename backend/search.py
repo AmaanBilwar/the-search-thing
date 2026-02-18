@@ -1,4 +1,4 @@
-import asyncio
+import asyncio 
 import re
 import sys
 
@@ -198,6 +198,14 @@ async def goated_search(search_query: str) -> dict:
         return_exceptions=True,
     )
 
+    for label, result in (
+        ("file", file_search_results),
+        ("video", video_search_results),
+        ("image", image_search_results),
+    ):
+        if isinstance(result, BaseException):
+            print(f"{label} search failed: {result}")
+
     file_items: list[dict] = []
     video_items: list[dict] = []
     image_items: list[dict] = []
@@ -395,9 +403,12 @@ async def goated_search(search_query: str) -> dict:
         image_items.clear()
         image_items.extend(deduped)
 
-    normalize_file_results(file_search_results)
-    normalize_video_results(video_search_results)
-    normalize_image_results(image_search_results)
+    if not isinstance(file_search_results, BaseException):
+        normalize_file_results(file_search_results)
+    if not isinstance(video_search_results, BaseException):
+        normalize_video_results(video_search_results)
+    if not isinstance(image_search_results, BaseException):
+        normalize_image_results(image_search_results)
 
     keywords = re.findall(r"\w+", search_query.lower())
 
