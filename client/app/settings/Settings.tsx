@@ -1,9 +1,9 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Settings as SettingsIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import SettingsSidebar from '../components/settings/SettingsSidebar'
 import SettingsContent from '../components/settings/SettingsContent'
-import { useState } from 'react'
 
 export default function Settings() {
   const navigate = useNavigate()
@@ -14,11 +14,10 @@ export default function Settings() {
   }
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* Header */}
+    <div className="flex flex-col gap-5 h-screen">
       <div
         className={cn(
-          'flex flex-row items-center flex-none min-h-[35px]',
+          'flex flex-row items-center gap-3 flex-none min-h-[55px]',
           'bg-zinc-800/60 px-4',
           'shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
         )}
@@ -27,15 +26,18 @@ export default function Settings() {
           onClick={() => navigate('/')}
           className={cn(
             'flex items-center justify-center',
-            'h-5 w-5 rounded-md',
+            'h-8 w-8 rounded-md',
             'text-zinc-400 hover:text-zinc-100',
             'hover:bg-zinc-700/60',
             'transition-colors duration-150'
           )}
           aria-label="Back to search"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-5 w-5" />
         </button>
+
+        <SettingsIcon className="h-5 w-5 text-zinc-400" />
+        <span className="text-lg font-medium text-zinc-100">Settings</span>
       </div>
 
       <div
