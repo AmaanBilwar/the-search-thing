@@ -4,9 +4,12 @@ import Home from '@/app/home/Home'
 import Settings from '@/app/settings/Settings'
 import './styles/app.css'
 import { AppProvider } from './AppContext'
+import { useKeybinds } from './hooks/use-keybinds'
+import { matchesCombo } from '@/lib/storage/keybind-store'
 
 function GlobalHotkeys() {
   const navigate = useNavigate()
+  const { keybinds } = useKeybinds()
 
   useEffect(() => {
     const runAfterRouteChange = (action: () => void) => {
@@ -14,9 +17,7 @@ function GlobalHotkeys() {
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      const key = event.key.toLowerCase()
-
-      if (event.ctrlKey && key === 'f') {
+      if (matchesCombo(event, keybinds.search)) {
         event.preventDefault()
         navigate('/')
         runAfterRouteChange(() => {
@@ -29,7 +30,7 @@ function GlobalHotkeys() {
         return
       }
 
-      if (event.altKey && key === 'f') {
+      if (matchesCombo(event, keybinds.index)) {
         event.preventDefault()
         navigate('/')
         runAfterRouteChange(() => {
@@ -41,7 +42,7 @@ function GlobalHotkeys() {
         return
       }
 
-      if (event.ctrlKey && key === 'b') {
+      if (matchesCombo(event, keybinds.settings)) {
         event.preventDefault()
         navigate('/settings')
       }
@@ -49,7 +50,7 @@ function GlobalHotkeys() {
 
     window.addEventListener('keydown', handleKeyDown, true)
     return () => window.removeEventListener('keydown', handleKeyDown, true)
-  }, [navigate])
+  }, [navigate, keybinds])
 
   return null
 }

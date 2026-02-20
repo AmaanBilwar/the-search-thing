@@ -11,8 +11,8 @@ type IconSpec =
 
 const icons: Record<(typeof items)[number], IconSpec> = {
   General: { type: 'lucide', Icon: Settings },
-  Keybinds: { type: 'image', src: about, alt: 'About' },
-  About: { type: 'lucide', Icon: Command },
+  About: { type: 'image', src: about, alt: 'About' },
+  Keybinds: { type: 'lucide', Icon: Command },
 }
 
 type SettingsSideBarProps = {
