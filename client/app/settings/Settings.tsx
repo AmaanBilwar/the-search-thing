@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Settings as SettingsIcon } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import SettingsSidebar from '../components/SettingsSidebar'
-import SettingsContent from '../components/SettingsContent'
+import SettingsSidebar from '../components/settings/SettingsSidebar'
+import SettingsContent from '../components/settings/SettingsContent'
 import { useState } from 'react'
 
 export default function Settings() {
