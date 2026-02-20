@@ -5,6 +5,7 @@ import { registerResourcesProtocol } from './protocols'
 import { registerWindowHandlers } from '@/lib/conveyor/handlers/window-handler'
 import { registerAppHandlers } from '@/lib/conveyor/handlers/app-handler'
 import { registerSearchHandlers } from '@/lib/conveyor/handlers/search-handler'
+import { registerSearchHistoryHandlers } from '@/lib/conveyor/handlers/search-history-handler'
 
 let mainWindow: BrowserWindow | null = null
 
