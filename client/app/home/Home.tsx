@@ -16,9 +16,10 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<SearchResponse>()
   const [hasSearched, setHasSearched] = useState(false) //temporary logic (pls remove in the future :pray:)
   const [isLoading, setIsLoading] = useState(false)
+  const [recentSearches, setRecentSearches] = useState<SearchHistoryEntry[]>([])
   const {
-    awaitingIndexing,
     setAwaitingIndexing,
+    awaitingIndexing,
     currentJobId,
     setCurrentJobId,
     setIndexingLocation,
