@@ -11,8 +11,6 @@ export default function Keybinds() {
       )}
     >
       <div className="text-xs uppercase tracking-wider text-zinc-500">Keybinds</div>
-      <div className="text-xl text-zinc-200">Keybinds Settings</div>
-
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-4">
           <div>

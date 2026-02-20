@@ -3,7 +3,7 @@ import type { ComponentType } from 'react'
 import { Settings, Command } from 'lucide-react'
 import about from '@/resources/about.svg'
 
-const items = ['General', 'About', 'Keybinds'] as const
+const items = ['General', 'Keybinds', 'About'] as const
 
 type IconSpec =
   | { type: 'lucide'; Icon: ComponentType<{ className?: string }> }
@@ -11,8 +11,8 @@ type IconSpec =
 
 const icons: Record<(typeof items)[number], IconSpec> = {
   General: { type: 'lucide', Icon: Settings },
-  About: { type: 'image', src: about, alt: 'About' },
-  Keybinds: { type: 'lucide', Icon: Command },
+  Keybinds: { type: 'image', src: about, alt: 'About' },
+  About: { type: 'lucide', Icon: Command },
 }
 
 type SettingsSideBarProps = {
