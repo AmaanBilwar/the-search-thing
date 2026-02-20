@@ -29,7 +29,6 @@ export function initializeApp(): void {
   registerKeybindsHandlers()
 }
 
-/**
  * Creates (or re-creates) the main application window.
  * IPC handlers and protocol registration are NOT performed here — call
  * initializeApp() once at startup instead.
