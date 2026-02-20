@@ -1,0 +1,142 @@
+
+export type KeyCombo = {
+  key: string
+  ctrlKey: boolean
+  altKey: boolean
+  shiftKey: boolean
+  metaKey: boolean
+}
+
+// current keybind actions
+export type KeybindAction = 'search' | 'index' | 'settings'
+export type KeybindMap = Record<KeybindAction, KeyCombo>
+export type KeybindMeta = {
+  action: KeybindAction
+  label: string
+  description: string
+}
+
+const STORAGE_KEY = 'user-keybinds'
+// all keybind actions right now
+export const KEYBIND_ACTIONS: KeybindMeta[] = [
+  { action: 'search', label: 'Search', description: 'Focus the search bar and run a search.' },
+  { action: 'index', label: 'Index directory', description: 'Open the indexing dialog.' },
+  { action: 'settings', label: 'Open settings', description: 'Navigate to the settings page.' },
+]
+
+//default keybinds
+export const DEFAULT_KEYBINDS: KeybindMap = {
+  search: { key: 'f', ctrlKey: true, altKey: false, shiftKey: false, metaKey: false },
+  index: { key: 'f', ctrlKey: false, altKey: true, shiftKey: false, metaKey: false },
+  settings: { key: 'b', ctrlKey: true, altKey: false, shiftKey: false, metaKey: false },
+}
+
+export const KEYBIND_CHANGE_EVENT = 'keybind-store:change'
+
+// helpers
+export const formatCombo = (combo: KeyCombo): string => {
+  const parts: string[] = []
+  if (combo.ctrlKey) parts.push('Ctrl')
+  if (combo.altKey) parts.push('Alt')
+  if (combo.shiftKey) parts.push('Shift')
+  if (combo.metaKey) parts.push('Meta')
+  parts.push(combo.key.length === 1 ? combo.key.toUpperCase() : capitalize(combo.key))
+  return parts.join(' + ')
+}
+
+export const comboTokens = (combo: KeyCombo): string[] => {
+  const parts: string[] = []
+  if (combo.ctrlKey) parts.push('Ctrl')
+  if (combo.altKey) parts.push('Alt')
+  if (combo.shiftKey) parts.push('Shift')
+  if (combo.metaKey) parts.push('Meta')
+  parts.push(combo.key.length === 1 ? combo.key.toUpperCase() : capitalize(combo.key))
+  return parts
+}
+
+export const matchesCombo = (event: KeyboardEvent, combo: KeyCombo): boolean => {
+  return (
+    event.key.toLowerCase() === combo.key.toLowerCase() &&
+    event.ctrlKey === combo.ctrlKey &&
+    event.altKey === combo.altKey &&
+    event.shiftKey === combo.shiftKey &&
+    event.metaKey === combo.metaKey
+  )
+}
+
+export const comboFromEvent = (event: KeyboardEvent): KeyCombo | null => {
+  const key = event.key.toLowerCase()
+
+  // Ignore bare modifier presses – the user hasn't finished the combo yet
+  if (['control', 'alt', 'shift', 'meta'].includes(key)) {
+    return null
+  }
+
+  return {
+    key,
+    ctrlKey: event.ctrlKey,
+    altKey: event.altKey,
+    shiftKey: event.shiftKey,
+    metaKey: event.metaKey,
+  }
+}
+
+export const combosEqual = (a: KeyCombo, b: KeyCombo): boolean => {
+  return (
+    a.key === b.key &&
+    a.ctrlKey === b.ctrlKey &&
+    a.altKey === b.altKey &&
+    a.shiftKey === b.shiftKey &&
+    a.metaKey === b.metaKey
+  )
+}
+
+export const findConflict = (
+  combo: KeyCombo,
+  current: KeybindMap,
+  ignoreAction: KeybindAction
+): KeybindAction | null => {
+  for (const [action, existing] of Object.entries(current) as [KeybindAction, KeyCombo][]) {
+    if (action === ignoreAction) continue
+    if (combosEqual(combo, existing)) return action
+  }
+  return null
+}
+
+// all local storage related 
+// load keybind map from local storage
+export const loadKeybinds = (): KeybindMap => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return { ...DEFAULT_KEYBINDS }
+
+    const parsed = JSON.parse(raw) as Partial<KeybindMap>
+
+    return {
+      ...DEFAULT_KEYBINDS,
+      ...parsed,
+    }
+  } catch {
+    return { ...DEFAULT_KEYBINDS }
+  }
+}
+
+export const saveKeybinds = (map: KeybindMap): void => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(map))
+  window.dispatchEvent(new CustomEvent(KEYBIND_CHANGE_EVENT))
+}
+
+export const updateKeybind = (action: KeybindAction, combo: KeyCombo): void => {
+  const current = loadKeybinds()
+  current[action] = combo
+  saveKeybinds(current)
+}
+
+export const resetKeybinds = (): void => {
+  saveKeybinds({ ...DEFAULT_KEYBINDS })
+}
+
+function capitalize(s: string): string {
+  if (s.length === 0) return s
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
