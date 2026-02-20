@@ -46,6 +46,7 @@ export default function Home() {
       <div className="flex flex-row items-center flex-none min-h-[55px] bg-zinc-800/60 pl-4 ">
         <Searchbar
           className="bg-transparent shadow-none px-0"
+          data-search-input="true"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value)
