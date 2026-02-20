@@ -43,7 +43,6 @@ type KeybindRowProps = {
 }
 
 function KeybindRow({
-  action,
   label,
   description,
   combo,
@@ -75,25 +74,23 @@ function KeybindRow({
     return () => window.removeEventListener('keydown', handleKeyDown, true)
   }, [isRecording, onCancelRecording, onRecorded])
 
-  const isDefault = combosEqual(combo, DEFAULT_KEYBINDS[action])
-
   return (
     <div
       className={cn(
         'flex items-center justify-between gap-4 px-3 py-2 rounded-md transition-colors',
-        isRecording && 'bg-zinc-700/40 ring-1 ring-amber-500/50'
+        isRecording && 'bg-zinc-700/40 ring-1 ring-gray-500/50'
       )}
     >
       <div className="flex flex-col gap-0.5 min-w-0">
         <div className="text-sm text-zinc-200">{label}</div>
         <div className="text-xs text-zinc-500">{description}</div>
-        {conflict && <div className="text-xs text-amber-400 mt-0.5">Conflicts with: {conflict}</div>}
+        {conflict && <div className="text-xs text-gray-400 mt-0.5">Conflicts with: {conflict}</div>}
       </div>
 
       <div className="flex items-center gap-3 flex-shrink-0">
         {isRecording ? (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-amber-400 animate-pulse">Press keys…</span>
+            <span className="text-xs text-gray-400 animate-pulse">Press keys…</span>
             <button
               onClick={onCancelRecording}
               className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors px-1.5 py-0.5 rounded border border-zinc-600/50 hover:border-zinc-500"
@@ -112,9 +109,6 @@ function KeybindRow({
             title="Click to rebind"
           >
             <ComboDisplay combo={combo} />
-            {!isDefault && (
-              <span className="text-[10px] text-zinc-600 group-hover:text-zinc-400 transition-colors ml-1">•</span>
-            )}
           </button>
         )}
       </div>
