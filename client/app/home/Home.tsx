@@ -16,15 +16,15 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<SearchResponse>()
   const [hasSearched, setHasSearched] = useState(false) //temporary logic (pls remove in the future :pray:)
   const [isLoading, setIsLoading] = useState(false)
-  const { 
-    awaitingIndexing, 
+  const {
+    awaitingIndexing,
     setAwaitingIndexing,
     currentJobId,
+    setCurrentJobId,
     setIndexingLocation,
-    indexingLocation
+    indexingLocation,
   } = useAppContext()
   const [hasInteracted, setHasInteracted] = useState(false)
-  const [currentJobId, setCurrentJobId] = useState<string | null>(null)
   const navigate = useNavigate()
 
   const handleSearch = async () => {
@@ -89,7 +89,7 @@ export default function Home() {
             setHasSearched(false)
             setAwaitingIndexing(false)
             setHasInteracted(true)
-            
+
             // If user starts typing a new query and there's an active indexing job in results,
             // move it to the footer
             if (currentJobId && indexingLocation === 'results' && newQuery.length > 0) {
