@@ -42,7 +42,7 @@ export default function Settings() {
         className={cn(
           'flex flex-1 min-h-0 flex-row items-stretch ',
           'border-1 border-zinc-700/80 bg-zinc-800/60',
-          ' sadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
+          ' shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
         )}
       >
         <SettingsSidebar selectedItem={selectedItem} onSelect={handleSelect} />
