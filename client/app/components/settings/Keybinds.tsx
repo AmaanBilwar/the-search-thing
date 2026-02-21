@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useKeybinds } from '@/app/hooks/use-keybinds'
 import {
@@ -117,9 +117,14 @@ function KeybindRow({
 }
 
 export default function Keybinds() {
-  const { keybinds, updateKeybind, resetKeybinds } = useKeybinds()
+  const { keybinds, setAllKeybinds } = useKeybinds()
   const [recordingAction, setRecordingAction] = useState<KeybindAction | null>(null)
   const [conflict, setConflict] = useState<{ action: KeybindAction; conflictsWith: string } | null>(null)
+  const [draftKeybinds, setDraftKeybinds] = useState(() => ({ ...keybinds }))
+
+  useEffect(() => {
+    setDraftKeybinds({ ...keybinds })
+  }, [keybinds])
 
   const handleStartRecording = (action: KeybindAction) => {
     setConflict(null)
@@ -131,7 +136,7 @@ export default function Keybinds() {
   }
 
   const handleRecorded = (action: KeybindAction, combo: KeyCombo) => {
-    const conflictingAction = findConflict(combo, keybinds, action)
+    const conflictingAction = findConflict(combo, draftKeybinds, action)
     if (conflictingAction) {
       const meta = KEYBIND_ACTIONS.find((m) => m.action === conflictingAction)
       setConflict({ action, conflictsWith: meta?.label ?? conflictingAction })
@@ -141,13 +146,35 @@ export default function Keybinds() {
     }
 
     setConflict(null)
-    updateKeybind(action, combo)
+    setDraftKeybinds((prev) => ({ ...prev, [action]: combo }))
     setRecordingAction(null)
   }
 
   const hasCustomBindings = KEYBIND_ACTIONS.some(
-    ({ action }) => !combosEqual(keybinds[action], DEFAULT_KEYBINDS[action])
+    ({ action }) => !combosEqual(draftKeybinds[action], DEFAULT_KEYBINDS[action])
   )
+
+  const hasUnsavedChanges = useMemo(() => {
+    return KEYBIND_ACTIONS.some(({ action }) => !combosEqual(draftKeybinds[action], keybinds[action]))
+  }, [draftKeybinds, keybinds])
+
+  const handleDiscard = () => {
+    setConflict(null)
+    setRecordingAction(null)
+    setDraftKeybinds({ ...keybinds })
+  }
+
+  const handleSave = () => {
+    setConflict(null)
+    setRecordingAction(null)
+    void setAllKeybinds(draftKeybinds)
+  }
+
+  const handleResetDefaults = () => {
+    setConflict(null)
+    setRecordingAction(null)
+    setDraftKeybinds({ ...DEFAULT_KEYBINDS })
+  }
 
   return (
     <div
@@ -159,19 +186,44 @@ export default function Keybinds() {
       )}
     >
       <div className="flex items-center justify-between">
-        <div className="text-xs uppercase tracking-wider text-zinc-500">Keybinds</div>
-        {hasCustomBindings && (
+        <div className="flex items-center gap-3">
+          <div className="text-xs uppercase tracking-wider text-zinc-500">Keybinds</div>
+          {hasUnsavedChanges && <div className="text-[11px] text-amber-300/80">Unsaved changes</div>}
+        </div>
+        <div className="flex items-center gap-2">
+          {hasCustomBindings && (
+            <button
+              onClick={handleResetDefaults}
+              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors px-2 py-1 rounded border border-zinc-700 hover:border-zinc-500"
+            >
+              Reset to defaults
+            </button>
+          )}
           <button
-            onClick={() => {
-              setConflict(null)
-              setRecordingAction(null)
-              resetKeybinds()
-            }}
-            className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors px-2 py-1 rounded border border-zinc-700 hover:border-zinc-500"
+            onClick={handleDiscard}
+            disabled={!hasUnsavedChanges}
+            className={cn(
+              'text-xs transition-colors px-2 py-1 rounded border',
+              hasUnsavedChanges
+                ? 'text-zinc-400 hover:text-zinc-200 border-zinc-700 hover:border-zinc-500'
+                : 'text-zinc-600 border-zinc-800 cursor-not-allowed'
+            )}
           >
-            Reset all
+            Discard
           </button>
-        )}
+          <button
+            onClick={handleSave}
+            disabled={!hasUnsavedChanges}
+            className={cn(
+              'text-xs transition-colors px-2 py-1 rounded border',
+              hasUnsavedChanges
+                ? 'text-emerald-200 border-emerald-500/60 hover:border-emerald-400'
+                : 'text-zinc-600 border-zinc-800 cursor-not-allowed'
+            )}
+          >
+            Save
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-1">
@@ -181,7 +233,7 @@ export default function Keybinds() {
             action={action}
             label={label}
             description={description}
-            combo={keybinds[action]}
+            combo={draftKeybinds[action]}
             isRecording={recordingAction === action}
             onStartRecording={() => handleStartRecording(action)}
             onCancelRecording={handleCancelRecording}
