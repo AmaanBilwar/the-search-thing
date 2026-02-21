@@ -12,6 +12,10 @@ const components = {About, General, Keybinds}
 export default function SettingsContent({ item }: SettingsContentProps) {
   const ComponentToRender = components[item as keyof typeof components];
   
+  if (!ComponentToRender) {
+    return null
+  }
+
   return (
     <div
       className={cn(
