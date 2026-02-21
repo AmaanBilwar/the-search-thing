@@ -16,7 +16,6 @@ export type KeybindMeta = {
   description: string
 }
 
-const STORAGE_KEY = 'user-keybinds'
 // all keybind actions right now
 export const KEYBIND_ACTIONS: KeybindMeta[] = [
   { action: 'search', label: 'Search', description: 'Focus the search bar and run a search.' },
@@ -101,39 +100,6 @@ export const findConflict = (
     if (combosEqual(combo, existing)) return action
   }
   return null
-}
-
-// all local storage related 
-// load keybind map from local storage
-export const loadKeybinds = (): KeybindMap => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return { ...DEFAULT_KEYBINDS }
-
-    const parsed = JSON.parse(raw) as Partial<KeybindMap>
-
-    return {
-      ...DEFAULT_KEYBINDS,
-      ...parsed,
-    }
-  } catch {
-    return { ...DEFAULT_KEYBINDS }
-  }
-}
-
-export const saveKeybinds = (map: KeybindMap): void => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(map))
-  window.dispatchEvent(new CustomEvent(KEYBIND_CHANGE_EVENT))
-}
-
-export const updateKeybind = (action: KeybindAction, combo: KeyCombo): void => {
-  const current = loadKeybinds()
-  current[action] = combo
-  saveKeybinds(current)
-}
-
-export const resetKeybinds = (): void => {
-  saveKeybinds({ ...DEFAULT_KEYBINDS })
 }
 
 function capitalize(s: string): string {
