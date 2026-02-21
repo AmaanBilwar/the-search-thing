@@ -6,6 +6,7 @@ import { registerWindowHandlers } from '@/lib/conveyor/handlers/window-handler'
 import { registerAppHandlers } from '@/lib/conveyor/handlers/app-handler'
 import { registerSearchHandlers } from '@/lib/conveyor/handlers/search-handler'
 import { registerSearchHistoryHandlers } from '@/lib/conveyor/handlers/search-history-handler'
+import { registerKeybindsHandlers } from '@/lib/conveyor/handlers/keybinds-handler'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -24,6 +25,8 @@ export function initializeApp(): void {
   registerWindowHandlers(getMainWindow)
   registerAppHandlers(app)
   registerSearchHandlers()
+  registerSearchHistoryHandlers()
+  registerKeybindsHandlers()
 }
 
 /**
