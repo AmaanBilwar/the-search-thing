@@ -116,9 +116,6 @@ function KeybindRow({
             title="Click to rebind"
           >
             <ComboDisplay combo={combo} />
-            {!isDefault && (
-              <span className="text-[10px] text-zinc-600 group-hover:text-zinc-400 transition-colors ml-1">•</span>
-            )}
           </button>
         )}
       </div>
