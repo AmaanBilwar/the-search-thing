@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Settings } from 'lucide-react'
 import { Searchbar } from '../components/ui/searchbar'
 import { useConveyor } from '@/app/hooks/use-conveyor'
 import { cn } from '@/lib/utils'
@@ -15,8 +17,16 @@ export default function Home() {
   const [hasSearched, setHasSearched] = useState(false) //temporary logic (pls remove in the future :pray:)
   const [isLoading, setIsLoading] = useState(false)
   const [recentSearches, setRecentSearches] = useState<SearchHistoryEntry[]>([])
-  const { setAwaitingIndexing, currentJobId, setIndexingLocation, indexingLocation } = useAppContext()
+  const {
+    setAwaitingIndexing,
+    awaitingIndexing,
+    currentJobId,
+    setCurrentJobId,
+    setIndexingLocation,
+    indexingLocation,
+  } = useAppContext()
   const [hasInteracted, setHasInteracted] = useState(false)
+  const navigate = useNavigate()
 
   const refreshRecentSearches = useCallback(async () => {
     try {
@@ -66,10 +76,40 @@ export default function Home() {
     }
   }
 
+  useEffect(() => {
+    const raw = sessionStorage.getItem('home-state')
+    if (!raw) return
+    try {
+      const state = JSON.parse(raw) as {
+        query?: string
+        hasInteracted?: boolean
+        hasSearched?: boolean
+        searchResults?: SearchResponse
+        awaitingIndexing?: boolean
+        currentJobId?: string | null
+      }
+      if (typeof state.query === 'string') setQuery(state.query)
+      if (typeof state.hasInteracted === 'boolean') setHasInteracted(state.hasInteracted)
+      if (typeof state.hasSearched === 'boolean') setHasSearched(state.hasSearched)
+      if (state.searchResults !== undefined) setSearchResults(state.searchResults)
+      if (typeof state.awaitingIndexing === 'boolean') setAwaitingIndexing(state.awaitingIndexing)
+      if (typeof state.currentJobId !== 'undefined') setCurrentJobId(state.currentJobId ?? null)
+    } catch {
+      // ignore malformed storage
+    }
+  }, [])
+
+  useEffect(() => {
+    const state = { query, hasInteracted, hasSearched, searchResults, awaitingIndexing, currentJobId }
+    sessionStorage.setItem('home-state', JSON.stringify(state))
+  }, [query, hasInteracted, hasSearched, searchResults, awaitingIndexing, currentJobId])
+
   return (
     <div className="welcome-content flex flex-col gap-5 h-screen">
-      <div className="flex items-center flex-none min-h-[55px]">
+      <div className="flex flex-row items-center flex-none min-h-[55px] bg-zinc-800/60 pl-4 ">
         <Searchbar
+          className="bg-transparent shadow-none px-0"
+          data-search-input="true"
           value={query}
           onChange={(e) => {
             const newQuery = e.target.value
@@ -92,6 +132,13 @@ export default function Home() {
             }
           }}
         />
+        <button
+          onClick={() => navigate('/settings')}
+          className="flex items-center justify-center h-8 w-8 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700/60 transition-colors duration-150 flex-none mx-2"
+          aria-label="Open settings"
+        >
+          <Settings className="h-5 w-5" />
+        </button>
       </div>
 
       {hasInteracted ? (

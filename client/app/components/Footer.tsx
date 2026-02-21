@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useConveyor } from '../hooks/use-conveyor'
 import { Button } from './ui/button'
 import about from '@/resources/about.svg'
@@ -93,7 +93,7 @@ export default function Footer() {
     }
   }, [currentJobId, search, setCurrentJobId, setIndexingLocation, setDirIndexed, setJobStatus, setAwaitingIndexing])
 
-  const handleStartIndexing = async () => {
+  const handleStartIndexing = useCallback(async () => {
     const res = await search.openFileDialog()
 
     if (!res || res.length === 0) return
@@ -119,7 +119,7 @@ export default function Footer() {
     } finally {
       setIsIndexing(false)
     }
-  }
+  }, [search])
 
   const renderStatus = () => {
     // Show simple status when job is in results or just status message
@@ -180,7 +180,13 @@ export default function Footer() {
 
       <div className="text-sm flex items-center flex-1 justify-center px-4">{renderStatus()}</div>
 
-      <Button variant="transparent" size="sm" onClick={handleStartIndexing} disabled={isIndexing || !!currentJobId}>
+      <Button
+        variant="transparent"
+        size="sm"
+        onClick={handleStartIndexing}
+        disabled={isIndexing || !!currentJobId}
+        data-index-button="true"
+      >
         Index <img src={enter} alt="index File" className="w-5 h-6 opacity-75" />
       </Button>
     </div>
