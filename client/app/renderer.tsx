@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import appIcon from '@/resources/build/electron.png'
+import appIcon from '@/resources/build/logo-white-bg.webp'
 import { WindowContextProvider, menuItems } from '@/app/components/window'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import App from './app'
