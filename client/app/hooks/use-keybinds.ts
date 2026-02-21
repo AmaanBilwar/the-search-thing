@@ -1,45 +1,49 @@
 import { useCallback, useEffect, useState } from 'react'
 
+import { type KeybindMap, type KeybindAction, type KeyCombo, KEYBIND_CHANGE_EVENT, DEFAULT_KEYBINDS } from '@/lib/storage/keybind-store'
 import {
-  type KeybindMap,
-  type KeybindAction,
-  type KeyCombo,
   loadKeybinds,
   saveKeybinds,
   updateKeybind as storeUpdateKeybind,
   resetKeybinds as storeResetKeybinds,
-  KEYBIND_CHANGE_EVENT,
-} from '@/lib/storage/keybind-store'
+} from '@/lib/storage/keybinds-client'
 
 export function useKeybinds() {
-  const [keybinds, setKeybinds] = useState<KeybindMap>(loadKeybinds)
+  const [keybinds, setKeybinds] = useState<KeybindMap>({ ...DEFAULT_KEYBINDS })
 
-  // Re-read from localStorage whenever any part of the app writes new bindings.
+  // Re-read from DB whenever any part of the app writes new bindings.
   useEffect(() => {
-    const sync = () => setKeybinds(loadKeybinds())
+    let isActive = true
+    const sync = () => {
+      void loadKeybinds().then((next) => {
+        if (isActive) {
+          setKeybinds(next)
+        }
+      })
+    }
+
+    sync()
 
     window.addEventListener(KEYBIND_CHANGE_EVENT, sync)
-    window.addEventListener('storage', sync)
 
     return () => {
+      isActive = false
       window.removeEventListener(KEYBIND_CHANGE_EVENT, sync)
-      window.removeEventListener('storage', sync)
     }
   }, [])
 
   const updateKeybind = useCallback((action: KeybindAction, combo: KeyCombo) => {
-    storeUpdateKeybind(action, combo)
     setKeybinds((prev) => ({ ...prev, [action]: combo }))
+    void storeUpdateKeybind(action, combo)
   }, [])
 
   const setAllKeybinds = useCallback((map: KeybindMap) => {
-    saveKeybinds(map)
     setKeybinds(map)
+    void saveKeybinds(map)
   }, [])
 
   const resetKeybinds = useCallback(() => {
-    storeResetKeybinds()
-    setKeybinds(loadKeybinds())
+    void storeResetKeybinds().then((map) => setKeybinds(map))
   }, [])
 
   return {
