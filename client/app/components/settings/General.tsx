@@ -1,6 +1,11 @@
 import { cn } from '@/lib/utils'
+import { useConveyor } from '@/app/hooks/use-conveyor'
+import { useGeneralSettings } from '@/app/hooks/use-general-settings'
 
 export default function General() {
+  const { settings, updateSetting } = useGeneralSettings()
+  const searchApi = useConveyor('search')
+
   return (
     <div
       className={cn(
@@ -20,9 +25,10 @@ export default function General() {
           </div>
           <button
             type="button"
+            onClick={() => updateSetting('launch-on-startup', !settings['launch-on-startup'])}
             className="h-7 px-3 rounded-md text-xs text-zinc-200 bg-zinc-700/60 hover:bg-zinc-700 transition-colors duration-150"
           >
-            Toggle
+            {settings['launch-on-startup'] ? 'On' : 'Off'}
           </button>
         </div>
 
@@ -34,13 +40,25 @@ export default function General() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="h-7 px-3 rounded-md text-xs text-zinc-200 bg-zinc-700/60 hover:bg-zinc-700 transition-colors duration-150"
+              onClick={() => updateSetting('theme', 'dark')}
+              className={cn(
+                'h-7 px-3 rounded-md text-xs transition-colors duration-150',
+                settings.theme === 'dark'
+                  ? 'text-zinc-100 bg-zinc-600/80 ring-1 ring-zinc-500/70'
+                  : 'text-zinc-200 bg-zinc-700/60 hover:bg-zinc-700'
+              )}
             >
               Dark
             </button>
             <button
               type="button"
-              className="h-7 px-3 rounded-md text-xs text-zinc-200 bg-zinc-700/60 hover:bg-zinc-700 transition-colors duration-150"
+              onClick={() => updateSetting('theme', 'light')}
+              className={cn(
+                'h-7 px-3 rounded-md text-xs transition-colors duration-150',
+                settings.theme === 'light'
+                  ? 'text-zinc-100 bg-zinc-600/80 ring-1 ring-zinc-500/70'
+                  : 'text-zinc-200 bg-zinc-700/60 hover:bg-zinc-700'
+              )}
             >
               Light
             </button>
@@ -52,10 +70,14 @@ export default function General() {
             <div className="text-sm text-zinc-200">Font</div>
             <div className="text-xs text-zinc-500">Choose Sans-Serif, Serif or Mono.</div>
           </div>
-          <select className="h-7 rounded-md bg-zinc-800/60 border-1 border-zinc-700/80 text-xs text-zinc-200 px-2">
-            <option>Sans-Serif</option>
-            <option>Serif</option>
-            <option>Mono</option>
+          <select
+            value={settings.font}
+            onChange={(event) => updateSetting('font', event.target.value as 'sans-serif' | 'serif' | 'mono')}
+            className="h-7 rounded-md bg-zinc-800/60 border-1 border-zinc-700/80 text-xs text-zinc-200 px-2"
+          >
+            <option value="sans-serif">Sans-Serif</option>
+            <option value="serif">Serif</option>
+            <option value="mono">Mono</option>
           </select>
         </div>
 
@@ -64,10 +86,14 @@ export default function General() {
             <div className="text-sm text-zinc-200">Search scope</div>
             <div className="text-xs text-zinc-500">Files, folders, or both.</div>
           </div>
-          <select className="h-7 rounded-md bg-zinc-800/60 border-1 border-zinc-700/80 text-xs text-zinc-200 px-2">
-            <option>Everything</option>
-            <option>Files Only</option>
-            <option>Folders Only</option>
+          <select
+            value={settings.scope}
+            onChange={(event) => updateSetting('scope', event.target.value as 'both' | 'files' | 'folders')}
+            className="h-7 rounded-md bg-zinc-800/60 border-1 border-zinc-700/80 text-xs text-zinc-200 px-2"
+          >
+            <option value="both">Everything</option>
+            <option value="files">Files Only</option>
+            <option value="folders">Folders Only</option>
           </select> 
         </div>
 
@@ -78,6 +104,9 @@ export default function General() {
           </div>
           <button
             type="button"
+            onClick={() => {
+              void searchApi.pruneSearchHistory(0)
+            }}
             className="h-7 px-3 rounded-md text-xs text-zinc-200 bg-zinc-700/60 hover:bg-zinc-700 transition-colors duration-150"
           >
             Clear
