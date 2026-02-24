@@ -12,10 +12,6 @@ body[data-font='sans-serif'] {
   font-family: system-ui, -apple-system, Arial, Helvetica, sans-serif;
 }
 
-body[data-font='serif'] {
-  font-family: Georgia, 'Times New Roman', Times, serif;
-}
-
 body[data-font='mono'] {
   font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 }
