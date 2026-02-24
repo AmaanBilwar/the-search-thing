@@ -17,7 +17,7 @@ export type GeneralSettingsState = {
 }
 
 export const DEFAULT_GENERAL_SETTINGS: GeneralSettingsState = {
-  'launch-on-startup': false,
+  'launch-on-startup': true,
   theme: 'dark',
   font: 'sans-serif',
   scope: 'both',

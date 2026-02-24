@@ -90,8 +90,6 @@ export const createGeneralSettingsStore = (adapter: SqliteAdapter) => {
   }
 
   const setGeneralSettings = (settings: GeneralSettingsState): GeneralSettingsState => {
-    adapter.exec('DELETE FROM general_settings')
-
     for (const [key, value] of Object.entries(settings) as [
       PersistedGeneralSettingKey,
       GeneralSettingsState[PersistedGeneralSettingKey],
