@@ -84,9 +84,9 @@ export default function General() {
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="text-xs uppercase tracking-wider text-zinc-500">General</div>
-          {hasUnsavedChanges && <div className="text-[11px] text-amber-300/80">Unsaved changes</div>}
-          {status === 'saved' && <div className="text-[11px] text-emerald-300/80">Saved</div>}
-          {status === 'cleared' && <div className="text-[11px] text-emerald-300/80">Cleared</div>}
+          {hasUnsavedChanges && <div className="text-[11px] text-amber-700/80 dark:text-amber-300/80">Unsaved changes</div>}
+          {status === 'saved' && <div className="text-[11px] text-emerald-700/80 dark:text-emerald-300/80">Saved</div>}
+          {status === 'cleared' && <div className="text-[11px] text-emerald-700/80 dark:text-emerald-300/80">Cleared</div>}
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -96,8 +96,8 @@ export default function General() {
             className={cn(
               'text-xs transition-colors px-2 py-1 rounded border',
               hasUnsavedChanges
-                ? 'text-zinc-400 hover:text-zinc-200 border-zinc-700 hover:border-zinc-500'
-                : 'text-zinc-600 border-zinc-800 cursor-not-allowed'
+                ? 'text-zinc-300 hover:text-zinc-200 border-zinc-600 hover:border-zinc-500 dark:text-zinc-400 dark:hover:text-zinc-200 dark:border-zinc-700 dark:hover:border-zinc-500'
+                : 'text-zinc-500 border-zinc-700 cursor-not-allowed dark:text-zinc-600 dark:border-zinc-800'
             )}
           >
             Discard
@@ -109,8 +109,8 @@ export default function General() {
             className={cn(
               'text-xs transition-colors px-2 py-1 rounded border',
               hasUnsavedChanges
-                ? 'text-emerald-200 border-emerald-500/60 hover:border-emerald-400'
-                : 'text-zinc-600 border-zinc-800 cursor-not-allowed'
+                ? 'text-emerald-700 border-emerald-700/70 hover:border-emerald-600 dark:text-emerald-200 dark:border-emerald-500/60 dark:hover:border-emerald-400'
+                : 'text-zinc-500 border-zinc-700 cursor-not-allowed dark:text-zinc-600 dark:border-zinc-800'
             )}
           >
             Save

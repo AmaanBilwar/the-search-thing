@@ -82,24 +82,24 @@ function KeybindRow({
     <div
       className={cn(
         'flex items-center justify-between gap-4 px-3 py-2 rounded-md transition-colors',
-        isRecording && 'bg-zinc-700/40 ring-1 ring-amber-500/50',
+        isRecording && 'bg-amber-100/70 ring-1 ring-amber-700/70 dark:bg-zinc-700/40 dark:ring-amber-500/50',
         conflict && 'bg-rose-500/10 ring-1 ring-rose-400/40'
       )}
     >
       <div className="flex flex-col gap-0.5 min-w-0">
         <div className="text-sm text-zinc-200">{label}</div>
         <div className="text-xs text-zinc-500">{description}</div>
-        {conflict && <div className="text-xs text-rose-300/80 mt-0.5">Conflicts with: {conflict}</div>}
+        {conflict && <div className="text-xs text-rose-700/80 dark:text-rose-300/80 mt-0.5">Conflicts with: {conflict}</div>}
       </div>
 
       <div className="flex items-center gap-3 flex-shrink-0">
         {isRecording ? (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-amber-400 animate-pulse">Press keys…</span>
+            <span className="text-xs text-amber-700 dark:text-amber-400 animate-pulse">Press keys...</span>
             <button
               type="button"
               onClick={onCancelRecording}
-              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors px-1.5 py-0.5 rounded border border-zinc-600/50 hover:border-zinc-500"
+              className="text-xs text-zinc-400 hover:text-zinc-300 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors px-1.5 py-0.5 rounded border border-zinc-600/70 hover:border-zinc-500"
             >
               Esc
             </button>
@@ -247,14 +247,14 @@ export default function Keybinds() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="text-xs uppercase tracking-wider text-zinc-500">Keybinds</div>
-          {hasUnsavedChanges && <div className="text-[11px] text-amber-300/80">Unsaved changes</div>}
-          {conflictItems.length > 0 && <div className="text-[11px] text-rose-300/80">Conflicting keybinds</div>}
+          {hasUnsavedChanges && <div className="text-[11px] text-amber-700/80 dark:text-amber-300/80">Unsaved changes</div>}
+          {conflictItems.length > 0 && <div className="text-[11px] text-rose-700/80 dark:text-rose-300/80">Conflicting keybinds</div>}
         </div>
         <div className="flex items-center gap-2">
           {hasCustomBindings && (
             <button
               onClick={handleResetDefaults}
-              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors px-2 py-1 rounded border border-zinc-700 hover:border-zinc-500"
+              className="text-xs text-zinc-400 hover:text-zinc-300 transition-colors px-2 py-1 rounded border border-zinc-700 hover:border-zinc-500"
             >
               Reset to defaults
             </button>
@@ -265,8 +265,8 @@ export default function Keybinds() {
             className={cn(
               'text-xs transition-colors px-2 py-1 rounded border',
               hasUnsavedChanges
-                ? 'text-zinc-400 hover:text-zinc-200 border-zinc-700 hover:border-zinc-500'
-                : 'text-zinc-600 border-zinc-800 cursor-not-allowed'
+                ? 'text-zinc-300 hover:text-zinc-200 border-zinc-600 hover:border-zinc-500 dark:text-zinc-400 dark:hover:text-zinc-200 dark:border-zinc-700 dark:hover:border-zinc-500'
+                : 'text-zinc-500 border-zinc-700 cursor-not-allowed dark:text-zinc-600 dark:border-zinc-800'
             )}
           >
             Discard
@@ -277,8 +277,8 @@ export default function Keybinds() {
             className={cn(
               'text-xs transition-colors px-2 py-1 rounded border',
               hasUnsavedChanges
-                ? 'text-emerald-200 border-emerald-500/60 hover:border-emerald-400'
-                : 'text-zinc-600 border-zinc-800 cursor-not-allowed'
+                ? 'text-emerald-700 border-emerald-700/70 hover:border-emerald-600 dark:text-emerald-200 dark:border-emerald-500/60 dark:hover:border-emerald-400'
+                : 'text-zinc-500 border-zinc-700 cursor-not-allowed dark:text-zinc-600 dark:border-zinc-800'
             )}
           >
             Save
@@ -314,8 +314,8 @@ export default function Keybinds() {
         </div>
       </div>
 
-      <div className="text-[11px] text-zinc-600 mt-auto">
-        Click a shortcut to rebind it. Press <kbd className="px-1 text-zinc-500">Esc</kbd> to cancel.
+      <div className="text-[11px] text-zinc-400 dark:text-zinc-600 mt-auto">
+        Click a shortcut to rebind it. Press <kbd className="px-1 text-zinc-300 dark:text-zinc-500">Esc</kbd> to cancel.
       </div>
 
       {isConflictModalOpen && (

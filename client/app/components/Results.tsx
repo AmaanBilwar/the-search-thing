@@ -244,7 +244,7 @@ const Results: React.FC<ResultsWithContextProps> = ({
                       <path d="m21 21-4.3-4.3" />
                       <circle cx="11" cy="11" r="7" />
                     </svg>
-                    <span className="text-white truncate" title={item.search_string}>
+                    <span className="text-zinc-100 truncate" title={item.search_string}>
                       {item.search_string}
                     </span>
                   </button>
@@ -268,9 +268,9 @@ const Results: React.FC<ResultsWithContextProps> = ({
                       handleOpen(result.path)
                     }
                   }}
-                  className={`flex flex-row p-2 rounded-xl cursor-pointer hover:bg-zinc-800 transition-colors border-b border-zinc-800 ${
-                    selectedItem?.path === result.path ? 'bg-zinc-700' : ''
-                  }`}
+                   className={`flex flex-row p-2 rounded-xl cursor-pointer hover:bg-zinc-800 transition-colors border-b border-zinc-800 ${
+                     selectedItem?.path === result.path ? 'bg-zinc-700' : ''
+                   }`}
                 >
                   <div className="pr-2">
                     {result.label === 'video' && result.thumbnail_url ? (
@@ -288,7 +288,7 @@ const Results: React.FC<ResultsWithContextProps> = ({
                       />
                     )}
                   </div>
-                  <div className="text-white truncate" title={result.path}>
+                  <div className="text-zinc-100 truncate" title={result.path}>
                     {getFileName(result.path)}
                   </div>
                 </div>

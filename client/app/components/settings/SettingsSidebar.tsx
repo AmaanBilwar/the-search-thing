@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 import { useEffect, useRef, type ComponentType, type KeyboardEvent } from 'react'
-import { Settings, Command } from 'lucide-react'
+import { Settings, Command, Info } from 'lucide-react'
 import about from '@/resources/about.svg'
 
 const items = ['General', 'Keybinds', 'About'] as const
@@ -11,7 +11,7 @@ type IconSpec =
 
 const icons: Record<(typeof items)[number], IconSpec> = {
   General: { type: 'lucide', Icon: Settings },
-  About: { type: 'image', src: about, alt: 'About' },
+  About: { type: 'lucide', Icon: Info },
   Keybinds: { type: 'lucide', Icon: Command },
 }
 

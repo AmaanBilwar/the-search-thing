@@ -147,7 +147,7 @@ export default function Footer() {
     }
 
     if (isIndexing) {
-      return <span className="opacity-75 text-white text-sm">Indexing...</span>
+      return <span className="opacity-75 text-zinc-100 text-sm">Indexing...</span>
     }
 
     if (errorMessage) {
@@ -162,7 +162,7 @@ export default function Footer() {
       <div className="relative" ref={popoverRef}>
         <Button
           variant="transparent"
-          className="p-0.5 w-auto h-auto rounded-full cursor-pointer hover:bg-white/5 transition-colors"
+          className="p-0.5 w-auto h-auto rounded-full cursor-pointer hover:bg-zinc-700/30 transition-colors"
           onClick={() => setIsPopoverOpen(!isPopoverOpen)}
         >
           <img src={about} alt="About" className="w-5 h-5 opacity-75" />
