@@ -5,6 +5,7 @@ import Settings from '@/app/settings/Settings'
 import './styles/app.css'
 import { AppProvider } from './AppContext'
 import { useKeybinds } from './hooks/use-keybinds'
+import { useGeneralSettings } from './hooks/use-general-settings'
 import { matchesCombo } from '@/lib/storage/keybind-store'
 
 function GlobalHotkeys() {
@@ -68,10 +69,25 @@ function GlobalHotkeys() {
   return null
 }
 
+function GlobalFontPreference() {
+  const { settings } = useGeneralSettings()
+
+  useEffect(() => {
+    document.body.dataset.font = settings.font
+
+    return () => {
+      delete document.body.dataset.font
+    }
+  }, [settings.font])
+
+  return null
+}
+
 export default function App() {
   return (
     <AppProvider>
       <MemoryRouter initialEntries={['/']} initialIndex={0}>
+        <GlobalFontPreference />
         <GlobalHotkeys />
         <Routes>
           <Route path="/" element={<Home />} />
