@@ -31,8 +31,8 @@ export function initializeApp(): void {
 
 export function createAppWindow(): BrowserWindow {
   mainWindow = new BrowserWindow({
-    width: 900,
-    height: 470,
+    width: 800,
+    height: 450,
     show: false,
     backgroundColor: '#1c1c1c',
     icon: appIcon,
