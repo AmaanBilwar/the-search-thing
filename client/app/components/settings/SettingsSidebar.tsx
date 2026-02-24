@@ -1,7 +1,6 @@
 import { cn } from '@/lib/utils'
 import { useEffect, useRef, type ComponentType, type KeyboardEvent } from 'react'
 import { Settings, Command, Info } from 'lucide-react'
-import about from '@/resources/about.svg'
 
 const items = ['General', 'Keybinds', 'About'] as const
 
