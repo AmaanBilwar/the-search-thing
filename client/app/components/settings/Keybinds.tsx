@@ -44,7 +44,6 @@ type KeybindRowProps = {
 }
 
 function KeybindRow({
-  action,
   label,
   description,
   combo,
@@ -75,8 +74,6 @@ function KeybindRow({
     window.addEventListener('keydown', handleKeyDown, true)
     return () => window.removeEventListener('keydown', handleKeyDown, true)
   }, [isRecording, onCancelRecording, onRecorded])
-
-  const isDefault = combosEqual(combo, DEFAULT_KEYBINDS[action])
 
   return (
     <div
@@ -320,10 +317,7 @@ export default function Keybinds() {
 
       {isConflictModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/60"
-            onClick={() => setIsConflictModalOpen(false)}
-          />
+          <div className="absolute inset-0 bg-black/60" onClick={() => setIsConflictModalOpen(false)} />
           <div className="relative z-10 w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-900/95 p-4 shadow-xl">
             <div className="text-sm text-zinc-200">Conflicting keybinds</div>
             <div className="text-xs text-zinc-400 mt-1">
@@ -345,16 +339,14 @@ export default function Keybinds() {
                     className="rounded-md border border-zinc-800 bg-zinc-900/60 px-3 py-2"
                   >
                     <div className="text-xs text-zinc-200">
-                      <span className="text-zinc-100">{item.comboLabel}</span>{' '}
-                      is assigned to{' '}
+                      <span className="text-zinc-100">{item.comboLabel}</span> is assigned to{' '}
                       <span className="text-zinc-100">{currentMeta?.label ?? item.action}</span> and{' '}
                       <span className="text-zinc-100">{conflictMeta?.label ?? item.conflictAction}</span>.
                     </div>
                     <div className="text-[11px] text-zinc-500 mt-1">
                       {previousMeta ? (
                         <>
-                          Saving will unbind{' '}
-                          <span className="text-zinc-300">{previousMeta.label}</span> in favor of{' '}
+                          Saving will unbind <span className="text-zinc-300">{previousMeta.label}</span> in favor of{' '}
                           <span className="text-zinc-300">{otherMeta?.label ?? otherAction}</span>.
                         </>
                       ) : (

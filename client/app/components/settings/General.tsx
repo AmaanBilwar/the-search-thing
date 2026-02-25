@@ -14,7 +14,7 @@ export default function General() {
   const searchApi = useConveyor('search')
   const windowApi = useConveyor('window')
   const [draftSettings, setDraftSettings] = useState<DraftGeneralSettings>({
-    "launch-on-startup": settings['launch-on-startup'],
+    'launch-on-startup': settings['launch-on-startup'],
     theme: settings.theme,
     font: settings.font,
     scope: settings.scope,
@@ -24,19 +24,13 @@ export default function General() {
 
   useEffect(() => {
     setDraftSettings({
-      "launch-on-startup": settings['launch-on-startup'],
+      'launch-on-startup': settings['launch-on-startup'],
       theme: settings.theme,
       font: settings.font,
       scope: settings.scope,
       'window-placement': settings['window-placement'],
     })
-  }, [
-    settings['launch-on-startup'],
-    settings.theme,
-    settings.font,
-    settings.scope,
-    settings['window-placement'],
-  ])
+  }, [settings['launch-on-startup'], settings.theme, settings.font, settings.scope, settings['window-placement']])
 
   useEffect(() => {
     if (status === 'idle') return
@@ -121,9 +115,13 @@ export default function General() {
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="text-xs uppercase tracking-wider text-zinc-500">General</div>
-          {hasUnsavedChanges && <div className="text-[11px] text-amber-700/80 dark:text-amber-600/80">Unsaved changes</div>}
+          {hasUnsavedChanges && (
+            <div className="text-[11px] text-amber-700/80 dark:text-amber-600/80">Unsaved changes</div>
+          )}
           {status === 'saved' && <div className="text-[11px] text-emerald-700/80 dark:text-emerald-600/80">Saved</div>}
-          {status === 'cleared' && <div className="text-[11px] text-emerald-700/80 dark:text-emerald-600/80">Cleared</div>}
+          {status === 'cleared' && (
+            <div className="text-[11px] text-emerald-700/80 dark:text-emerald-600/80">Cleared</div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -207,7 +205,7 @@ export default function General() {
             </button>
           </div>
         </div>
-        
+
         <div className="flex items-center justify-between gap-4">
           <div>
             <div className="text-sm text-zinc-200">Font</div>
@@ -246,7 +244,7 @@ export default function General() {
             <option value="both">Everything</option>
             <option value="files">Files Only</option>
             <option value="folders">Folders Only</option>
-          </select> 
+          </select>
         </div>
 
         <div className="flex items-center justify-between gap-4">
@@ -257,11 +255,7 @@ export default function General() {
           <select
             value={draftSettings['window-placement']}
             onChange={(event) => {
-              const nextValue = event.target.value as
-                | 'center'
-                | 'center-above'
-                | 'center-below'
-                | 'cursor'
+              const nextValue = event.target.value as 'center' | 'center-above' | 'center-below' | 'cursor'
               setDraftSettings((prev) => ({
                 ...prev,
                 'window-placement': nextValue,

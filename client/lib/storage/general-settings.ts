@@ -2,14 +2,7 @@ export type ThemeSetting = 'dark' | 'light'
 export type SearchScopeSetting = 'both' | 'files' | 'folders'
 export type FontSetting = 'sans-serif' | 'mono'
 export type WindowPlacementSetting = 'center' | 'center-above' | 'center-below' | 'cursor'
-
-export type GeneralSettingKey =
-  | 'launch-on-startup'
-  | 'theme'
-  | 'font'
-  | 'scope'
-  | 'window-placement'
-  | 'clear-search'
+export type GeneralSettingKey = 'launch-on-startup' | 'theme' | 'font' | 'scope' | 'window-placement' | 'clear-search'
 
 export type GeneralSettingsState = {
   'launch-on-startup': boolean
@@ -28,7 +21,6 @@ export const DEFAULT_GENERAL_SETTINGS: GeneralSettingsState = {
 }
 
 export const GENERAL_SETTINGS_CHANGE_EVENT = 'general-settings:change'
-
 
 // current general settings actions
 export type GeneralMeta = {

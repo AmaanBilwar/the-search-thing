@@ -1,8 +1,4 @@
-import {
-  DEFAULT_GENERAL_SETTINGS,
-  GENERAL_SETTINGS_CHANGE_EVENT,
-  type GeneralSettingsState,
-} from './general-settings'
+import { DEFAULT_GENERAL_SETTINGS, GENERAL_SETTINGS_CHANGE_EVENT, type GeneralSettingsState } from './general-settings'
 
 type PersistedGeneralSettingKey = keyof GeneralSettingsState
 
