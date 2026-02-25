@@ -223,7 +223,7 @@ export default function General() {
             }
             className="h-7 rounded-md bg-zinc-800/60 border-1 border-zinc-600/80 text-xs text-zinc-200 px-2"
           >
-            <option value="sans-serif">Sans-Serif</option>
+            <option value="sans-serif">Manrope</option>
             <option value="mono">Mono</option>
           </select>
         </div>
