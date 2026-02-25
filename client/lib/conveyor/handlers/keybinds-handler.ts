@@ -3,6 +3,7 @@ import { join } from 'path'
 import { handle } from '@/lib/main/shared'
 import { createBetterSqliteAdapter } from '@/lib/storage/sqlite-adapter'
 import { createKeybindsStore } from '@/lib/storage/keybinds-db-store'
+import type { KeybindMap } from '@/lib/storage/keybind-store'
 
 let store: ReturnType<typeof createKeybindsStore> | null = null
 
@@ -19,7 +20,7 @@ const getStore = () => {
   return store
 }
 
-export const registerKeybindsHandlers = () => {
+export const registerKeybindsHandlers = (onChange?: (map: KeybindMap) => void) => {
   app.on('before-quit', () => {
     store?.close?.()
   })
@@ -29,14 +30,20 @@ export const registerKeybindsHandlers = () => {
   })
 
   handle('keybinds/set', async (map) => {
-    return getStore().setKeybinds(map)
+    const next = getStore().setKeybinds(map)
+    onChange?.(next)
+    return next
   })
 
   handle('keybinds/update', async (action, combo) => {
-    return getStore().updateKeybind(action, combo)
+    const next = getStore().updateKeybind(action, combo)
+    onChange?.(next)
+    return next
   })
 
   handle('keybinds/reset', async () => {
-    return getStore().resetKeybinds()
+    const next = getStore().resetKeybinds()
+    onChange?.(next)
+    return next
   })
 }

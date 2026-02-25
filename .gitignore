@@ -30,10 +30,15 @@ rewrite-env-history.ps1
 node_modules/
 .webpack/
 
+
+client/resources/
+
 .ruff_cache/
 videos/output_indexer/
 videos/thumbnails/
-
+#build/backend/
+backend.spec
+backend/build/backend/
 lazygit
 backend/build/backend/
 client/resources/backend/

@@ -61,6 +61,20 @@
     --radius: 0.5rem;
   }
 
+  .light {
+    --color-zinc-50: #202124;
+    --color-zinc-100: #2b2c2e;
+    --color-zinc-200: #37383b;
+    --color-zinc-300: #4a4b4f;
+    --color-zinc-400: #64666b;
+    --color-zinc-500: #84878d;
+    --color-zinc-600: #a9adb4;
+    --color-zinc-700: #c7cbd2;
+    --color-zinc-800: #dee2e8;
+    --color-zinc-900: #eceff3;
+    --color-zinc-950: #f4f6f8;
+  }
+
   .dark {
     --background: var(--color-neutral-950);
     --foreground: var(--color-neutral-100);

@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useConveyor } from '../hooks/use-conveyor'
 import { Button } from './ui/button'
-import about from '@/resources/about.svg'
-import enter from '@/resources/enter.svg'
+import { Info, CornerDownLeft } from 'lucide-react'
 import { useAppContext } from '../AppContext'
 
 const phaseLabels: Record<string, string> = {
@@ -147,7 +146,7 @@ export default function Footer() {
     }
 
     if (isIndexing) {
-      return <span className="opacity-75 text-white text-sm">Indexing...</span>
+      return <span className="opacity-75 text-zinc-100 text-sm">Indexing...</span>
     }
 
     if (errorMessage) {
@@ -161,15 +160,15 @@ export default function Footer() {
     <div className="flex flex-row justify-between items-center w-full h-full">
       <div className="relative" ref={popoverRef}>
         <Button
-          variant="transparent"
-          className="p-0.5 w-auto h-auto rounded-full cursor-pointer hover:bg-white/5 transition-colors"
+          variant="hoverlessTransparent"
+          className="p-0.5 w-auto h-auto rounded-full cursor-pointer transition-colors"
           onClick={() => setIsPopoverOpen(!isPopoverOpen)}
         >
-          <img src={about} alt="About" className="w-5 h-5 opacity-75" />
+          <Info className="w-3 h- opacity-75" />
         </Button>
 
         {isPopoverOpen && (
-          <div className="absolute left-0 bottom-full mb-2 z-[60] min-w-[120px] rounded-lg bg-zinc-900/70 p-3 text-zinc-100 shadow-xl ring-1 ring-white/10 backdrop-blur-sm">
+          <div className="absolute left-0 bottom-full mb-2 z-[60] min-w-[150px] rounded-lg bg-zinc-900/70 p-3 text-zinc-100 shadow-xl backdrop-blur-sm border border-zinc-600">
             <div className="text-xs font-medium mb-1">the-search-thing</div>
             <div className="text-[10px] text-zinc-400">Version 0.1.0</div>
             {/* Arrow pointing down */}
@@ -187,7 +186,7 @@ export default function Footer() {
         disabled={isIndexing || !!currentJobId}
         data-index-button="true"
       >
-        Index <img src={enter} alt="index File" className="w-5 h-6 opacity-75" />
+        Index <CornerDownLeft className="w-5 h-6 opacity-75" />
       </Button>
     </div>
   )
