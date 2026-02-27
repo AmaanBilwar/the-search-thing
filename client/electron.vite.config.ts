@@ -39,8 +39,6 @@ export default defineConfig({
   },
   renderer: {
     root: './app',
-    envDir: resolve(__dirname, '..'),
-    envPrefix: ['VITE_', 'BACKEND_', 'FRONTEND_'],
     build: {
       rollupOptions: {
         input: {

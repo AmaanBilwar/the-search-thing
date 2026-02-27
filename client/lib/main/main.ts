@@ -1,5 +1,4 @@
 import { app, BrowserWindow, globalShortcut } from 'electron'
-import { startBackend, stopBackend } from './backend'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { join } from 'path'
 import { createAppWindow, getMainWindow, initializeApp, positionAppWindow } from './app'
@@ -85,10 +84,9 @@ const handleKeybindsChange = (map: KeybindMap) => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(async () => {
+app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
-  await startBackend()
   // Register IPC handlers and custom protocols once, before any window is created.
   // This must not be called again — ipcMain.handle() throws on duplicate registrations.
   initializeApp({
@@ -128,7 +126,6 @@ app.whenReady().then(async () => {
 app.on('will-quit', () => {
   globalShortcut.unregisterAll()
   keybindsStore?.close?.()
-  stopBackend()
 })
 
 app.on('window-all-closed', () => {
