@@ -33,10 +33,10 @@ node_modules/
 
 client/resources/
 
+linux/
 .ruff_cache/
 videos/output_indexer/
 videos/thumbnails/
-#build/backend/
 backend.spec
 backend/build/backend/
 lazygit
