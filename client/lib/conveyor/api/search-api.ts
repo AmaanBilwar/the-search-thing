@@ -5,7 +5,17 @@ export class SearchApi extends ConveyorApi {
   index = (dirPaths: string) => this.invoke('index', dirPaths)
   indexStatus = (jobId: string) => this.invoke('index-status', jobId)
   search = (input: string) => this.invoke('search', input)
-  
+
+  sidecarPing = () => this.invoke('sidecar-ping')
+  sidecarWalkTextBatch = (input: {
+    dir: string
+    textExts: string[]
+    ignoreExts: string[]
+    ignoreFiles: string[]
+    cursor: number
+    batchSize: number
+  }) => this.invoke('sidecar-walk-text-batch', input)
+
   // system methods
   openFileDialog = () => this.invoke('open-file-dialog')
   openFile = (filePath: string) => this.invoke('open-file', filePath)

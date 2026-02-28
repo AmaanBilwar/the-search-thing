@@ -1,16 +1,36 @@
 import { handle } from '@/lib/main/shared'
 import { dialog, shell } from 'electron'
 import axios from 'axios'
+import { sidecarClient } from '@/lib/main/sidecar-client'
 
 export const registerSearchHandlers = () => {
+  const useSidecarForIndexing = process.env['USE_RUST_SIDECAR_INDEXING'] !== 'false'
+  const useSidecarForSearch = process.env['USE_RUST_SIDECAR_SEARCH'] !== 'false'
+
   handle('search', async (query: string) => {
+    if (useSidecarForSearch) {
+      return sidecarClient.searchQuery(query)
+    }
+
     const response = await axios.get('http://localhost:8000/api/search', {
       params: { q: query },
     })
     return response.data
   })
 
+  handle('sidecar-ping', async () => {
+    return sidecarClient.ping()
+  })
+
+  handle('sidecar-walk-text-batch', async (input) => {
+    return sidecarClient.walkTextBatch(input)
+  })
+
   handle('index', async (dirPaths: string) => {
+    if (useSidecarForIndexing) {
+      return sidecarClient.indexStart(dirPaths)
+    }
+
     const response = await axios.get('http://localhost:8000/api/index', {
       params: { dir: dirPaths },
     })
@@ -18,6 +38,10 @@ export const registerSearchHandlers = () => {
   })
 
   handle('index-status', async (jobId: string) => {
+    if (useSidecarForIndexing) {
+      return sidecarClient.indexStatus(jobId)
+    }
+
     const response = await axios.get('http://localhost:8000/api/index/status', {
       params: { job_id: jobId },
     })
