@@ -1,6 +1,7 @@
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::json;
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fs;
 use walkdir::WalkDir;
@@ -152,4 +153,27 @@ pub fn handle_walk_text_batch(request: &JsonRpcRequest) -> JsonRpcResponse {
             Some(json!({ "reason": error })),
         ),
     }
+}
+
+pub fn get_file_contents(file_path: String) -> Result<String, String> {
+    let contents = fs::read_to_string(&file_path).map_err(|e| e.to_string())?;
+    Ok(contents)
+}
+
+pub fn walk_and_get_files_content(dir: String) -> Result<HashMap<String, String>, String> {
+    let mut files_content: HashMap<String, String> = HashMap::new();
+    for entry in WalkDir::new(&dir) {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let path = entry.path().to_string_lossy().to_string();
+
+        if entry.path().is_file() {
+            match get_file_contents(path.clone()) {
+                Ok(content) => {
+                    files_content.insert(path, content);
+                }
+                Err(_) => continue,
+            }
+        }
+    }
+    Ok(files_content)
 }
