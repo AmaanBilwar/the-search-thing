@@ -5,7 +5,7 @@ Thanks for your interest in contributing to the-search-thing. This guide covers 
 ## Prerequisites
 
 - Python 3.11+
-- Rust (for PyO3 / maturin build)
+- Rust (for sidecar + indexing/search core)
 - ffmpeg + ffprobe on PATH
 - Helix DB running locally
 - Groq API key (for transcription + vision summaries)
@@ -42,7 +42,7 @@ maturin develop --release
 
 ```bash
 cp .env.example .env
-# set GROQ_API_KEY, HELIX_LOCAL=true, HELIX_PORT=7002 (or whatever port you like).
+# set GROQ_API_KEY, HELIX_LOCAL=true, HELIX_PORT=7003 (or whatever port you like).
 ```
 
 4) Setup Helix Docker image to run locally
@@ -66,9 +66,31 @@ uv run -m backend.app
 6) Start the Electron app
 
 ```bash
-cd client
-npm install
-npm run dev
+npm --prefix client install
+npm --prefix client run sidecar:build:debug
+npm --prefix client run dev
+```
+
+## Runtime modes (rewrite migration)
+
+The desktop app now routes through Rust sidecar JSON-RPC by default. You can choose migration modes with env vars:
+
+- `SIDECAR_INDEX_MODE`
+  - `python-proxy` (default compatibility path)
+  - `rust-text` (Rust text indexing orchestrator + Rust Helix adapter)
+- `SIDECAR_SEARCH_MODE`
+  - `python-proxy` (compatibility path)
+  - `rust-helix` (Rust Helix-backed search)
+- `HELIX_ENDPOINT` (default `http://localhost`)
+- `HELIX_PORT` (default `7003`)
+- `HELIX_API_KEY` (optional, for secured Helix deployments)
+
+Convenience scripts:
+
+```bash
+npm --prefix client run dev               # default
+npm --prefix client run dev:rust-text     # rust text indexing mode
+npm --prefix client run dev:rust-core     # rust text indexing + rust helix search
 ```
 
 ## Usage
@@ -107,8 +129,10 @@ Ignored extensions/files live in `config/ignore.json`.
 ## Development notes
 
 - If you change Rust code, rebuild with `maturin develop --release`.
-- For the Electron sidecar pilot, build the Rust sidecar with `npm --prefix client run sidecar:build:debug`.
-- Electron UI uses IPC through Rust sidecar for `index`, `index-status`, and `search` by default, with HTTP fallback flags in `client/lib/conveyor/handlers/search-handler.ts`.
+- Build the sidecar with `npm --prefix client run sidecar:build:debug`.
+- Electron uses IPC through Rust sidecar for `index`, `index-status`, and `search` by default.
+- JSON-RPC route tests live in `tests/sidecar_jrpc.rs`.
+- Run JSON-RPC integration tests with `npm --prefix client run sidecar:test:jrpc`.
 - Local search history is stored in a SQLite DB at `app.getPath('userData')/search-history.db` (schema in `client/lib/storage/search-history-store.ts`).
   - Windows: `C:\Users\<you>\AppData\Roaming\<YourApp>\search-history.db`
   - macOS: `~/Library/Application Support/<YourApp>/search-history.db`
