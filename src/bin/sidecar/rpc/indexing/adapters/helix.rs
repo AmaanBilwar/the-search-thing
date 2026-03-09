@@ -3,7 +3,9 @@ use helix_rs::{HelixDB, HelixDBClient};
 use serde_json::{json, Value};
 use std::env;
 
-use crate::sidecar::rpc::indexing::adapters::store::{ExistingFileRecord, TextIndexStore};
+use crate::sidecar::rpc::indexing::adapters::store::{
+    ChunkCreateInput, ExistingFileRecord, ExistingVideoRecord, TextIndexStore, VideoIndexStore,
+};
 
 #[derive(Debug, Clone)]
 pub struct HelixTextStore {
@@ -64,6 +66,35 @@ impl HelixTextStore {
 
         None
     }
+
+    fn extract_existing_video_id(value: &Value) -> Option<String> {
+        if let Some(video_id) = value.get("video_id").and_then(Value::as_str) {
+            return Some(video_id.to_string());
+        }
+
+        if let Some(video_node) = value.get("video") {
+            if let Some(video_id) = video_node.get("video_id").and_then(Value::as_str) {
+                return Some(video_id.to_string());
+            }
+            if let Some(video_array) = video_node.as_array() {
+                if let Some(first) = video_array.first() {
+                    if let Some(video_id) = first.get("video_id").and_then(Value::as_str) {
+                        return Some(video_id.to_string());
+                    }
+                }
+            }
+        }
+
+        if let Some(array) = value.as_array() {
+            if let Some(first) = array.first() {
+                if let Some(video_id) = first.get("video_id").and_then(Value::as_str) {
+                    return Some(video_id.to_string());
+                }
+            }
+        }
+
+        None
+    }
 }
 
 #[async_trait]
@@ -117,6 +148,141 @@ impl TextIndexStore for HelixTextStore {
         let client = self.client();
         let _: Value = client
             .query("CreateFileEmbeddings", &payload)
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl VideoIndexStore for HelixTextStore {
+    async fn get_video_by_hash(
+        &self,
+        content_hash: &str,
+    ) -> Result<Option<ExistingVideoRecord>, String> {
+        let payload = json!({ "content_hash": content_hash });
+        let client = self.client();
+        let result: Value = client
+            .query("GetVideoByHash", &payload)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(Self::extract_existing_video_id(&result).map(|video_id| ExistingVideoRecord { video_id }))
+    }
+
+    async fn create_video(
+        &self,
+        video_id: &str,
+        content_hash: &str,
+        no_of_chunks: usize,
+        path: &str,
+    ) -> Result<(), String> {
+        let payload = json!({
+            "video_id": video_id,
+            "content_hash": content_hash,
+            "no_of_chunks": no_of_chunks,
+            "path": path,
+        });
+        let client = self.client();
+        let _: Value = client
+            .query("CreateVideo", &payload)
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    async fn create_chunk(&self, chunk: &ChunkCreateInput) -> Result<(), String> {
+        let payload = json!({
+            "video_id": chunk.video_id,
+            "chunk_id": chunk.chunk_id,
+            "start_time": chunk.start_time,
+            "end_time": chunk.end_time,
+            "transcript": chunk.transcript,
+        });
+        let client = self.client();
+        let _: Value = client
+            .query("CreateChunk", &payload)
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    async fn create_video_chunk_relationship(
+        &self,
+        video_id: &str,
+        chunk_id: &str,
+    ) -> Result<(), String> {
+        let payload = json!({
+            "video_id": video_id,
+            "chunk_id": chunk_id,
+        });
+        let client = self.client();
+        let _: Value = client
+            .query("CreateVideoToChunkRelationship", &payload)
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    async fn create_transcript_node(&self, chunk_id: &str, content: &str) -> Result<(), String> {
+        let payload = json!({
+            "chunk_id": chunk_id,
+            "content": content,
+        });
+        let client = self.client();
+        let _: Value = client
+            .query("CreateTranscript", &payload)
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    async fn create_transcript_embeddings(
+        &self,
+        chunk_id: &str,
+        content: &str,
+    ) -> Result<(), String> {
+        let payload = json!({
+            "chunk_id": chunk_id,
+            "content": content,
+        });
+        let client = self.client();
+        let _: Value = client
+            .query("CreateTranscriptEmbeddings", &payload)
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    async fn create_frame_summary_node(
+        &self,
+        chunk_id: &str,
+        content: &str,
+    ) -> Result<(), String> {
+        let payload = json!({
+            "chunk_id": chunk_id,
+            "content": content,
+        });
+        let client = self.client();
+        let _: Value = client
+            .query("CreateFrameSummary", &payload)
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    async fn create_frame_summary_embeddings(
+        &self,
+        chunk_id: &str,
+        content: &str,
+    ) -> Result<(), String> {
+        let payload = json!({
+            "chunk_id": chunk_id,
+            "content": content,
+        });
+        let client = self.client();
+        let _: Value = client
+            .query("CreateFrameSummaryEmbeddings", &payload)
             .await
             .map_err(|e| e.to_string())?;
         Ok(())
