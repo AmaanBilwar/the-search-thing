@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
@@ -6,7 +7,7 @@ use std::process::Command;
 use tokio::task::JoinSet;
 use uuid::Uuid;
 
-use crate::sidecar::rpc::indexing::adapters::groq::GroqClient;
+use crate::sidecar::rpc::indexing::adapters::groq::TranscriptionClient;
 use crate::sidecar::rpc::indexing::adapters::store::{ChunkCreateInput, VideoIndexStore};
 
 #[derive(Clone, Debug)]
@@ -22,6 +23,79 @@ struct ChunkArtifact {
     chunk_path: String,
     audio_path: Option<String>,
     thumbnail_paths: Vec<String>,
+}
+
+#[async_trait]
+trait VideoIndexerDeps: Send + Sync {
+    async fn chunk_video_if_needed(
+        &self,
+        video_path: &str,
+        chunks_dir: &str,
+        chunk_duration_secs: f64,
+    ) -> Result<Vec<String>, String>;
+
+    async fn build_chunk_artifacts(
+        &self,
+        chunk_paths: Vec<String>,
+        audio_dir: String,
+        thumbnails_dir: String,
+    ) -> Result<Vec<ChunkArtifact>, String>;
+
+    async fn generate_transcripts(&self, artifacts: &[ChunkArtifact]) -> HashMap<String, Value>;
+
+    async fn generate_frame_summaries(
+        &self,
+        artifacts: &[ChunkArtifact],
+    ) -> HashMap<String, Vec<Value>>;
+}
+
+#[derive(Clone)]
+struct SidecarVideoIndexerDeps<C>
+where
+    C: TranscriptionClient + Clone,
+{
+    groq: C,
+}
+
+#[async_trait]
+impl<C> VideoIndexerDeps for SidecarVideoIndexerDeps<C>
+where
+    C: TranscriptionClient + Clone + 'static,
+{
+    async fn chunk_video_if_needed(
+        &self,
+        video_path: &str,
+        chunks_dir: &str,
+        chunk_duration_secs: f64,
+    ) -> Result<Vec<String>, String> {
+        tokio::task::spawn_blocking({
+            let vp = video_path.to_string();
+            let cd = chunks_dir.to_string();
+            move || chunk_video_if_needed(&vp, &cd, chunk_duration_secs)
+        })
+        .await
+        .map_err(|e| e.to_string())?
+    }
+
+    async fn build_chunk_artifacts(
+        &self,
+        chunk_paths: Vec<String>,
+        audio_dir: String,
+        thumbnails_dir: String,
+    ) -> Result<Vec<ChunkArtifact>, String> {
+        build_chunk_artifacts(chunk_paths, audio_dir, thumbnails_dir).await
+    }
+
+    async fn generate_transcripts(&self, artifacts: &[ChunkArtifact]) -> HashMap<String, Value> {
+        generate_transcripts(&self.groq, artifacts).await
+    }
+
+    async fn generate_frame_summaries(
+        &self,
+        artifacts: &[ChunkArtifact],
+    ) -> HashMap<String, Vec<Value>> {
+        generate_frame_summaries(&self.groq, artifacts).await
+    }
 }
 
 fn normalize_path(path: &str) -> String {
@@ -261,10 +335,10 @@ async fn build_chunk_artifacts(
     Ok(artifacts)
 }
 
-async fn generate_transcripts(
-    groq: &GroqClient,
-    artifacts: &[ChunkArtifact],
-) -> HashMap<String, Value> {
+async fn generate_transcripts<C>(groq: &C, artifacts: &[ChunkArtifact]) -> HashMap<String, Value>
+where
+    C: TranscriptionClient + Clone + 'static,
+{
     let mut audio_items: Vec<(String, Vec<u8>)> = Vec::new();
     for artifact in artifacts {
         if let Some(audio_path) = &artifact.audio_path {
@@ -303,10 +377,13 @@ async fn generate_transcripts(
     map
 }
 
-async fn generate_frame_summaries(
-    groq: &GroqClient,
+async fn generate_frame_summaries<C>(
+    groq: &C,
     artifacts: &[ChunkArtifact],
-) -> HashMap<String, Vec<Value>> {
+) -> HashMap<String, Vec<Value>>
+where
+    C: TranscriptionClient + Clone + 'static,
+{
     let mut grouped: HashMap<String, Vec<Value>> = HashMap::new();
 
     let mut flat_items: Vec<(String, usize, Vec<u8>)> = Vec::new();
@@ -371,15 +448,18 @@ fn extract_transcript_text(transcript_payload: &Value) -> String {
         .to_string()
 }
 
-pub async fn index_video_with_sidecar(
+async fn index_video_with_deps<D>(
     video_id: &str,
     content_hash: &str,
     video_path: &str,
     output_dir: &str,
     chunk_duration_secs: f64,
-    groq: &GroqClient,
+    deps: &D,
     store: &dyn VideoIndexStore,
-) -> Result<VideoIndexResult, String> {
+) -> Result<VideoIndexResult, String>
+where
+    D: VideoIndexerDeps,
+{
     let normalized_out_dir = normalize_path(output_dir);
     let chunks_dir = format!("{}/chunks", normalized_out_dir);
     let audio_dir = format!("{}/audio", normalized_out_dir);
@@ -389,17 +469,15 @@ pub async fn index_video_with_sidecar(
     fs::create_dir_all(&audio_dir).map_err(|e| e.to_string())?;
     fs::create_dir_all(&thumbnails_dir).map_err(|e| e.to_string())?;
 
-    let chunk_paths = tokio::task::spawn_blocking({
-        let vp = video_path.to_string();
-        let cd = chunks_dir.clone();
-        move || chunk_video_if_needed(&vp, &cd, chunk_duration_secs)
-    })
-    .await
-    .map_err(|e| e.to_string())??;
+    let chunk_paths = deps
+        .chunk_video_if_needed(video_path, &chunks_dir, chunk_duration_secs)
+        .await?;
 
-    let artifacts = build_chunk_artifacts(chunk_paths, audio_dir.clone(), thumbnails_dir.clone()).await?;
-    let transcripts = generate_transcripts(groq, &artifacts).await;
-    let frame_summaries = generate_frame_summaries(groq, &artifacts).await;
+    let artifacts = deps
+        .build_chunk_artifacts(chunk_paths, audio_dir.clone(), thumbnails_dir.clone())
+        .await?;
+    let transcripts = deps.generate_transcripts(&artifacts).await;
+    let frame_summaries = deps.generate_frame_summaries(&artifacts).await;
 
     store
         .create_video(video_id, content_hash, artifacts.len(), video_path)
@@ -473,3 +551,31 @@ pub async fn index_video_with_sidecar(
         error: None,
     })
 }
+
+pub async fn index_video_with_sidecar<C>(
+    video_id: &str,
+    content_hash: &str,
+    video_path: &str,
+    output_dir: &str,
+    chunk_duration_secs: f64,
+    groq: &C,
+    store: &dyn VideoIndexStore,
+) -> Result<VideoIndexResult, String>
+where
+    C: TranscriptionClient + Clone + 'static,
+{
+    let deps = SidecarVideoIndexerDeps { groq: groq.clone() };
+    index_video_with_deps(
+        video_id,
+        content_hash,
+        video_path,
+        output_dir,
+        chunk_duration_secs,
+        &deps,
+        store,
+    )
+    .await
+}
+
+#[cfg(test)]
+mod property_tests;

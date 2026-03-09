@@ -133,6 +133,9 @@ Ignored extensions/files live in `config/ignore.json`.
 - Electron uses IPC through Rust sidecar for `index`, `index-status`, and `search` by default.
 - JSON-RPC route tests live in `tests/sidecar_jrpc.rs`.
 - Run JSON-RPC integration tests with `npm --prefix client run sidecar:test:jrpc`.
+- Property-based sidecar tests for the video indexer live in `src/bin/sidecar/rpc/indexing/video/property_tests.rs`.
+- Run video indexer property tests with `cargo test --bin the-search-thing-sidecar sidecar::rpc::indexing::video::property_tests::`.
+- Property tests in this repo follow a Zed-style randomized approach: seeded RNG, generated scenarios, and invariant assertions over orchestration behavior.
 - Local search history is stored in a SQLite DB at `app.getPath('userData')/search-history.db` (schema in `client/lib/storage/search-history-store.ts`).
   - Windows: `C:\Users\<you>\AppData\Roaming\<YourApp>\search-history.db`
   - macOS: `~/Library/Application Support/<YourApp>/search-history.db`

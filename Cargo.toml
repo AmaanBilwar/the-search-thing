@@ -38,3 +38,6 @@ path = "src/bin/the-search-thing-sidecar.rs"
 [features]
 default = ["python"]
 python = []
+
+[dev-dependencies]
+rand = "0.9"

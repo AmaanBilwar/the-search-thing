@@ -1,5 +1,6 @@
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
+use async_trait::async_trait;
 use reqwest::multipart::{Form, Part};
 use reqwest::Client;
 use serde_json::{json, Value};
@@ -9,6 +10,21 @@ use std::env;
 pub struct GroqClient {
     http: Client,
     api_key: String,
+}
+
+#[async_trait]
+pub trait TranscriptionClient: Send + Sync {
+    async fn transcribe_audio_bytes(
+        &self,
+        chunk_key: &str,
+        audio_bytes: Vec<u8>,
+    ) -> Result<Value, String>;
+
+    async fn summarize_image_bytes(
+        &self,
+        image_id: &str,
+        image_bytes: Vec<u8>,
+    ) -> Result<Value, String>;
 }
 
 impl GroqClient {
@@ -134,6 +150,25 @@ impl GroqClient {
             "image": image_id,
             "summary": summary
         }))
+    }
+}
+
+#[async_trait]
+impl TranscriptionClient for GroqClient {
+    async fn transcribe_audio_bytes(
+        &self,
+        chunk_key: &str,
+        audio_bytes: Vec<u8>,
+    ) -> Result<Value, String> {
+        Self::transcribe_audio_bytes(self, chunk_key, audio_bytes).await
+    }
+
+    async fn summarize_image_bytes(
+        &self,
+        image_id: &str,
+        image_bytes: Vec<u8>,
+    ) -> Result<Value, String> {
+        Self::summarize_image_bytes(self, image_id, image_bytes).await
     }
 }
 
