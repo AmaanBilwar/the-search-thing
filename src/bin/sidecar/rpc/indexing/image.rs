@@ -229,8 +229,13 @@ where
     for path in paths {
         let normalized_path = normalize_path(&path);
         let path_obj = Path::new(&normalized_path);
+        eprintln!("[sidecar:index:image] processing {}", normalized_path);
 
         if !path_obj.exists() {
+            eprintln!(
+                "[sidecar:index:image] missing file, skipping {}",
+                normalized_path
+            );
             results.push(ImageIndexResult {
                 path: normalized_path,
                 image_id: None,
@@ -263,10 +268,20 @@ where
 
         let existing = match store.get_image_by_hash(&content_hash).await {
             Ok(existing) => existing,
-            Err(_) => None,
+            Err(error) => {
+                eprintln!(
+                    "[sidecar:index:image] hash lookup failed for {}: {}",
+                    normalized_path, error
+                );
+                None
+            }
         };
 
         if let Some(record) = existing {
+            eprintln!(
+                "[sidecar:index:image] duplicate hash for {} (existing image_id={})",
+                normalized_path, record.image_id
+            );
             results.push(ImageIndexResult {
                 path: normalized_path,
                 image_id: Some(record.image_id),
@@ -284,6 +299,10 @@ where
         {
             Ok(payload) => payload,
             Err(error) => {
+                eprintln!(
+                    "[sidecar:index:image] summarization failed for {}: {}",
+                    normalized_path, error
+                );
                 results.push(ImageIndexResult {
                     path: normalized_path,
                     image_id: None,
@@ -301,6 +320,10 @@ where
             .create_image(&image_id, &content_hash, &summary_json, &normalized_path)
             .await
         {
+            eprintln!(
+                "[sidecar:index:image] failed to create image node for {} (image_id={}): {}",
+                normalized_path, image_id, error
+            );
             results.push(ImageIndexResult {
                 path: normalized_path,
                 image_id: Some(image_id),
@@ -314,6 +337,10 @@ where
             .create_image_embeddings(&image_id, &embedding_text, &normalized_path)
             .await
         {
+            eprintln!(
+                "[sidecar:index:image] failed to create image embeddings for {} (image_id={}): {}",
+                normalized_path, image_id, error
+            );
             results.push(ImageIndexResult {
                 path: normalized_path,
                 image_id: Some(image_id),
@@ -323,6 +350,10 @@ where
             continue;
         }
 
+        eprintln!(
+            "[sidecar:index:image] indexed {} successfully (image_id={})",
+            normalized_path, image_id
+        );
         results.push(ImageIndexResult {
             path: normalized_path,
             image_id: Some(image_id),
