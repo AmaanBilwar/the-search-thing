@@ -125,6 +125,12 @@ impl HelixTextStore {
 
         None
     }
+
+    fn is_not_found_error(message: &str) -> bool {
+        let lowered = message.to_ascii_lowercase();
+        lowered.contains("graph error: no value found")
+            || lowered.contains("\"error\":\"graph error: no value found\"")
+    }
 }
 
 #[async_trait]
@@ -138,7 +144,14 @@ impl TextIndexStore for HelixTextStore {
         let result: Value = client
             .query("GetFileByHash", &payload)
             .await
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| e.to_string())
+            .or_else(|error| {
+                if Self::is_not_found_error(&error) {
+                    Ok(Value::Null)
+                } else {
+                    Err(error)
+                }
+            })?;
 
         Ok(Self::extract_existing_file_id(&result).map(|file_id| ExistingFileRecord { file_id }))
     }
@@ -195,7 +208,14 @@ impl ImageIndexStore for HelixTextStore {
         let result: Value = client
             .query("GetImageByHash", &payload)
             .await
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| e.to_string())
+            .or_else(|error| {
+                if Self::is_not_found_error(&error) {
+                    Ok(Value::Null)
+                } else {
+                    Err(error)
+                }
+            })?;
 
         Ok(Self::extract_existing_image_id(&result).map(|image_id| ExistingImageRecord {
             image_id,
@@ -254,7 +274,14 @@ impl VideoIndexStore for HelixTextStore {
         let result: Value = client
             .query("GetVideoByHash", &payload)
             .await
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| e.to_string())
+            .or_else(|error| {
+                if Self::is_not_found_error(&error) {
+                    Ok(Value::Null)
+                } else {
+                    Err(error)
+                }
+            })?;
 
         Ok(Self::extract_existing_video_id(&result).map(|video_id| ExistingVideoRecord { video_id }))
     }
