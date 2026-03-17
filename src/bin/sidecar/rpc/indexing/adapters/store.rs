@@ -11,6 +11,11 @@ pub struct ExistingVideoRecord {
 }
 
 #[derive(Debug, Clone)]
+pub struct ExistingImageRecord {
+    pub image_id: String,
+}
+
+#[derive(Debug, Clone)]
 pub struct ChunkCreateInput {
     pub video_id: String,
     pub chunk_id: String,
@@ -37,6 +42,29 @@ pub trait TextIndexStore: Send + Sync {
     async fn create_file_embeddings(
         &self,
         file_id: &str,
+        content: &str,
+        path: &str,
+    ) -> Result<(), String>;
+}
+
+#[async_trait]
+pub trait ImageIndexStore: Send + Sync {
+    async fn get_image_by_hash(
+        &self,
+        content_hash: &str,
+    ) -> Result<Option<ExistingImageRecord>, String>;
+
+    async fn create_image(
+        &self,
+        image_id: &str,
+        content_hash: &str,
+        content: &str,
+        path: &str,
+    ) -> Result<(), String>;
+
+    async fn create_image_embeddings(
+        &self,
+        image_id: &str,
         content: &str,
         path: &str,
     ) -> Result<(), String>;
