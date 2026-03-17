@@ -281,8 +281,17 @@ fn get_job(job_id: &str) -> Result<Option<IndexJobStatus>, String> {
     Ok(jobs.get(job_id).cloned())
 }
 
+fn format_image_result_error(path: &str, error: &str) -> String {
+    format!("Image indexing failed for {}: {}", path, error)
+}
+
+fn format_video_result_error(path: &str, error: &str) -> String {
+    format!("Video indexing failed for {}: {}", path, error)
+}
+
 fn spawn_rust_index_job(job_id: String, dir: String) {
     thread::spawn(move || {
+        eprintln!("[sidecar:index] starting job {} for {}", job_id, dir);
         let runtime = match tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -296,6 +305,10 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
                     job.message = "Indexing failed".to_string();
                     job.finished_at = Some(now_string());
                 });
+                eprintln!(
+                    "[sidecar:index] job {} failed to initialize runtime: {}",
+                    job_id, error
+                );
                 return;
             }
         };
@@ -311,12 +324,17 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
                     job.message = "Indexing failed".to_string();
                     job.finished_at = Some(now_string());
                 });
+                eprintln!(
+                    "[sidecar:index] job {} failed to initialize Helix store",
+                    job_id
+                );
                 return;
             }
         };
         let groq = match GroqClient::from_env() {
             Ok(client) => client,
             Err(error) => {
+                let error_message = error.clone();
                 let _ = update_job(&job_id, |job| {
                     job.status = "failed".to_string();
                     job.phase = "done".to_string();
@@ -324,6 +342,10 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
                     job.message = "Indexing failed".to_string();
                     job.finished_at = Some(now_string());
                 });
+                eprintln!(
+                    "[sidecar:index] job {} failed to initialize Groq client: {}",
+                    job_id, error_message
+                );
                 return;
             }
         };
@@ -334,6 +356,20 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
         });
 
         let results = runtime.block_on(file_indexer(vec![dir.clone()], &hasher, &store));
+        eprintln!(
+            "[sidecar:index] job {} text pass complete: found={}, indexed={}, errors={}, skipped={}",
+            job_id,
+            results.len(),
+            results.iter().filter(|r| r.indexed).count(),
+            results
+                .iter()
+                .filter(|r| !r.indexed && r.error.as_deref() != Some("Duplicate content hash"))
+                .count(),
+            results
+                .iter()
+                .filter(|r| r.error.as_deref() == Some("Duplicate content hash"))
+                .count()
+        );
 
         let text_found = results.len();
         let text_indexed = results.iter().filter(|r| r.indexed).count();
@@ -361,6 +397,7 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
         let mut video_indexed = 0usize;
         let mut video_errors = 0usize;
         let mut video_skipped = 0usize;
+        let mut first_video_error: Option<String> = None;
 
         let output_dir = env::current_dir()
             .map(|d| d.join("videos").join("output_indexer"))
@@ -372,12 +409,23 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
             job.phase = "index_video".to_string();
             job.message = "Indexing video files (Rust sidecar)".to_string();
         });
+        eprintln!(
+            "[sidecar:index] job {} video pass starting: {} candidate files",
+            job_id, video_found
+        );
 
         for video_path in video_files {
             let content_hash = match runtime.block_on(hasher.compute_file_hash(&video_path)) {
                 Ok(hash) => hash,
-                Err(_) => {
+                Err(error) => {
                     video_errors += 1;
+                    if first_video_error.is_none() {
+                        first_video_error = Some(format_video_result_error(&video_path, &error));
+                    }
+                    eprintln!(
+                        "[sidecar:index] job {} failed to hash video {}: {}",
+                        job_id, video_path, error
+                    );
                     continue;
                 }
             };
@@ -386,6 +434,10 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
             match existing {
                 Ok(Some(_)) => {
                     video_skipped += 1;
+                    eprintln!(
+                        "[sidecar:index] job {} skipping duplicate video {}",
+                        job_id, video_path
+                    );
                     let _ = update_job(&job_id, |job| {
                         job.video_indexed = video_indexed;
                         job.video_errors = video_errors;
@@ -411,12 +463,35 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
             match result {
                 Ok(r) if r.indexed => {
                     video_indexed += 1;
+                    eprintln!(
+                        "[sidecar:index] job {} indexed video {}",
+                        job_id, video_path
+                    );
                 }
-                Ok(_) => {
+                Ok(r) => {
                     video_errors += 1;
+                    let error_message = r
+                        .error
+                        .clone()
+                        .unwrap_or_else(|| "video produced no searchable chunks".to_string());
+                    if first_video_error.is_none() {
+                        first_video_error =
+                            Some(format_video_result_error(&video_path, &error_message));
+                    }
+                    eprintln!(
+                        "[sidecar:index] job {} video indexing returned not-indexed for {}: {}",
+                        job_id, video_path, error_message
+                    );
                 }
-                Err(_) => {
+                Err(error) => {
                     video_errors += 1;
+                    if first_video_error.is_none() {
+                        first_video_error = Some(format_video_result_error(&video_path, &error));
+                    }
+                    eprintln!(
+                        "[sidecar:index] job {} video indexing failed for {}: {}",
+                        job_id, video_path, error
+                    );
                 }
             }
 
@@ -439,15 +514,40 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
             job.phase = "index_image".to_string();
             job.message = "Indexing image files (Rust sidecar)".to_string();
         });
+        eprintln!(
+            "[sidecar:index] job {} image pass starting: {} candidate files",
+            job_id, image_found
+        );
 
         let image_results = runtime.block_on(image_indexer_with_sidecar(image_files, &groq, &store));
+        let first_image_error = image_results.iter().find_map(|result| {
+            result
+                .error
+                .as_ref()
+                .filter(|error| error.as_str() != "Duplicate content hash")
+                .map(|error| format_image_result_error(&result.path, error))
+        });
         for result in image_results {
             if result.indexed {
                 image_indexed += 1;
+                eprintln!(
+                    "[sidecar:index] job {} indexed image {}",
+                    job_id, result.path
+                );
             } else if result.error.as_deref() == Some("Duplicate content hash") {
                 image_skipped += 1;
+                eprintln!(
+                    "[sidecar:index] job {} skipping duplicate image {}",
+                    job_id, result.path
+                );
             } else {
                 image_errors += 1;
+                eprintln!(
+                    "[sidecar:index] job {} image indexing failed for {}: {}",
+                    job_id,
+                    result.path,
+                    result.error.clone().unwrap_or_else(|| "unknown error".to_string())
+                );
             }
 
             let _ = update_job(&job_id, |job| {
@@ -479,9 +579,13 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
                 job.error = if !failed_example.is_empty() {
                     failed_example
                 } else if image_errors > 0 {
-                    "Image indexing encountered one or more errors".to_string()
+                    first_image_error.unwrap_or_else(|| {
+                        "Image indexing encountered one or more errors".to_string()
+                    })
                 } else {
-                    "Video indexing encountered one or more errors".to_string()
+                    first_video_error.unwrap_or_else(|| {
+                        "Video indexing encountered one or more errors".to_string()
+                    })
                 };
             } else {
                 job.status = "completed".to_string();
@@ -489,6 +593,19 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
                 job.error.clear();
             }
         });
+        eprintln!(
+            "[sidecar:index] job {} finished: text(indexed={}, errors={}, skipped={}), video(indexed={}, errors={}, skipped={}), image(indexed={}, errors={}, skipped={})",
+            job_id,
+            text_indexed,
+            text_errors,
+            text_skipped,
+            video_indexed,
+            video_errors,
+            video_skipped,
+            image_indexed,
+            image_errors,
+            image_skipped
+        );
     });
 }
 
