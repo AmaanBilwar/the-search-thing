@@ -18,6 +18,7 @@ use crate::sidecar::protocol::{
 use crate::sidecar::rpc::indexing::adapters::groq::GroqClient;
 use crate::sidecar::rpc::indexing::adapters::hash::{PathHasher, Sha256PathHasher};
 use crate::sidecar::rpc::indexing::adapters::helix::HelixTextStore;
+use crate::sidecar::rpc::indexing::image::image_indexer_with_sidecar;
 use crate::sidecar::rpc::indexing::adapters::store::VideoIndexStore;
 use crate::sidecar::rpc::indexing::text_indexer::file_indexer;
 use crate::sidecar::rpc::indexing::video::index_video_with_sidecar;
@@ -108,6 +109,46 @@ fn load_video_extensions() -> Vec<String> {
         })
         .filter(|v| !v.is_empty())
         .unwrap_or_else(|| vec![".mp4".to_string(), ".mov".to_string()])
+}
+
+fn load_image_extensions() -> Vec<String> {
+    let path = Path::new("config/file_types.json");
+    let Ok(raw) = fs::read_to_string(path) else {
+        return vec![
+            ".jpeg".to_string(),
+            ".jpg".to_string(),
+            ".png".to_string(),
+            ".webp".to_string(),
+        ];
+    };
+    let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&raw) else {
+        return vec![
+            ".jpeg".to_string(),
+            ".jpg".to_string(),
+            ".png".to_string(),
+            ".webp".to_string(),
+        ];
+    };
+
+    parsed
+        .get("image")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str())
+                .map(normalize_extension)
+                .filter(|v| !v.is_empty())
+                .collect::<Vec<String>>()
+        })
+        .filter(|v| !v.is_empty())
+        .unwrap_or_else(|| {
+            vec![
+                ".jpeg".to_string(),
+                ".jpg".to_string(),
+                ".png".to_string(),
+                ".webp".to_string(),
+            ]
+        })
 }
 
 fn load_ignore_config() -> (Vec<String>, Vec<String>) {
@@ -314,6 +355,7 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
             .unwrap_or_default();
 
         let video_exts = load_video_extensions();
+        let image_exts = load_image_extensions();
         let (ignore_exts, ignore_files) = load_ignore_config();
         let video_files =
             collect_video_files_with_ignore(&dir, &video_exts, &ignore_exts, &ignore_files);
@@ -387,6 +429,36 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
             });
         }
 
+        let image_files =
+            collect_video_files_with_ignore(&dir, &image_exts, &ignore_exts, &ignore_files);
+        let image_found = image_files.len();
+        let mut image_indexed = 0usize;
+        let mut image_errors = 0usize;
+        let mut image_skipped = 0usize;
+
+        let _ = update_job(&job_id, |job| {
+            job.image_found = image_found;
+            job.phase = "index_image".to_string();
+            job.message = "Indexing image files (Rust sidecar)".to_string();
+        });
+
+        let image_results = runtime.block_on(image_indexer_with_sidecar(image_files, &groq, &store));
+        for result in image_results {
+            if result.indexed {
+                image_indexed += 1;
+            } else if result.error.as_deref() == Some("Duplicate content hash") {
+                image_skipped += 1;
+            } else {
+                image_errors += 1;
+            }
+
+            let _ = update_job(&job_id, |job| {
+                job.image_indexed = image_indexed;
+                job.image_errors = image_errors;
+                job.image_skipped = image_skipped;
+            });
+        }
+
         let _ = update_job(&job_id, |job| {
             job.text_found = text_found;
             job.text_indexed = text_indexed;
@@ -396,20 +468,26 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
             job.video_indexed = video_indexed;
             job.video_errors = video_errors;
             job.video_skipped = video_skipped;
+            job.image_found = image_found;
+            job.image_indexed = image_indexed;
+            job.image_errors = image_errors;
+            job.image_skipped = image_skipped;
             job.phase = "done".to_string();
             job.finished_at = Some(now_string());
 
-            if text_errors > 0 || video_errors > 0 {
+            if text_errors > 0 || video_errors > 0 || image_errors > 0 {
                 job.status = "failed".to_string();
                 job.message = "Indexing failed".to_string();
                 job.error = if !failed_example.is_empty() {
                     failed_example
+                } else if image_errors > 0 {
+                    "Image indexing encountered one or more errors".to_string()
                 } else {
                     "Video indexing encountered one or more errors".to_string()
                 };
             } else {
                 job.status = "completed".to_string();
-                job.message = "Text and video indexing complete".to_string();
+                job.message = "Text, video, and image indexing complete".to_string();
                 job.error.clear();
             }
         });
