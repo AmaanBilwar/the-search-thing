@@ -240,6 +240,35 @@ fn has_thumbnail(content_hash: &str) -> bool {
     file_path.exists()
 }
 
+fn is_empty_vector_index_error(message: &str) -> bool {
+    let lowered = message.to_ascii_lowercase();
+    lowered.contains("no entry point found for hnsw index")
+        || lowered.contains("empty input provided to reranker")
+        || (lowered.contains("graph_error") && lowered.contains("vector error"))
+        || (lowered.contains("graph_error") && lowered.contains("reranker error"))
+}
+
+fn normalize_vector_query_result(
+    label: &str,
+    result: Result<Value, helix_rs::HelixError>,
+) -> Result<Value, String> {
+    match result {
+        Ok(value) => Ok(value),
+        Err(error) => {
+            let message = error.to_string();
+            if is_empty_vector_index_error(&message) {
+                eprintln!(
+                    "[sidecar:search] {} search returned empty-index/reranker response; treating as no results: {}",
+                    label, message
+                );
+                Ok(Value::Array(Vec::new()))
+            } else {
+                Err(format!("{} search failed: {}", label, message))
+            }
+        }
+    }
+}
+
 async fn rust_helix_search_query(query: &str) -> Result<Value, String> {
     let endpoint = env::var("HELIX_ENDPOINT").unwrap_or_else(|_| "http://localhost".to_string());
     let port = env::var("HELIX_PORT")
@@ -257,9 +286,9 @@ async fn rust_helix_search_query(query: &str) -> Result<Value, String> {
 
     let (file_raw, video_raw, image_raw) = tokio::join!(file_future, video_future, image_future);
 
-    let file_value = file_raw.map_err(|e| format!("file search failed: {}", e))?;
-    let video_value = video_raw.map_err(|e| format!("video search failed: {}", e))?;
-    let image_value = image_raw.map_err(|e| format!("image search failed: {}", e))?;
+    let file_value = normalize_vector_query_result("file", file_raw)?;
+    let video_value = normalize_vector_query_result("video", video_raw)?;
+    let image_value = normalize_vector_query_result("image", image_raw)?;
 
     let mut file_items = normalize_file_results(&file_value);
     let mut video_items = normalize_video_results(&video_value);
