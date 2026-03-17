@@ -1,5 +1,11 @@
+use async_trait::async_trait;
 use serde_json::{json, Map, Value};
+use std::fs;
 use std::path::Path;
+use uuid::Uuid;
+
+use crate::sidecar::rpc::indexing::adapters::groq::TranscriptionClient;
+use crate::sidecar::rpc::indexing::adapters::store::ImageIndexStore;
 
 #[derive(Clone, Debug)]
 pub struct ImageIndexResult {
@@ -7,6 +13,41 @@ pub struct ImageIndexResult {
     pub image_id: Option<String>,
     pub indexed: bool,
     pub error: Option<String>,
+}
+
+#[async_trait]
+trait ImageIndexerDeps: Send + Sync {
+    async fn summarize_image(
+        &self,
+        image_id: &str,
+        mime_hint: &str,
+        image_bytes: Vec<u8>,
+    ) -> Result<Value, String>;
+}
+
+#[derive(Clone)]
+struct SidecarImageIndexerDeps<C>
+where
+    C: TranscriptionClient + Clone,
+{
+    groq: C,
+}
+
+#[async_trait]
+impl<C> ImageIndexerDeps for SidecarImageIndexerDeps<C>
+where
+    C: TranscriptionClient + Clone + 'static,
+{
+    async fn summarize_image(
+        &self,
+        image_id: &str,
+        mime_hint: &str,
+        image_bytes: Vec<u8>,
+    ) -> Result<Value, String> {
+        self.groq
+            .summarize_index_image_bytes(image_id, mime_hint, image_bytes)
+            .await
+    }
 }
 
 pub fn normalize_path(path: &str) -> String {
@@ -160,4 +201,147 @@ pub fn build_embedding_text(summary: &Value) -> String {
     }
 
     parts.join(" | ")
+}
+
+fn normalize_paths(file_paths: Vec<String>) -> Vec<String> {
+    file_paths
+        .into_iter()
+        .map(|path| path.trim().to_string())
+        .filter(|path| !path.is_empty())
+        .collect()
+}
+
+async fn index_images_with_deps<D>(
+    file_paths: Vec<String>,
+    deps: &D,
+    store: &dyn ImageIndexStore,
+) -> Vec<ImageIndexResult>
+where
+    D: ImageIndexerDeps,
+{
+    let paths = normalize_paths(file_paths);
+    if paths.is_empty() {
+        return Vec::new();
+    }
+
+    let mut results = Vec::new();
+
+    for path in paths {
+        let normalized_path = normalize_path(&path);
+        let path_obj = Path::new(&normalized_path);
+
+        if !path_obj.exists() {
+            results.push(ImageIndexResult {
+                path: normalized_path,
+                image_id: None,
+                indexed: false,
+                error: Some("Path not found".to_string()),
+            });
+            continue;
+        }
+
+        let image_bytes = match fs::read(path_obj) {
+            Ok(bytes) => bytes,
+            Err(error) => {
+                results.push(ImageIndexResult {
+                    path: normalized_path,
+                    image_id: None,
+                    indexed: false,
+                    error: Some(error.to_string()),
+                });
+                continue;
+            }
+        };
+
+        let content_hash = {
+            use sha2::{Digest, Sha256};
+
+            let mut hasher = Sha256::new();
+            hasher.update(&image_bytes);
+            format!("{:x}", hasher.finalize())
+        };
+
+        let existing = match store.get_image_by_hash(&content_hash).await {
+            Ok(existing) => existing,
+            Err(_) => None,
+        };
+
+        if let Some(record) = existing {
+            results.push(ImageIndexResult {
+                path: normalized_path,
+                image_id: Some(record.image_id),
+                indexed: false,
+                error: Some("Duplicate content hash".to_string()),
+            });
+            continue;
+        }
+
+        let image_id = Uuid::new_v4().to_string();
+        let mime_hint = mime_hint_from_path(path_obj);
+        let summary_payload = match deps
+            .summarize_image(&image_id, mime_hint, image_bytes)
+            .await
+        {
+            Ok(payload) => payload,
+            Err(error) => {
+                results.push(ImageIndexResult {
+                    path: normalized_path,
+                    image_id: None,
+                    indexed: false,
+                    error: Some(error),
+                });
+                continue;
+            }
+        };
+
+        let embedding_text = build_embedding_text(&summary_payload);
+        let summary_json = summary_payload.to_string();
+
+        if let Err(error) = store
+            .create_image(&image_id, &content_hash, &summary_json, &normalized_path)
+            .await
+        {
+            results.push(ImageIndexResult {
+                path: normalized_path,
+                image_id: Some(image_id),
+                indexed: false,
+                error: Some(error),
+            });
+            continue;
+        }
+
+        if let Err(error) = store
+            .create_image_embeddings(&image_id, &embedding_text, &normalized_path)
+            .await
+        {
+            results.push(ImageIndexResult {
+                path: normalized_path,
+                image_id: Some(image_id),
+                indexed: false,
+                error: Some(error),
+            });
+            continue;
+        }
+
+        results.push(ImageIndexResult {
+            path: normalized_path,
+            image_id: Some(image_id),
+            indexed: true,
+            error: None,
+        });
+    }
+
+    results
+}
+
+pub async fn image_indexer_with_sidecar<C>(
+    file_paths: Vec<String>,
+    groq: &C,
+    store: &dyn ImageIndexStore,
+) -> Vec<ImageIndexResult>
+where
+    C: TranscriptionClient + Clone + 'static,
+{
+    let deps = SidecarImageIndexerDeps { groq: groq.clone() };
+    index_images_with_deps(file_paths, &deps, store).await
 }
