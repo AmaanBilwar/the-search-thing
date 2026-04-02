@@ -74,7 +74,15 @@ pub async fn file_indexer(
 
             let existing = match store.get_file_by_hash(&content_hash).await {
                 Ok(existing) => existing,
-                Err(_) => None,
+                Err(error) => {
+                    results.push(TextIndexResult {
+                        path: file_path,
+                        file_id: None,
+                        indexed: false,
+                        error: Some(format!("store lookup failed: {}", error)),
+                    });
+                    continue;
+                }
             };
 
             if let Some(record) = existing {
