@@ -6,7 +6,7 @@ use std::collections::HashSet;
 use std::env;
 use std::path::PathBuf;
 
-use crate::sidecar::backend_proxy::proxy_search_query;
+use crate::sidecar::backend_proxy::{backend_base_url, proxy_search_query};
 use crate::sidecar::protocol::{
     err_response, ok_response, parse_params, JsonRpcRequest, JsonRpcResponse,
 };
@@ -31,7 +31,7 @@ struct SearchItem {
 }
 
 fn search_mode() -> String {
-    env::var("SIDECAR_SEARCH_MODE").unwrap_or_else(|_| "rust-helix".to_string())
+    env::var("SIDECAR_SEARCH_MODE").unwrap_or_else(|_| "python-proxy".to_string())
 }
 
 fn extract_keywords(query: &str) -> Vec<String> {
@@ -322,7 +322,7 @@ async fn rust_helix_search_query(query: &str) -> Result<Value, String> {
         deduped.push(item);
     }
 
-    let backend_origin = env::var("BACKEND_ORIGIN").unwrap_or_else(|_| "http://localhost:8000".to_string());
+    let backend_origin = backend_base_url();
 
     let mut results: Vec<Value> = Vec::new();
     for item in deduped {
