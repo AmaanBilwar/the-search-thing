@@ -60,25 +60,16 @@ fn walk_text_batch(params: WalkTextBatchParams) -> Result<WalkTextBatchResult, S
     let ignore_exts = normalize_extensions(params.ignore_exts);
     let ignore_files = normalize_file_names(params.ignore_files);
 
-    let mut batch: Vec<(String, String)> = Vec::new();
+    let mut all_entries: Vec<(String, String)> = Vec::new();
     let mut scanned_count = 0usize;
     let mut skipped_count = 0usize;
-    let mut next_cursor = params.cursor;
 
-    for (idx, entry) in WalkDir::new(&params.dir).into_iter().enumerate() {
-        let entry = entry.map_err(|e| e.to_string())?;
-        if idx < params.cursor {
-            continue;
-        }
-
-        next_cursor = idx + 1;
+    for entry in WalkDir::new(&params.dir).into_iter().flatten() {
         let path = entry.path();
 
         if !path.is_file() {
             continue;
         }
-
-        scanned_count += 1;
 
         if let Some(name) = path.file_name().and_then(|s| s.to_str()) {
             if ignore_files.contains(&name.to_lowercase()) {
@@ -102,29 +93,25 @@ fn walk_text_batch(params: WalkTextBatchParams) -> Result<WalkTextBatchResult, S
         match ext {
             Some(ref extension) if text_exts.contains(extension) => {
                 if let Ok(content) = fs::read_to_string(path) {
-                    batch.push((path.to_string_lossy().to_string(), content));
+                    all_entries.push((path.to_string_lossy().to_string(), content));
+                    scanned_count += 1;
                 }
             }
             _ => {
                 skipped_count += 1;
             }
         }
-
-        if batch.len() >= params.batch_size {
-            return Ok(WalkTextBatchResult {
-                batch,
-                cursor: next_cursor,
-                done: false,
-                scanned_count,
-                skipped_count,
-            });
-        }
     }
+
+    let start = params.cursor.min(all_entries.len());
+    let end = (start + params.batch_size).min(all_entries.len());
+    let batch = all_entries[start..end].to_vec();
+    let done = end >= all_entries.len();
 
     Ok(WalkTextBatchResult {
         batch,
-        cursor: next_cursor,
-        done: true,
+        cursor: end,
+        done,
         scanned_count,
         skipped_count,
     })
