@@ -15,16 +15,18 @@ use crate::sidecar::backend_proxy::{proxy_index_start, proxy_index_status};
 use crate::sidecar::protocol::{
     err_response, ok_response, parse_params, JsonRpcRequest, JsonRpcResponse,
 };
+use crate::sidecar::rpc::indexing::adapters::groq::GroqClient;
 use crate::sidecar::rpc::indexing::adapters::hash::{PathHasher, Sha256PathHasher};
 use crate::sidecar::rpc::indexing::adapters::helix::HelixTextStore;
 use crate::sidecar::rpc::indexing::adapters::store::VideoIndexStore;
 use crate::sidecar::rpc::indexing::text_indexer::file_indexer;
 use crate::sidecar::rpc::indexing::video::index_video_with_sidecar;
-use crate::sidecar::rpc::indexing::adapters::groq::GroqClient;
 
 #[derive(Debug, Deserialize)]
 struct IndexStartParams {
     dir: String,
+    #[serde(default)]
+    batch_size: usize,
 }
 
 #[derive(Debug, Deserialize)]
@@ -439,7 +441,7 @@ pub fn handle_start(request: &JsonRpcRequest) -> JsonRpcResponse {
         dir: parsed.dir.clone(),
         status: "running".to_string(),
         phase: "scan_text".to_string(),
-        batch_size: 0,
+        batch_size: parsed.batch_size,
         text_found: 0,
         text_indexed: 0,
         text_errors: 0,
