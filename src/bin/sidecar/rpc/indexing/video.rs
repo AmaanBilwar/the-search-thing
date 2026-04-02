@@ -479,12 +479,9 @@ where
     let transcripts = deps.generate_transcripts(&artifacts).await;
     let frame_summaries = deps.generate_frame_summaries(&artifacts).await;
 
-    store
-        .create_video(video_id, content_hash, artifacts.len(), video_path)
-        .await?;
-
     let mut cumulative_time = 0.0_f64;
     let mut chunks_created = 0_usize;
+    let mut video_registered = false;
 
     for artifact in &artifacts {
         let Some(audio_path) = &artifact.audio_path else {
@@ -499,6 +496,13 @@ where
         let Some(transcript_payload) = transcripts.get(audio_stem) else {
             continue;
         };
+
+        if !video_registered {
+            store
+                .create_video(video_id, content_hash, 0, video_path)
+                .await?;
+            video_registered = true;
+        }
 
         let duration = transcript_payload
             .get("duration")
@@ -542,6 +546,12 @@ where
         }
 
         chunks_created += 1;
+    }
+
+    if video_registered {
+        store
+            .update_video_chunk_count(video_id, chunks_created)
+            .await?;
     }
 
     Ok(VideoIndexResult {

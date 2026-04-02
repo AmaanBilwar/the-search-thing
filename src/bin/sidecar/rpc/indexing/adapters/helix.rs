@@ -287,4 +287,21 @@ impl VideoIndexStore for HelixTextStore {
             .map_err(|e| e.to_string())?;
         Ok(())
     }
+
+    async fn update_video_chunk_count(
+        &self,
+        video_id: &str,
+        no_of_chunks: usize,
+    ) -> Result<(), String> {
+        let payload = json!({
+            "video_id": video_id,
+            "no_of_chunks": no_of_chunks,
+        });
+        let client = self.client();
+        let _: Value = client
+            .query("UpdateVideoChunkCount", &payload)
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
 }

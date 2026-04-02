@@ -84,4 +84,10 @@ pub trait VideoIndexStore: Send + Sync {
         chunk_id: &str,
         content: &str,
     ) -> Result<(), String>;
+
+    async fn update_video_chunk_count(
+        &self,
+        video_id: &str,
+        no_of_chunks: usize,
+    ) -> Result<(), String>;
 }

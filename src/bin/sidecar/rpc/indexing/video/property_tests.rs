@@ -70,6 +70,7 @@ enum StoreCall {
     CreateTranscriptEmbeddings { chunk_id: String },
     CreateFrameSummaryNode { chunk_id: String },
     CreateFrameSummaryEmbeddings { chunk_id: String },
+    UpdateVideoChunkCount,
 }
 
 #[derive(Default)]
@@ -169,6 +170,14 @@ impl VideoIndexStore for MockStore {
         self.push_or_fail(StoreCall::CreateFrameSummaryEmbeddings {
             chunk_id: chunk_id.to_string(),
         })
+    }
+
+    async fn update_video_chunk_count(
+        &self,
+        _video_id: &str,
+        _no_of_chunks: usize,
+    ) -> Result<(), String> {
+        self.push_or_fail(StoreCall::UpdateVideoChunkCount)
     }
 }
 
@@ -297,10 +306,18 @@ async fn video_indexer_randomized_pipeline_properties() {
                 .iter()
                 .filter(|c| matches!(c, StoreCall::CreateVideo))
                 .count(),
-            1,
-            "seed {}: create_video should run once",
+            if expected_chunks > 0 { 1 } else { 0 },
+            "seed {}: create_video should run only when chunks exist",
             seed
         );
+
+        if expected_chunks > 0 {
+            assert!(
+                calls.iter().any(|c| matches!(c, StoreCall::UpdateVideoChunkCount)),
+                "seed {}: update_video_chunk_count should run when chunks exist",
+                seed
+            );
+        }
 
         let chunks = calls
             .iter()
@@ -397,7 +414,37 @@ async fn video_indexer_randomized_store_failure_propagates() {
         let mut rng = StdRng::seed_from_u64(seed + 10_000);
         let scenario = random_scenario(&mut rng);
         let expected_chunks = expected_created_chunks(&scenario);
-        let guaranteed_max_call = (1 + (expected_chunks * 4)).max(1);
+        let expected_frame_summary_chunks = scenario
+            .artifacts
+            .iter()
+            .filter_map(|artifact| {
+                let audio_path = artifact.audio_path.as_ref()?;
+                let stem = Path::new(audio_path)
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or_default()
+                    .to_string();
+                if scenario.transcripts.contains_key(&stem)
+                    && scenario.frame_summaries.contains_key(&stem)
+                {
+                    Some(())
+                } else {
+                    None
+                }
+            })
+            .count();
+
+        // When expected_chunks == 0, no store calls are made (create_video is deferred),
+        // so there is no failure point to inject — skip these seeds.
+        if expected_chunks == 0 {
+            continue;
+        }
+
+        // Max calls: create_video(1) + update_video_chunk_count(1) +
+        //   per-chunk: create_chunk + relationship + transcript_node + transcript_embeddings (4)
+        //   per frame-summary-chunk: frame_summary_node + frame_summary_embeddings (2)
+        let guaranteed_max_call =
+            (2 + (expected_chunks * 4) + (expected_frame_summary_chunks * 2)).max(1);
         let fail_at = rng.random_range(1..=guaranteed_max_call);
 
         let deps = MockDeps { scenario };
