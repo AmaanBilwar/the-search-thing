@@ -5,6 +5,7 @@ import { createAppWindow, getMainWindow, initializeApp, positionAppWindow } from
 import { createBetterSqliteAdapter } from '@/lib/storage/sqlite-adapter'
 import { createKeybindsStore } from '@/lib/storage/keybinds-db-store'
 import type { KeyCombo, KeybindMap } from '@/lib/storage/keybind-store'
+import { sidecarClient } from '@/lib/main/sidecar-client'
 
 let keybindsStore: ReturnType<typeof createKeybindsStore> | null = null
 let currentToggleShortcut: string | null = null
@@ -103,6 +104,16 @@ app.whenReady().then(() => {
 
   const initialKeybinds = getKeybindsStore().getKeybinds()
   handleKeybindsChange(initialKeybinds)
+
+  sidecarClient
+    .ping()
+    .then((result) => {
+      console.log(`[sidecar] connected to ${result.service} v${result.version}`)
+    })
+    .catch((error) => {
+      console.error('[sidecar] ping failed:', error)
+    })
+
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
   // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
@@ -126,6 +137,7 @@ app.whenReady().then(() => {
 app.on('will-quit', () => {
   globalShortcut.unregisterAll()
   keybindsStore?.close?.()
+  sidecarClient.stop()
 })
 
 app.on('window-all-closed', () => {

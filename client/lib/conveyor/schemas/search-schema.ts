@@ -45,6 +45,36 @@ export const searchIpcSchema = {
       ),
     }),
   },
+  'sidecar-ping': {
+    args: z.tuple([]),
+    return: z.object({
+      ok: z.boolean(),
+      service: z.string(),
+      version: z.string(),
+      backend_url: z.string().optional(),
+      index_mode: z.string().optional(),
+      search_mode: z.string().optional(),
+    }),
+  },
+  'sidecar-walk-text-batch': {
+    args: z.tuple([
+      z.object({
+        dir: z.string(),
+        textExts: z.array(z.string()),
+        ignoreExts: z.array(z.string()),
+        ignoreFiles: z.array(z.string()),
+        cursor: z.number().int().nonnegative(),
+        batchSize: z.number().int().positive(),
+      }),
+    ]),
+    return: z.object({
+      batch: z.array(z.tuple([z.string(), z.string()])),
+      cursor: z.number().int().nonnegative(),
+      done: z.boolean(),
+      scannedCount: z.number().int().nonnegative(),
+      skippedCount: z.number().int().nonnegative(),
+    }),
+  },
   // system operations
   'open-file-dialog': {
     args: z.tuple([]),
