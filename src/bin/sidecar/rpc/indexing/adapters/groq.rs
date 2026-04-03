@@ -30,11 +30,22 @@ pub trait TranscriptionClient: Send + Sync {
 impl GroqClient {
     pub fn from_env() -> Result<Self, String> {
         let api_key = env::var("GROQ_API_KEY")
-            .map_err(|_| "GROQ_API_KEY not found in environment variables".to_string())?;
+            .map_err(|_| "GROQ_API_KEY not set — video indexing will be skipped".to_string())?;
+        
+        if api_key.trim().is_empty() {
+            return Err("GROQ_API_KEY is empty — video indexing will be skipped".to_string());
+        }
+        
         Ok(Self {
             http: Client::new(),
             api_key,
         })
+    }
+
+    pub fn is_available() -> bool {
+        env::var("GROQ_API_KEY")
+            .map(|k| !k.trim().is_empty())
+            .unwrap_or(false)
     }
 
     pub async fn transcribe_audio_bytes(
