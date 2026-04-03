@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "cross-env ELECTRON_DISABLE_SANDBOX=1 electron-vite dev -w",
     "dev:rust-text": "cross-env ELECTRON_DISABLE_SANDBOX=1 SIDECAR_INDEX_MODE=rust-text electron-vite dev -w",
-    "dev:rust-core": "cross-env ELECTRON_DISABLE_SANDBOX=1 SIDECAR_INDEX_MODE=rust-text SIDECAR_SEARCH_MODE=rust-helix HELIX_ENDPOINT=http://localhost HELIX_PORT=7003 electron-vite dev -w",
+    "dev:rust-core": "cross-env ELECTRON_DISABLE_SANDBOX=1 SIDECAR_INDEX_MODE=rust-text SIDECAR_SEARCH_MODE=rust-helix electron-vite dev -w",
     "format": "prettier --write .",
     "lint": "eslint . --ext .ts,.tsx --fix",
     "start": "electron-vite preview",
