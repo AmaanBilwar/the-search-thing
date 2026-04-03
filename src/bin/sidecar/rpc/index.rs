@@ -18,8 +18,8 @@ use crate::sidecar::protocol::{
 use crate::sidecar::rpc::indexing::adapters::groq::GroqClient;
 use crate::sidecar::rpc::indexing::adapters::hash::{PathHasher, Sha256PathHasher};
 use crate::sidecar::rpc::indexing::adapters::helix::HelixTextStore;
-use crate::sidecar::rpc::indexing::image::image_indexer_with_sidecar;
 use crate::sidecar::rpc::indexing::adapters::store::VideoIndexStore;
+use crate::sidecar::rpc::indexing::image::image_indexer_with_sidecar;
 use crate::sidecar::rpc::indexing::text_indexer::file_indexer;
 use crate::sidecar::rpc::indexing::video::index_video_with_sidecar;
 
@@ -389,6 +389,14 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
             .find(|r| !r.indexed && r.error.as_deref() != Some("Duplicate content hash"))
             .and_then(|r| r.error.clone())
             .unwrap_or_default();
+
+        let _ = update_job(&job_id, |job| {
+            job.text_found = text_found;
+            job.text_indexed = text_indexed;
+            job.text_skipped = text_skipped;
+            job.text_errors = text_errors;
+            job.message = "Text indexing complete, starting video indexing".to_string();
+        });
 
         let video_exts = load_video_extensions();
         let image_exts = load_image_extensions();
