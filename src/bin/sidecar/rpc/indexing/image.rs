@@ -376,3 +376,6 @@ where
     let deps = SidecarImageIndexerDeps { groq: groq.clone() };
     index_images_with_deps(file_paths, &deps, store).await
 }
+
+#[cfg(test)]
+mod property_tests;
