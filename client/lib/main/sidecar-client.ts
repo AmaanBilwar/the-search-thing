@@ -3,6 +3,10 @@ import { spawn, type ChildProcessWithoutNullStreams } from 'child_process'
 import { existsSync } from 'fs'
 import { resolve, join } from 'path'
 import { createInterface } from 'readline'
+import { config } from 'dotenv'
+
+const repoRoot = resolve(__dirname, '../../..')
+config({ path: join(repoRoot, '.env') })
 
 type JsonRpcId = number
 
