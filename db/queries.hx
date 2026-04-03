@@ -116,24 +116,27 @@ QUERY CreateFrameSummaryEmbeddings (chunk_id:String, content: String) =>
 // search file embeddings separate
 // #[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]
 QUERY SearchFileEmbeddings(search_text: String) =>
-    file_embeddings <- SearchV<FileEmbeddings>(Embed(search_text), 100)
+    file_embeddings <- SearchHybrid<FileEmbeddings>(Embed(search_text), search_text, 100)
+        ::RerankRRF(k: 60)
+        ::RANGE(0, 50)
     chunks <- file_embeddings::In<HasFileEmbeddings>
     RETURN chunks
 
 // search image embeddings
 QUERY SearchImageEmbeddings(search_text: String) =>
-    image_embeddings <- SearchV<ImageEmbeddings>(Embed(search_text), 100)
+    image_embeddings <- SearchHybrid<ImageEmbeddings>(Embed(search_text), search_text, 100)
+        ::RerankRRF(k: 60)
+        ::RANGE(0, 50)
     images <- image_embeddings::In<HasImageEmbeddings>
     RETURN images
 
 
 // search transcript & frame embeddings
-// #[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]
 QUERY SearchTranscriptAndFrameEmbeddings(search_text: String) =>
-    transcript <- SearchV<TranscriptEmbeddings>(Embed(search_text), 100)
+    transcript <- SearchHybrid<TranscriptEmbeddings>(Embed(search_text), search_text, 100)
         ::RerankRRF(k: 60)
         ::RANGE(0, 50)
-    frame <- SearchV<FrameSummaryEmbeddings>(Embed(search_text), 100)
+    frame <- SearchHybrid<FrameSummaryEmbeddings>(Embed(search_text), search_text, 100)
         ::RerankRRF(k: 60)
         ::RANGE(0, 50)
     transcript_videos <- transcript::In<HasTranscriptEmbeddings>::In<Has>

@@ -81,24 +81,24 @@ E::HasImageEmbeddings{
 
 V::TranscriptEmbeddings {
     chunk_id: String,
-    content: String
+    INDEX content: String
 }
 
 V::FrameSummaryEmbeddings {
     chunk_id: String,
-    content: String
+    INDEX content: String
 }
 
 // file embeddings vector
 V::FileEmbeddings{
     INDEX file_id: String,
-    content: String,
+    INDEX content: String,
     path: String,
 }
 
 V::ImageEmbeddings{
     INDEX image_id: String,
-    content: String,
+    INDEX content: String,
     path: String,
 }
 
