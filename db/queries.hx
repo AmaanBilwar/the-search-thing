@@ -288,10 +288,20 @@ QUERY DeleteAllVideos() =>
     DROP N<Video>
     RETURN "Deleted all video nodes"
 
+QUERY DeleteAllFiles() => 
+    files <- N<File>
+    DROP N<File>
+    RETURN "DELETED ALL FILES"
+
 QUERY DeleteAllChunks() =>
     chunks <- N<Chunk>
     DROP N<Chunk>
     RETURN "deleted all chunk nodes"
+
+QUERY DeleteAllImages() => 
+    files <- N<Image>
+    DROP N<Image>
+    RETURN "DELETED ALL IMAGE NODES"
 
 QUERY DeleteOutgoingNeighbours() =>
     videos <- N<Video>
