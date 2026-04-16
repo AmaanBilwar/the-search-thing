@@ -29,13 +29,45 @@ helix push dev
 
 > Note: Because we already have [helix.toml](./helix.toml) defined, we don't need to run `helix init`
 
+5) Install ffmpeg/ffprobe and verify PATH
 
-6) Start the Electron app
+macOS (Homebrew):
 
 ```bash
+brew install ffmpeg
+```
+
+Ubuntu/Debian:
+
+```bash
+sudo apt update && sudo apt install -y ffmpeg
+```
+
+Windows (winget):
+
+```powershell
+winget install --id Gyan.FFmpeg -e
+```
+
+Verify both binaries are available:
+
+```bash
+ffmpeg -version
+ffprobe -version
+```
+
+
+6) Run locally
+
+```bash
+# one-time
 npm --prefix client install
-npm --prefix client run sidecar:build:debug
-npm --prefix client run dev
+
+# terminal 1
+cargo run
+
+# terminal 2
+npm --prefix client run dev:rust-core
 ```
 
 ## Runtime modes (rewrite migration)
