@@ -12,32 +12,6 @@ Thanks for your interest in contributing to the-search-thing. This guide covers 
 
 ## Setup
 
-1) Install Python deps (uv)
-
-```bash
-uv venv
-```
-
-macOS / Linux:
-
-```bash
-source .venv/bin/activate
-uv sync
-```
-
-Windows (PowerShell):
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-uv sync
-```
-
-2) Build Rust extension (PyO3)
-
-```bash
-maturin develop --release
-```
-
 3) Configure environment
 
 ```bash
@@ -55,13 +29,6 @@ helix push dev
 
 > Note: Because we already have [helix.toml](./helix.toml) defined, we don't need to run `helix init`
 
-
-5) Start the API
-
-```bash
-uv run -m backend.app
-# or: uvicorn backend.app:app --reload
-```
 
 6) Start the Electron app
 
