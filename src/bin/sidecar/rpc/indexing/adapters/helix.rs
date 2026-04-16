@@ -4,7 +4,8 @@ use serde_json::{json, Value};
 use std::env;
 
 use crate::sidecar::rpc::indexing::adapters::store::{
-    ChunkCreateInput, ExistingFileRecord, ExistingVideoRecord, TextIndexStore, VideoIndexStore,
+    ChunkCreateInput, ExistingFileRecord, ExistingImageRecord, ExistingVideoRecord,
+    ImageIndexStore, TextIndexStore, VideoIndexStore,
 };
 
 #[derive(Debug, Clone)]
@@ -95,6 +96,41 @@ impl HelixTextStore {
 
         None
     }
+
+    fn extract_existing_image_id(value: &Value) -> Option<String> {
+        if let Some(image_id) = value.get("image_id").and_then(Value::as_str) {
+            return Some(image_id.to_string());
+        }
+
+        if let Some(image_node) = value.get("image") {
+            if let Some(image_id) = image_node.get("image_id").and_then(Value::as_str) {
+                return Some(image_id.to_string());
+            }
+            if let Some(image_array) = image_node.as_array() {
+                if let Some(first) = image_array.first() {
+                    if let Some(image_id) = first.get("image_id").and_then(Value::as_str) {
+                        return Some(image_id.to_string());
+                    }
+                }
+            }
+        }
+
+        if let Some(array) = value.as_array() {
+            if let Some(first) = array.first() {
+                if let Some(image_id) = first.get("image_id").and_then(Value::as_str) {
+                    return Some(image_id.to_string());
+                }
+            }
+        }
+
+        None
+    }
+
+    fn is_not_found_error(message: &str) -> bool {
+        let lowered = message.to_ascii_lowercase();
+        lowered.contains("graph error: no value found")
+            || lowered.contains("\"error\":\"graph error: no value found\"")
+    }
 }
 
 #[async_trait]
@@ -108,7 +144,14 @@ impl TextIndexStore for HelixTextStore {
         let result: Value = client
             .query("GetFileByHash", &payload)
             .await
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| e.to_string())
+            .or_else(|error| {
+                if Self::is_not_found_error(&error) {
+                    Ok(Value::Null)
+                } else {
+                    Err(error)
+                }
+            })?;
 
         Ok(Self::extract_existing_file_id(&result).map(|file_id| ExistingFileRecord { file_id }))
     }
@@ -155,6 +198,72 @@ impl TextIndexStore for HelixTextStore {
 }
 
 #[async_trait]
+impl ImageIndexStore for HelixTextStore {
+    async fn get_image_by_hash(
+        &self,
+        content_hash: &str,
+    ) -> Result<Option<ExistingImageRecord>, String> {
+        let payload = json!({ "content_hash": content_hash });
+        let client = self.client();
+        let result: Value = client
+            .query("GetImageByHash", &payload)
+            .await
+            .map_err(|e| e.to_string())
+            .or_else(|error| {
+                if Self::is_not_found_error(&error) {
+                    Ok(Value::Null)
+                } else {
+                    Err(error)
+                }
+            })?;
+
+        Ok(Self::extract_existing_image_id(&result).map(|image_id| ExistingImageRecord {
+            image_id,
+        }))
+    }
+
+    async fn create_image(
+        &self,
+        image_id: &str,
+        content_hash: &str,
+        content: &str,
+        path: &str,
+    ) -> Result<(), String> {
+        let payload = json!({
+            "image_id": image_id,
+            "content_hash": content_hash,
+            "content": content,
+            "path": path,
+        });
+        let client = self.client();
+        let _: Value = client
+            .query("CreateImage", &payload)
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    async fn create_image_embeddings(
+        &self,
+        image_id: &str,
+        content: &str,
+        path: &str,
+    ) -> Result<(), String> {
+        let payload = json!({
+            "image_id": image_id,
+            "content": content,
+            "path": path,
+        });
+        let client = self.client();
+        let _: Value = client
+            .query("CreateImageEmbeddings", &payload)
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+}
+
+#[async_trait]
 impl VideoIndexStore for HelixTextStore {
     async fn get_video_by_hash(
         &self,
@@ -165,7 +274,14 @@ impl VideoIndexStore for HelixTextStore {
         let result: Value = client
             .query("GetVideoByHash", &payload)
             .await
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| e.to_string())
+            .or_else(|error| {
+                if Self::is_not_found_error(&error) {
+                    Ok(Value::Null)
+                } else {
+                    Err(error)
+                }
+            })?;
 
         Ok(Self::extract_existing_video_id(&result).map(|video_id| ExistingVideoRecord { video_id }))
     }

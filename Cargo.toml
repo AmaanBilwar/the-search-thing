@@ -30,6 +30,7 @@ sha2 = "0.10.9"
 helix-rs = "0.1.9"
 reqwest = { version = "0.12", features = ["json", "multipart", "stream"] }
 uuid = { version = "1", features = ["v4"] }
+dotenv = "0.15"
 
 [[bin]]
 name = "the-search-thing-sidecar"
