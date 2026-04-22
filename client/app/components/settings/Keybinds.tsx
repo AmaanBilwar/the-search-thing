@@ -78,7 +78,7 @@ function KeybindRow({
   return (
     <div
       className={cn(
-        'flex items-center justify-between gap-4 px-3 py-2 transition-colors',
+        'flex items-center justify-between gap-4 py-1 transition-colors',
         isRecording && 'bg-amber-100/70 ring-1 ring-amber-700/70 dark:bg-zinc-700/40 dark:ring-amber-500/50',
         conflict && 'bg-rose-500/10 ring-1 ring-rose-400/40'
       )}
@@ -238,7 +238,7 @@ export default function Keybinds() {
         'flex flex-col gap-4',
         'w-full h-full overflow-hidden',
         'border border-zinc-700/70 bg-zinc-800/50',
-        'p-2'
+        'p-4'
       )}
     >
       <div className="flex items-center justify-between">
@@ -301,7 +301,7 @@ export default function Keybinds() {
       </div>
 
       {/* Static Enter row — not customizable per user request */}
-      <div className="flex items-center justify-between gap-4 px-3 py-2 opacity-50">
+      <div className="flex items-center justify-between gap-4 py-2 opacity-50">
         <div className="flex flex-col gap-0.5">
           <div className="text-sm text-zinc-200">Open selected result</div>
           <div className="text-xs text-zinc-500">Open the highlighted result.</div>
