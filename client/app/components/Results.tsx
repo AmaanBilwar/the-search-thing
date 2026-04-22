@@ -1,6 +1,5 @@
 import * as React from 'react'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import noFiles from '@/resources/no-files-found.svg'
 import { FileX } from 'lucide-react'
 import { ResultProps, SearchResultItem } from '../types/types'
 import * as fileIcons from '@/resources/filetype icons'
@@ -65,7 +64,6 @@ const Results: React.FC<ResultsWithContextProps> = ({
     search.openFile(filePath)
   }
 
-  // Extract filename from path
   const getFileName = (path: string) => {
     const parts = path.split(/[/\\]/)
     return parts[parts.length - 1] || path
@@ -79,7 +77,6 @@ const Results: React.FC<ResultsWithContextProps> = ({
   const handleStartIndexing = useCallback(async () => {
     const res = await search.openFileDialog()
     if (!res || res.length === 0) {
-      // User cancelled the file dialog - reset the awaiting state
       onIndexingCancelled?.()
       setAwaitingIndexing(false)
       setHasInitiatedIndexing(false)
@@ -102,7 +99,6 @@ const Results: React.FC<ResultsWithContextProps> = ({
 
   useEffect(() => {
     if (awaitingIndexing && !currentJobId && !hasInitiatedIndexing && !hasOpenedDialogRef.current) {
-      //temporary guardrail for development strict mode
       hasOpenedDialogRef.current = true
       setHasInitiatedIndexing(true)
       handleStartIndexing()
@@ -115,45 +111,40 @@ const Results: React.FC<ResultsWithContextProps> = ({
     if (found === 0 && indexed === 0) return null
     return (
       <div className="w-full">
-        <div className="flex justify-between text-xs text-zinc-400 mb-1">
+        <div className="mb-1 flex justify-between text-xs text-zinc-400">
           <span>{label}</span>
           <span>
             {indexed}/{found}
-            {errors > 0 && <span className="text-red-400 ml-1">({errors} errors)</span>}
-            {skipped > 0 && <span className="text-yellow-600 ml-1">({skipped} skipped)</span>}
+            {errors > 0 && <span className="ml-1 text-red-400">({errors} errors)</span>}
+            {skipped > 0 && <span className="ml-1 text-yellow-600">({skipped} skipped)</span>}
           </span>
         </div>
-        <div className="w-full h-1.5 bg-zinc-700 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${pct}%` }}
-          />
+        <div className="h-1.5 w-full overflow-hidden bg-zinc-700">
+          <div className="h-full bg-blue-500 transition-all duration-500 ease-out" style={{ width: `${pct}%` }} />
         </div>
       </div>
     )
   }
 
-  // Show full indexing UI when actively indexing in results view
   if (indexingLocation === 'results' && awaitingIndexing) {
     return (
-      <div className="flex flex-col w-full h-full items-center justify-center p-6 gap-5">
-        {/* Spinner + phase label */}
+      <div className="flex h-full w-full flex-col items-center justify-center gap-5 p-6">
         <div className="flex items-center gap-3">
           {(!jobStatus || (jobStatus.status !== 'completed' && jobStatus.status !== 'failed')) && (
-            <svg className="animate-spin h-5 w-5 text-blue-400" viewBox="0 0 24 24" fill="none">
+            <svg className="h-5 w-5 animate-spin text-blue-400" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
           )}
-          <div className="text-zinc-200 text-lg font-medium">
+          <div className="text-lg font-medium text-zinc-200">
             {jobStatus ? phaseLabels[jobStatus.phase] || jobStatus.phase : 'Starting indexing...'}
           </div>
         </div>
 
-        {currentJobId && dirIndexed && <div className="text-zinc-500 text-xs font-mono">Directory: {dirIndexed}</div>}
+        {currentJobId && dirIndexed && <div className="font-mono text-xs text-zinc-500">Directory: {dirIndexed}</div>}
 
         {jobStatus && (
-          <div className="flex flex-col gap-3 w-full max-w-sm">
+          <div className="flex w-full max-w-sm flex-col gap-3">
             {progressSection(
               'Text files',
               jobStatus.text_found,
@@ -176,34 +167,24 @@ const Results: React.FC<ResultsWithContextProps> = ({
               jobStatus.image_skipped
             )}
 
-            {/* Status message */}
-            {jobStatus.message && <div className="text-zinc-400 text-xs text-center mt-1">{jobStatus.message}</div>}
+            {jobStatus.message && <div className="mt-1 text-center text-xs text-zinc-400">{jobStatus.message}</div>}
 
-            {/* Error */}
-            {jobStatus.error && (
-              <div className="text-red-500 text-xs text-center mt-1 bg-red-950/30 rounded px-3 py-2">
-                {jobStatus.error}
-              </div>
-            )}
+            {jobStatus.error && <div className="mt-1 bg-red-950/30 px-3 py-2 text-center text-xs text-red-500">{jobStatus.error}</div>}
 
-            {/* Completed / failed badge */}
             {jobStatus.status === 'completed' && (
-              <div className="text-green-600 text-sm text-center mt-2 font-medium">Indexing complete!</div>
+              <div className="mt-2 text-center text-sm font-medium text-green-600">Indexing complete!</div>
             )}
-            {jobStatus.status === 'failed' && (
-              <div className="text-red-600 text-sm text-center mt-2 font-medium">Indexing failed</div>
-            )}
+            {jobStatus.status === 'failed' && <div className="mt-2 text-center text-sm font-medium text-red-600">Indexing failed</div>}
           </div>
         )}
       </div>
     )
   }
 
-  // Searched but found nothing
   if (hasSearched && allResults.length === 0 && query) {
     return (
-      <div className="flex flex-col items-center gap-4 w-full h-full pt-30">
-        <FileX className="w-15 h-15 opacity-55" />
+      <div className="flex h-full w-full flex-col items-center gap-4 pt-28">
+        <FileX className="h-14 w-14 opacity-55" />
         <div className="flex flex-col items-center">
           <div className="text-zinc-500">No results for "{query}"</div>
           <div className="text-zinc-500">Press Enter to index directories.</div>
@@ -215,16 +196,13 @@ const Results: React.FC<ResultsWithContextProps> = ({
   const showRecentSearches = !hasSearched
 
   return (
-    <div className="flex items-center w-full h-full">
-      <div className="flex w-full h-full">
-        {/* Files & its paths */}
-        <div className="w-1/3 min-w-[200px] max-w-[300px] h-full border-r border-zinc-700 flex flex-col">
-          <div className="p-1 flex-none">
-            <h3 className="text-zinc-400 text-[0.8rem] font-medium">
-              {showRecentSearches ? 'Recent Searches' : 'Results'}
-            </h3>
+    <div className="flex h-full w-full items-center">
+      <div className="flex h-full w-full">
+        <div className="flex h-full w-1/3 min-w-[220px] max-w-[320px] flex-col border-r border-zinc-700/80 pr-2">
+          <div className="flex-none px-1 py-2">
+            <h3 className="text-[0.8rem] font-medium text-zinc-400">{showRecentSearches ? 'Recent Searches' : 'Results'}</h3>
           </div>
-          <div className="flex-1 min-h-0 flex flex-col overflow-y-auto pr-2">
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pr-1">
             {showRecentSearches ? (
               recentSearches.length > 0 ? (
                 recentSearches.map((item) => (
@@ -232,7 +210,7 @@ const Results: React.FC<ResultsWithContextProps> = ({
                     key={item.id}
                     type="button"
                     onClick={() => onRecentSearchSelect?.(item.search_string)}
-                    className="flex items-center gap-2 p-2 rounded-xl cursor-pointer hover:bg-zinc-800 transition-colors border-b border-zinc-800 text-left"
+                    className="flex items-center gap-2 border border-transparent px-2.5 py-2 text-left transition-colors hover:border-zinc-700/70 hover:bg-zinc-700/30"
                   >
                     <svg
                       aria-hidden="true"
@@ -245,19 +223,19 @@ const Results: React.FC<ResultsWithContextProps> = ({
                       <path d="m21 21-4.3-4.3" />
                       <circle cx="11" cy="11" r="7" />
                     </svg>
-                    <span className="text-zinc-100 truncate" title={item.search_string}>
+                    <span className="truncate text-zinc-100" title={item.search_string}>
                       {item.search_string}
                     </span>
                   </button>
                 ))
               ) : (
-                <div className="text-zinc-500 text-sm p-2">No recent searches yet.</div>
+                <div className="p-2 text-sm text-zinc-500">No recent searches yet.</div>
               )
             ) : (
               allResults.map((result, index) => (
-                <div
+                <button
                   key={`${result.path}-${result.label}-${index}`}
-                  tabIndex={0}
+                  type="button"
                   onClick={() => setSelectedItem(result)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -269,63 +247,55 @@ const Results: React.FC<ResultsWithContextProps> = ({
                       handleOpen(result.path)
                     }
                   }}
-                   className={`flex flex-row p-2 rounded-xl cursor-pointer hover:bg-zinc-800 transition-colors border-b border-zinc-800 ${
-                     selectedItem?.path === result.path ? 'bg-zinc-700' : ''
-                   }`}
+                  className={`flex w-full cursor-pointer flex-row border px-2.5 py-2 text-left transition-colors ${
+                    selectedItem?.path === result.path
+                      ? 'border-zinc-600/80 bg-zinc-700/70'
+                      : 'border-transparent hover:border-zinc-700/70 hover:bg-zinc-700/30'
+                  }`}
                 >
-                  <div className="pr-2 shrink-0">
+                  <div className="shrink-0 pr-2">
                     {result.label === 'video' && result.thumbnail_url ? (
-                      <img
-                        src={result.thumbnail_url}
-                        alt=""
-                        className="w-7 h-7 rounded-md object-cover"
-                        loading="lazy"
-                      />
+                      <img src={result.thumbnail_url} alt="" className="h-7 w-7 object-cover" loading="lazy" />
                     ) : (
                       <img
                         src={fileIcons[getFileExt(result.path).toLowerCase()] || fileIcons.txt}
-                        className="w-5 h-5"
+                        className="h-5 w-5"
                         alt=""
                       />
                     )}
                   </div>
-                  <div className="min-w-0 flex-1 text-zinc-100 truncate" title={result.path}>
+                  <div className="min-w-0 flex-1 truncate text-zinc-100" title={result.path}>
                     {getFileName(result.path)}
                   </div>
-                </div>
+                </button>
               ))
             )}
           </div>
         </div>
 
-        {/* Content preview */}
-        <div className="flex-1 h-full">
+        <div className="h-full flex-1">
           {selectedItem ? (
-            <div className="pl-4 py-2 h-full">
+            <div className="h-full py-2 pl-3">
               {selectedItem.label === 'video' && selectedItem.thumbnail_url ? (
-                <div className="p-5 rounded-2xl min-h-[320px] bg-zinc-900/60 overflow-hidden">
-                  <img
-                    src={selectedItem.thumbnail_url}
-                    alt=""
-                    className="w-full max-h-[360px] object-contain rounded-xl bg-zinc-950"
-                  />
-                  <div className="text-zinc-300 whitespace-pre-wrap overflow-y-auto max-h-[calc(100vh-260px)] mt-4">
+                <div className="min-h-[320px] overflow-hidden border border-zinc-700/70 bg-zinc-900/60 p-5">
+                  <img src={selectedItem.thumbnail_url} alt="" className="w-full max-h-[360px] bg-zinc-950 object-contain" />
+                  <div className="mt-4 max-h-[calc(100vh-260px)] overflow-y-auto whitespace-pre-wrap text-zinc-300">
                     {selectedItem.content ?? 'No preview available for this result.'}
                   </div>
-                  <div className="text-zinc-400 text-xs mt-3 truncate" title={selectedItem.path}>
+                  <div className="mt-3 truncate text-xs text-zinc-400" title={selectedItem.path}>
                     {selectedItem.path}
                   </div>
                 </div>
               ) : (
-                <div className="p-5 rounded-2xl min-h-[320px] bg-zinc-700/60 overflow-hidden">
-                  <div className="text-zinc-300 whitespace-pre-wrap overflow-y-auto max-h-[calc(100vh-200px)]">
+                <div className="min-h-[320px] overflow-hidden border border-zinc-700/70 bg-zinc-700/35 p-5">
+                  <div className="max-h-[calc(100vh-200px)] overflow-y-auto whitespace-pre-wrap text-zinc-300">
                     {selectedItem.content ?? 'No preview available for this result.'}
                   </div>
                 </div>
               )}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full text-zinc-500">
+            <div className="flex h-full items-center justify-center text-zinc-500">
               {allResults.length > 0 ? 'Select a file to view its content' : 'Search for something to see results'}
             </div>
           )}

@@ -105,10 +105,10 @@ export default function Home() {
   }, [query, hasInteracted, hasSearched, searchResults, awaitingIndexing, currentJobId])
 
   return (
-    <div className="welcome-content flex flex-col gap-5 h-screen">
-      <div className="flex flex-row items-center flex-none min-h-[55px] bg-zinc-800/60 pl-4 ">
+    <div className="welcome-content flex h-screen flex-col gap-3 p-3">
+      <div className="flex min-h-[56px] flex-none items-center border border-zinc-700/70 bg-zinc-800/65 pr-1 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
         <Searchbar
-          className="bg-transparent shadow-none px-0"
+          className="bg-transparent px-3 shadow-none"
           data-search-input="true"
           value={query}
           onChange={(e) => {
@@ -134,7 +134,7 @@ export default function Home() {
         />
         <button
           onClick={() => navigate('/settings')}
-          className="flex items-center justify-center h-8 w-8 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700/60 transition-colors duration-150 flex-none mx-2"
+          className="mx-2 flex h-9 w-9 flex-none items-center justify-center text-zinc-400 transition-colors duration-150 hover:bg-zinc-700/60 hover:text-zinc-100"
           aria-label="Open settings"
         >
           <Settings className="h-5 w-5" />
@@ -145,8 +145,8 @@ export default function Home() {
         <div
           className={cn(
             'flex flex-1 min-h-0',
-            'border-2 border-zinc-700/80 bg-zinc-800/75',
-            'px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
+            'border border-zinc-700/70 bg-zinc-800/75',
+            'px-3 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
           )}
         >
           {isLoading ? (
@@ -165,8 +165,8 @@ export default function Home() {
       ) : (
         <div
           className={cn(
-            'flex flex-1 min-h-0 gap-1 flex-col items-center justify-center',
-            'border-2 border-zinc-700/80 bg-zinc-800/85',
+            'flex flex-1 min-h-0 flex-col items-center justify-center gap-1',
+            'border border-zinc-700/70 bg-zinc-800/85',
             'px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
           )}
         >
@@ -178,8 +178,8 @@ export default function Home() {
       <div
         className={cn(
           'flex items-center flex-none min-h-[56px]',
-          ' bg-zinc-800/60',
-          'px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
+          'border border-zinc-700/70 bg-zinc-800/60',
+          'px-3 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
         )}
       >
         <Footer />

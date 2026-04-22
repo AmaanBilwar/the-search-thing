@@ -161,14 +161,14 @@ export default function Footer() {
       <div className="relative" ref={popoverRef}>
         <Button
           variant="hoverlessTransparent"
-          className="p-0.5 w-auto h-auto rounded-full cursor-pointer transition-colors"
+          className="h-8 w-8 p-0.5 text-zinc-400 transition-colors hover:bg-zinc-700/60 hover:text-zinc-100"
           onClick={() => setIsPopoverOpen(!isPopoverOpen)}
         >
-          <Info className="w-3 h- opacity-75" />
+          <Info className="h-3.5 w-3.5" />
         </Button>
 
         {isPopoverOpen && (
-          <div className="absolute left-0 bottom-full mb-2 z-[60] min-w-[150px] rounded-lg bg-zinc-900/70 p-3 text-zinc-100 shadow-xl backdrop-blur-sm border border-zinc-600">
+          <div className="absolute left-0 bottom-full mb-2 z-[60] min-w-[150px] border border-zinc-600 bg-zinc-900/70 p-3 text-zinc-100 shadow-xl backdrop-blur-sm">
             <div className="text-xs font-medium mb-1">the-search-thing</div>
             <div className="text-[10px] text-zinc-400">Version 0.1.0</div>
             {/* Arrow pointing down */}
@@ -177,16 +177,17 @@ export default function Footer() {
         )}
       </div>
 
-      <div className="text-sm flex items-center flex-1 justify-center px-4">{renderStatus()}</div>
+      <div className="flex flex-1 items-center justify-center px-4 text-sm">{renderStatus()}</div>
 
       <Button
         variant="transparent"
         size="sm"
+        className="h-8 px-2.5"
         onClick={handleStartIndexing}
         disabled={isIndexing || !!currentJobId}
         data-index-button="true"
       >
-        Index <CornerDownLeft className="w-5 h-6 opacity-75" />
+        Index <CornerDownLeft className="h-4 w-4 opacity-75" />
       </Button>
     </div>
   )

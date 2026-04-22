@@ -75,12 +75,11 @@ export default function SettingsSidebar({ selectedItem, onSelect }: SettingsSide
     <div
       className={cn(
         'flex flex-col gap-2',
-        'w-56 flex-none',
-        'border-1 border-zinc-700/80 bg-zinc-800/60',
-        'p-3 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
+        'w-56 flex-none border border-zinc-700/70 bg-zinc-800/50',
+        'p-3'
       )}
     >
-      <div className="text-xs uppercase tracking-wider text-zinc-500 px-1">Settings</div>
+      <div className="text-xs uppercase tracking-wider text-zinc-500 px-1 py-2">Settings</div>
       <nav className="flex flex-col gap-1" role="tablist" aria-label="Settings sections">
         {items.map((label, index) => {
           const icon = icons[label]

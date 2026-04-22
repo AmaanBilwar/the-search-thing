@@ -10,16 +10,23 @@ export default function About() {
   return (
     <div
       className={cn(
-        'flex flex-1 min-h-0 flex-col items-center justify-center gap-3 w-full h-full',
-        'border-1 border-zinc-700/80 bg-zinc-800/60',
-        'p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
+        'flex h-full w-full flex-1 flex-col items-center justify-center gap-5',
+        'border border-zinc-700/80 bg-zinc-800/60',
+        'px-8 py-6 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
       )}
     >
-      <img src={logoSrc} alt="Logo" className="w-[75px] h-[75px]" />
-      <div className="items-center flex flex-col">
-        <p className="text-lg text-zinc-200">the-search-thing</p>
-        <p className="text-sm text-zinc-500 font-semibold">v0.1.0</p>
-        <p className="text-xs text-zinc-500 py-2">by Karthik & Amaan</p>
+      <img src={logoSrc} alt="Logo" className="h-[76px] w-[76px] border border-zinc-700/80 bg-zinc-900/30 p-1.5" />
+
+      <div className="flex flex-col items-center gap-1">
+        <p className="text-lg font-medium tracking-tight text-zinc-100">the-search-thing</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">Version 0.1.0</p>
+      </div>
+
+      <div className="h-px w-52 bg-zinc-700/80" />
+
+      <div className="flex w-full max-w-sm items-center justify-between gap-4 border border-zinc-700/70 bg-zinc-900/30 px-3 py-2 text-xs">
+        <span className="uppercase tracking-wider text-zinc-500">Created by</span>
+        <span className="text-zinc-200">Karthik & Amaan</span>
       </div>
     </div>
   )

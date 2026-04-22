@@ -14,9 +14,9 @@ import {
 } from '@/lib/storage/keybind-store'
 
 function KeyToken({ children }: { children: string }) {
-  return <kbd className="px-2 py-1 text-xs text-zinc-300 bg-zinc-700/50 border border-zinc-600 rounded">{children}</kbd>
+  return <kbd className="px-2 py-1 text-xs text-zinc-300 bg-zinc-700/50 border border-zinc-600">{children}</kbd>
 }
-
+  
 function ComboDisplay({ combo }: { combo: KeyCombo }) {
   const tokens = comboTokens(combo)
   return (
@@ -78,7 +78,7 @@ function KeybindRow({
   return (
     <div
       className={cn(
-        'flex items-center justify-between gap-4 px-3 py-2 rounded-md transition-colors',
+        'flex items-center justify-between gap-4 px-3 py-2 transition-colors',
         isRecording && 'bg-amber-100/70 ring-1 ring-amber-700/70 dark:bg-zinc-700/40 dark:ring-amber-500/50',
         conflict && 'bg-rose-500/10 ring-1 ring-rose-400/40'
       )}
@@ -96,7 +96,7 @@ function KeybindRow({
             <button
               type="button"
               onClick={onCancelRecording}
-              className="text-xs text-zinc-400 hover:text-zinc-300 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors px-1.5 py-0.5 rounded border border-zinc-600/70 hover:border-zinc-500"
+              className="text-xs text-zinc-400 hover:text-zinc-300 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors px-1.5 py-0.5 border border-zinc-600/70 hover:border-zinc-500"
             >
               Esc
             </button>
@@ -105,11 +105,11 @@ function KeybindRow({
           <button
             type="button"
             onClick={onStartRecording}
-            className={cn(
-              'flex items-center gap-2 group cursor-pointer',
-              'rounded-md px-2 py-1 -mx-2 -my-1',
-              'hover:bg-zinc-700/50 transition-colors'
-            )}
+              className={cn(
+                'flex items-center gap-2 group cursor-pointer',
+                'px-2 py-1 -mx-2 -my-1',
+                'hover:bg-zinc-700/50 transition-colors'
+              )}
             title="Click to rebind"
           >
             <ComboDisplay combo={combo} />
@@ -236,9 +236,9 @@ export default function Keybinds() {
     <div
       className={cn(
         'flex flex-col gap-4',
-        'w-full h-full',
-        'border-1 border-zinc-700/80 bg-zinc-800/60',
-        'p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
+        'w-full h-full overflow-hidden',
+        'border border-zinc-700/70 bg-zinc-800/50',
+        'p-2'
       )}
     >
       <div className="flex items-center justify-between">
@@ -251,7 +251,7 @@ export default function Keybinds() {
           {hasCustomBindings && (
             <button
               onClick={handleResetDefaults}
-              className="text-xs text-zinc-400 hover:text-zinc-300 transition-colors px-2 py-1 rounded border border-zinc-700 hover:border-zinc-500"
+              className="text-xs text-zinc-400 hover:text-zinc-300 transition-colors px-2 py-1 border border-zinc-700 hover:border-zinc-500"
             >
               Reset to defaults
             </button>
@@ -259,9 +259,9 @@ export default function Keybinds() {
           <button
             onClick={handleDiscard}
             disabled={!hasUnsavedChanges}
-            className={cn(
-              'text-xs transition-colors px-2 py-1 rounded border',
-              hasUnsavedChanges
+              className={cn(
+                'text-xs transition-colors px-2 py-1 border',
+                hasUnsavedChanges
                 ? 'text-zinc-300 hover:text-zinc-200 border-zinc-600 hover:border-zinc-500 dark:text-zinc-400 dark:hover:text-zinc-200 dark:border-zinc-700 dark:hover:border-zinc-500'
                 : 'text-zinc-500 border-zinc-700 cursor-not-allowed dark:text-zinc-600 dark:border-zinc-800'
             )}
@@ -271,9 +271,9 @@ export default function Keybinds() {
           <button
             onClick={handleSave}
             disabled={!hasUnsavedChanges}
-            className={cn(
-              'text-xs transition-colors px-2 py-1 rounded border',
-              hasUnsavedChanges
+              className={cn(
+                'text-xs transition-colors px-2 py-1 border',
+                hasUnsavedChanges
                 ? 'text-emerald-700 border-emerald-700/70 hover:border-emerald-600 dark:text-emerald-200 dark:border-emerald-500/60 dark:hover:border-emerald-400'
                 : 'text-zinc-500 border-zinc-700 cursor-not-allowed dark:text-zinc-600 dark:border-zinc-800'
             )}
@@ -318,7 +318,7 @@ export default function Keybinds() {
       {isConflictModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setIsConflictModalOpen(false)} />
-          <div className="relative z-10 w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-900/95 p-4 shadow-xl">
+          <div className="relative z-10 w-full max-w-md border border-zinc-700 bg-zinc-900/95 p-4 shadow-xl">
             <div className="text-sm text-zinc-200">Conflicting keybinds</div>
             <div className="text-xs text-zinc-400 mt-1">
               These shortcuts overlap. Saving will unbind the older action(s).
@@ -336,7 +336,7 @@ export default function Keybinds() {
                 return (
                   <div
                     key={`${item.action}-${item.conflictAction}-${item.comboLabel}`}
-                    className="rounded-md border border-zinc-800 bg-zinc-900/60 px-3 py-2"
+                    className="border border-zinc-800 bg-zinc-900/60 px-3 py-2"
                   >
                     <div className="text-xs text-zinc-200">
                       <span className="text-zinc-100">{item.comboLabel}</span> is assigned to{' '}
@@ -360,7 +360,7 @@ export default function Keybinds() {
             <div className="mt-4 flex items-center justify-end gap-2">
               <button
                 onClick={() => setIsConflictModalOpen(false)}
-                className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors px-2 py-1 rounded border border-zinc-700 hover:border-zinc-500"
+                className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors px-2 py-1 border border-zinc-700 hover:border-zinc-500"
               >
                 Cancel
               </button>
@@ -369,7 +369,7 @@ export default function Keybinds() {
                   setIsConflictModalOpen(false)
                   void setAllKeybinds(draftKeybinds)
                 }}
-                className="text-xs text-rose-200 border border-rose-500/60 hover:border-rose-400 transition-colors px-2 py-1 rounded"
+                className="text-xs text-rose-200 border border-rose-500/60 hover:border-rose-400 transition-colors px-2 py-1"
               >
                 Save anyway
               </button>

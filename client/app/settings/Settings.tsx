@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Settings as SettingsIcon } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import SettingsSidebar from '../components/settings/SettingsSidebar'
 import SettingsContent from '../components/settings/SettingsContent'
@@ -14,11 +14,11 @@ export default function Settings() {
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex h-screen flex-col overflow-hidden ">
       <div
         className={cn(
-          'flex flex-row items-center flex-none min-h-[35px]',
-          'bg-zinc-800/60 px-4',
+          'flex min-h-[40px] flex-none flex-row items-center border border-zinc-700/70',
+          'bg-zinc-800/60 px-3',
           'shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
         )}
       >
@@ -26,7 +26,7 @@ export default function Settings() {
           onClick={() => navigate('/')}
           className={cn(
             'flex items-center justify-center',
-            'h-6 w-6 rounded-md',
+            'h-8 w-8',
             'text-zinc-400 hover:text-zinc-100',
             'hover:bg-zinc-700/60',
             'transition-colors duration-150'
@@ -39,8 +39,8 @@ export default function Settings() {
 
       <div
         className={cn(
-          'flex flex-1 min-h-0 flex-row items-stretch ',
-          'border-1 border-zinc-700/80 bg-zinc-800/60',
+          'flex flex-1 min-h-0 flex-row items-stretch overflow-hidden',
+          'bg-zinc-800/60',
           'shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
         )}
       >

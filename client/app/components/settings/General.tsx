@@ -107,9 +107,9 @@ export default function General() {
     <div
       className={cn(
         'flex flex-col gap-4',
-        'w-full h-full',
-        'border-1 border-zinc-700/80 bg-zinc-800/60',
-        'p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
+        'w-full h-full overflow-hidden',
+        'border border-zinc-700/70 bg-zinc-800/50',
+        'p-4'
       )}
     >
       <div className="flex items-center justify-between gap-4">
@@ -129,7 +129,7 @@ export default function General() {
             onClick={handleDiscard}
             disabled={!hasUnsavedChanges}
             className={cn(
-              'text-xs transition-colors px-2 py-1 rounded border',
+              'text-xs transition-colors px-2 py-1 border',
               hasUnsavedChanges
                 ? 'text-zinc-300 hover:text-zinc-200 border-zinc-600 hover:border-zinc-500 dark:text-zinc-400 dark:hover:text-zinc-200 dark:border-zinc-700 dark:hover:border-zinc-500'
                 : 'text-zinc-500 border-zinc-700 cursor-not-allowed dark:text-zinc-600 dark:border-zinc-800'
@@ -167,7 +167,7 @@ export default function General() {
                 'launch-on-startup': !prev['launch-on-startup'],
               }))
             }
-            className="h-7 px-3 rounded-md text-xs text-zinc-200 bg-zinc-700/60 hover:bg-zinc-700 transition-colors duration-150"
+            className="h-7 px-3 text-xs text-zinc-200 bg-zinc-700/60 hover:bg-zinc-700 transition-colors duration-150"
           >
             {draftSettings['launch-on-startup'] ? 'On' : 'Off'}
           </button>
@@ -183,7 +183,7 @@ export default function General() {
               type="button"
               onClick={() => setDraftSettings((prev) => ({ ...prev, theme: 'dark' }))}
               className={cn(
-                'h-7 px-3 rounded-md text-xs transition-colors duration-150',
+                'h-7 px-3 text-xs transition-colors duration-150',
                 draftSettings.theme === 'dark'
                   ? 'text-zinc-100 bg-zinc-600/80 ring-1 ring-zinc-500/70'
                   : 'text-zinc-200 bg-zinc-700/60 hover:bg-zinc-700'
@@ -195,7 +195,7 @@ export default function General() {
               type="button"
               onClick={() => setDraftSettings((prev) => ({ ...prev, theme: 'light' }))}
               className={cn(
-                'h-7 px-3 rounded-md text-xs transition-colors duration-150',
+                'h-7 px-3 text-xs transition-colors duration-150',
                 draftSettings.theme === 'light'
                   ? 'text-zinc-100 bg-zinc-600/80 ring-1 ring-zinc-500/70'
                   : 'text-zinc-200 bg-zinc-700/60 hover:bg-zinc-700'
@@ -219,7 +219,7 @@ export default function General() {
                 font: event.target.value as 'sans-serif' | 'mono',
               }))
             }
-            className="h-7 rounded-md bg-zinc-800/60 border-1 border-zinc-600/80 text-xs text-zinc-200 px-2"
+            className="h-8 border border-zinc-600/80 bg-zinc-800/60 px-2.5 text-xs text-zinc-200"
           >
             <option value="sans-serif">Manrope</option>
             <option value="mono">Mono</option>
@@ -239,7 +239,7 @@ export default function General() {
                 scope: event.target.value as 'both' | 'files' | 'folders',
               }))
             }
-            className="h-7 rounded-md bg-zinc-800/60 border-1 border-zinc-600/80 text-xs text-zinc-200 px-2"
+            className="h-8 border border-zinc-600/80 bg-zinc-800/60 px-2.5 text-xs text-zinc-200"
           >
             <option value="both">Everything</option>
             <option value="files">Files Only</option>
@@ -262,7 +262,7 @@ export default function General() {
               }))
               void windowApi.windowApplyPlacement(nextValue)
             }}
-            className="h-7 rounded-md bg-zinc-800/60 border-1 border-zinc-600/80 text-xs text-zinc-200 px-2"
+            className="h-8 border border-zinc-600/80 bg-zinc-800/60 px-2.5 text-xs text-zinc-200"
           >
             <option value="center" title="Center the window on the active display.">
               Centered
@@ -287,7 +287,7 @@ export default function General() {
           <button
             type="button"
             onClick={() => void handleClearRecentSearches()}
-            className="h-7 px-3 rounded-md text-xs text-zinc-200 bg-zinc-700/60 hover:bg-zinc-700 transition-colors duration-150"
+            className="h-7 px-3 text-xs text-zinc-200 bg-zinc-700/60 hover:bg-zinc-700 transition-colors duration-150"
           >
             Clear
           </button>

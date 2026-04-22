@@ -1,4 +1,3 @@
-// components/raycast-searchbar.tsx
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 
@@ -14,9 +13,8 @@ export const Searchbar = React.forwardRef<HTMLInputElement, SearchbarProps>(func
     <div
       className={cn(
         'flex items-center gap-3',
-        'h-full w-screen ',
-        'bg-zinc-800/60',
-        'px-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]',
+        'h-full w-full',
+        'px-4',
         className
       )}
     >
@@ -34,13 +32,13 @@ export const Searchbar = React.forwardRef<HTMLInputElement, SearchbarProps>(func
 
       <input
         ref={ref}
-        className={cn('w-full bg-transparent text-xl placeholder:text-zinc-500', 'outline-none')}
+        className={cn('w-full bg-transparent text-lg text-zinc-100 placeholder:text-zinc-500', 'outline-none')}
         placeholder="Search for files or folders…"
         {...props}
       />
 
       {kbd && (
-        <kbd className="px-2 py-1 text-sm text-zinc-400 bg-zinc-700/50 border border-zinc-600 rounded">{kbd}</kbd>
+        <kbd className="px-2 py-1 text-sm text-zinc-400 bg-zinc-700/50 border border-zinc-600">{kbd}</kbd>
       )}
     </div>
   )

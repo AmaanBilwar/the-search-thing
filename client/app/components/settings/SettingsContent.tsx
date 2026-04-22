@@ -24,9 +24,8 @@ export default function SettingsContent({ item }: SettingsContentProps) {
   return (
     <div
       className={cn(
-        'flex flex-1 min-h-0 flex-col items-start justify-start gap-3',
-        ' bg-zinc-800/60',
-        'shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
+        'flex flex-1 min-h-0 flex-col items-start justify-start gap-3 overflow-hidden',
+        'bg-transparent'
       )}
     >
       <ComponentToRender />
