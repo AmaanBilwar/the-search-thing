@@ -7,8 +7,7 @@
 
 ## What it is
 
-the-search-thing is a local-first search system that makes your files, images, and videos
-semantically searchable from one place.
+the-search-thing is a local-first search system that makes your files, images, and videos semantically searchable from one place.
 
 ## Features
 
@@ -27,37 +26,9 @@ semantically searchable from one place.
 - FastAPI (`backend/app.py`): still used during migration for remaining Python-backed paths
 - Python (`backend/`): transitional runtime for non-migrated internals (image/video pipeline migration in progress)
 
-## Rewrite status
-
-This project is actively migrating from Python-orchestrated routes to a Rust sidecar core.
-
-- `health.ping`, `fs.walkTextBatch`, `index.start`, `index.status`, and `search.query` are exposed through Rust JSON-RPC routes
-- Text indexing and search now support Rust-native execution modes (`rust-text`, `rust-helix`)
-- Python remains as a fallback/compat layer while image and video indexing internals are being migrated
-- Goal: keep Electron API contracts stable while replacing internals behind sidecar route boundaries
-
-## UI flow
-
-<div align="center">
-  <img src="docs/demo.gif" alt="Search demo" width="800" />
-  <p>Demo video or GIF (coming soon)</p>
-</div>
-
-- Choose a folder to index
-- Enter a natural language query
-- Open results directly from the app
-
 ## Contributing
 
 See `CONTRIBUTING.md` for setup, dev workflow, and frontend website instructions.
-
-## Try it without dev setup
-
-Download the Windows `.exe` release from GitHub Releases (coming soon).
-
-## Release
-
-We will ship a Windows `.exe` release so users can try it without a dev setup.
 
 ## Technologies used
 
