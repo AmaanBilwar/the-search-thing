@@ -63,6 +63,8 @@ QUERY CreateVideoToChunkRelationship (video_id: String, chunk_id: String) =>
     hasChunk <- AddE<Has>::From(video)::To(chunk)
     RETURN hasChunk
 
+
+// unused??????
 // create chunk to transcript
 QUERY CreateChunkToTranscriptRelationship (chunk_id: String, transcript_id: ID) =>
     chunk <- N<Chunk>({chunk_id: chunk_id})
@@ -70,14 +72,13 @@ QUERY CreateChunkToTranscriptRelationship (chunk_id: String, transcript_id: ID) 
     hasTranscript <- AddE<Has>::From(chunk)::To(transcript)
     RETURN hasTranscript
 
+// unused??????
 // create chunk to frame summary
 QUERY CreateChunkToFrameSummaryRelationship (chunk_id: String,frame_summary_id: ID) =>
     chunk <- N<Chunk>({chunk_id: chunk_id})
     frame_summary <- N<FrameSummary>(frame_summary_id)
     HasFrameSummary <- AddE<HasFrameSummaryEmbeddings>::From(chunk)::To(frame_summary)
     RETURN HasFrameSummary
-
-
 
 // create file embeddings vector and connect to file node
 QUERY CreateFileEmbeddings (file_id: String, content: String, path:String) =>
@@ -140,17 +141,19 @@ QUERY SearchTranscriptAndFrameEmbeddings(search_text: String) =>
     frame_videos <- frame::In<HasFrameSummaryEmbeddings>::In<Has>
     RETURN transcript_videos, frame_videos
 
-
+// unused???
 // search file keywords
 QUERY SearchFileKeyword(keywords: String, limit: I64) =>
     documents <- SearchBM25<File>(keywords, limit)
     RETURN documents
 
+    // unused???
 // search transcript keywords
 QUERY SearchTranscriptKeyword(keywords: String, limit: I64) =>
     documents <- SearchBM25<Transcript>(keywords, limit)
     RETURN documents
 
+    // unused???
 // search frame summary keywords
 QUERY SearchFrameSummaryKeyword(keywords: String, limit: I64) =>
     documents <- SearchBM25<FrameSummary>(keywords, limit)
@@ -159,18 +162,17 @@ QUERY SearchFrameSummaryKeyword(keywords: String, limit: I64) =>
 
 // hybrid search frame summary keywords + embeddings
 // this doesnt work as of now
-QUERY SearchFrameSummaryCombined(search_string: String, keywords: String) =>
-    vec_results <- SearchV<FrameSummaryEmbeddings>(Embed(search_string), 100)
-    bm25_results <- SearchBM25<FrameSummary>(keywords, 100)
-    // Use RerankRRF to combine both result sets
-    combined_results <- vec_results::RerankRRF(k: 60)::RANGE(0, 10)
-    RETURN combined_results
-
+//QUERY SearchFrameSummaryCombined(search_string: String, keywords: String) =>
+//    vec_results <- SearchV<FrameSummaryEmbeddings>(Embed(search_string), 100)
+//    bm25_results <- SearchBM25<FrameSummary>(keywords, 100)
+//    // Use RerankRRF to combine both result sets
+//    combined_results <- vec_results::RerankRRF(k: 60)::RANGE(0, 10)
+//    RETURN combined_results
 
 // updating nodes
 // https://docs.helix-db.com/documentation/hql/updating
 
-
+// unused???
 // testing combiend file and vidoe Search
 QUERY CombinedFileAndVideo(search_text: String) =>
     // File search
@@ -197,6 +199,7 @@ QUERY CombinedFileAndVideo(search_text: String) =>
     RETURN combined_with_frames, chunks, transcript_videos, frame_videos
 
 
+    // unused???
 // testing combiend file and vidoe Search
 QUERY CombinedFileVidAndImage(search_text: String) =>
     // File search
@@ -229,27 +232,27 @@ QUERY CombinedFileVidAndImage(search_text: String) =>
     RETURN combined_with_frames, chunks, transcript_videos, frame_videos, images
 
 
-
+// unused???
 QUERY GetAllImagemebeddings()=>
     images <- N<Image>
     RETURN images
 
-
+// unused???
 QUERY TestFileSearch(search_text: String) =>
     results <- SearchV<FileEmbeddings>(Embed(search_text), 10)
     RETURN results
 
+    // unused???
 QUERY TestTranscriptSearch(search_text: String) =>
     results <- SearchV<TranscriptEmbeddings>(Embed(search_text), 10)
     RETURN results
 
+    // unused???
 QUERY TestFrameSearch(search_text: String) =>
     results <- SearchV<FrameSummaryEmbeddings>(Embed(search_text), 10)
     RETURN results
 
-
-// last resort is to have a single vector type for all fields
-
+// unused???
 // combined search
 QUERY CombinedSearch(search_text: String) =>
     transcripts <- SearchV<TranscriptEmbeddings>(Embed(search_text), 100)
@@ -268,6 +271,7 @@ QUERY GetAllVideos() =>
     videos <- N<Video>
     RETURN videos
 
+// unused???
 QUERY GetAllFiles() =>
     files <- N<File>
     RETURN files
@@ -288,7 +292,7 @@ QUERY DeleteAllVideos() =>
     DROP N<Video>
     RETURN "Deleted all video nodes"
 
-QUERY DeleteAllFiles() => 
+QUERY DeleteAllFiles() =>
     files <- N<File>
     DROP N<File>
     RETURN "DELETED ALL FILES"
@@ -298,7 +302,7 @@ QUERY DeleteAllChunks() =>
     DROP N<Chunk>
     RETURN "deleted all chunk nodes"
 
-QUERY DeleteAllImages() => 
+QUERY DeleteAllImages() =>
     files <- N<Image>
     DROP N<Image>
     RETURN "DELETED ALL IMAGE NODES"
