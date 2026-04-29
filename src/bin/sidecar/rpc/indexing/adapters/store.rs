@@ -7,6 +7,7 @@ pub struct ExistingFileRecord {
 
 #[derive(Debug, Clone)]
 pub struct ExistingVideoRecord {
+    #[allow(dead_code)]
     pub video_id: String,
 }
 

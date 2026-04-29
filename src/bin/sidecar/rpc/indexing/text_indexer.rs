@@ -7,6 +7,7 @@ use crate::sidecar::rpc::indexing::adapters::store::TextIndexStore;
 
 static FILE_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
 
+#[allow(dead_code)] // for path and file_id
 #[derive(Debug, Clone)]
 pub struct TextIndexResult {
     pub path: String,

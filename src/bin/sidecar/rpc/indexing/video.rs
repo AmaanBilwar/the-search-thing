@@ -10,6 +10,7 @@ use uuid::Uuid;
 use crate::sidecar::rpc::indexing::adapters::groq::TranscriptionClient;
 use crate::sidecar::rpc::indexing::adapters::store::{ChunkCreateInput, VideoIndexStore};
 
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub struct VideoIndexResult {
     pub video_path: String,
