@@ -20,13 +20,11 @@ pub fn trim_video_with_rust(
     ensure_output_dir(&output_path)?;
 
     // Handle existing output file
-    if Path::new(&output_path).exists() {
-        if let Err(_) = fs::remove_file(&output_path) {
-            // If removal fails, try with _1 suffix
-            if let Some((base, ext)) = output_path.rsplit_once('.') {
-                let new_path = format!("{}_1.{}", base, ext);
-                return trim_video_with_rust(video_path, start_time, end_time, new_path);
-            }
+    if Path::new(&output_path).exists() && fs::remove_file(&output_path).is_err() {
+        // If removal fails, try with _1 suffix
+        if let Some((base, ext)) = output_path.rsplit_once('.') {
+            let new_path = format!("{}_1.{}", base, ext);
+            return trim_video_with_rust(video_path, start_time, end_time, new_path);
         }
     }
 
@@ -38,11 +36,11 @@ pub fn trim_video_with_rust(
     let output = Command::new("ffmpeg")
         .arg("-y")
         .arg("-ss")
-        .arg(&start_time.to_string())
+        .arg(start_time.to_string())
         .arg("-i")
         .arg(&video_path)
         .arg("-t")
-        .arg(&duration.to_string())
+        .arg(duration.to_string())
         .arg("-c:v")
         .arg("libx264")
         .arg("-preset")
@@ -65,11 +63,11 @@ pub fn trim_video_with_rust(
         let output = Command::new("ffmpeg")
             .arg("-y")
             .arg("-ss")
-            .arg(&start_time.to_string())
+            .arg(start_time.to_string())
             .arg("-i")
             .arg(&video_path)
             .arg("-t")
-            .arg(&duration.to_string())
+            .arg(duration.to_string())
             .arg("-c:v")
             .arg("libx264")
             .arg("-preset")
