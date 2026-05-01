@@ -43,6 +43,18 @@ impl ImageIndexerDeps for MockDeps {
         hasher.update(&image_bytes);
         let content_hash = format!("{:x}", hasher.finalize());
 
+        // Debug: log if hash not found
+        if !self.summaries_by_hash.contains_key(&content_hash) {
+            eprintln!("DEBUG summarize_image: hash not found: {}", content_hash);
+            eprintln!(
+                "DEBUG available hashes: {:?}",
+                self.summaries_by_hash
+                    .keys()
+                    .map(|k| &k[..16])
+                    .collect::<Vec<_>>()
+            );
+        }
+
         self.summaries_by_hash
             .get(&content_hash)
             .cloned()
@@ -145,12 +157,14 @@ impl ImageIndexStore for MockStore {
     }
 }
 
-fn make_temp_dir(name: &str) -> PathBuf {
+fn make_temp_dir(name: &str, seed: u64, idx: usize) -> PathBuf {
     let nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("time")
         .as_nanos();
-    let dir = std::env::temp_dir().join(format!("image-indexer-{}-{}", name, nanos));
+    // Include seed and index to ensure uniqueness across test runs
+    let dir =
+        std::env::temp_dir().join(format!("image-indexer-{}-{}-{}-{}", name, seed, idx, nanos));
     fs::create_dir_all(&dir).expect("create temp dir");
     dir
 }
@@ -179,8 +193,8 @@ fn hash_bytes(bytes: &[u8]) -> String {
     format!("{:x}", hasher.finalize())
 }
 
-fn random_scenario(rng: &mut StdRng) -> Scenario {
-    let temp_dir = make_temp_dir("scenario");
+fn random_scenario(rng: &mut StdRng, seed: u64, scenario_idx: usize) -> Scenario {
+    let temp_dir = make_temp_dir("scenario", seed, scenario_idx);
     let item_count = rng.random_range(1..=8);
     let extensions = ["jpg", "jpeg", "png", "webp"];
 
@@ -224,13 +238,39 @@ fn random_scenario(rng: &mut StdRng) -> Scenario {
 async fn image_indexer_randomized_pipeline_properties() {
     for seed in 0_u64..100 {
         let mut rng = StdRng::seed_from_u64(seed);
-        let scenario = random_scenario(&mut rng);
+        let scenario = random_scenario(&mut rng, seed, 0);
 
-        // Build summaries_by_hash ensuring first occurrence of each hash wins
-        // (avoids overwrites when there are duplicate images)
+        // Build summaries_by_hash including ALL hashes from the scenario
+        // (not just unique ones - each item's hash must have a summary)
         let mut summaries_by_hash = HashMap::new();
-        for item in scenario.items.iter().rev() {
-            summaries_by_hash.insert(item.content_hash.clone(), item.summary.clone());
+        for item in &scenario.items {
+            // Only insert if not already present - first occurrence wins
+            summaries_by_hash
+                .entry(item.content_hash.clone())
+                .or_insert_with(|| item.summary.clone());
+        }
+        // Debug for seed 0 to understand hash mismatch
+        if seed == 0 {
+            eprintln!(
+                "DEBUG seed 0: {} items, {} unique",
+                scenario.items.len(),
+                scenario.unique_hashes
+            );
+            for (i, item) in scenario.items.iter().enumerate() {
+                eprintln!(
+                    "  item {}: hash={}, path={}",
+                    i,
+                    &item.content_hash[..16],
+                    item.path
+                );
+            }
+            eprintln!(
+                "  summaries_by_hash keys: {:?}",
+                summaries_by_hash
+                    .keys()
+                    .map(|k| &k[..16])
+                    .collect::<Vec<_>>()
+            );
         }
         let deps = MockDeps { summaries_by_hash };
         let store = MockStore::default();
@@ -321,7 +361,7 @@ async fn image_indexer_randomized_pipeline_properties() {
 async fn image_indexer_randomized_store_failures_are_reported() {
     for seed in 0_u64..50 {
         let mut rng = StdRng::seed_from_u64(seed + 10_000);
-        let scenario = random_scenario(&mut rng);
+        let scenario = random_scenario(&mut rng, seed + 10_000, 0);
         let max_store_calls = (scenario.unique_hashes * 2).max(1);
         let fail_at = rng.random_range(1..=max_store_calls);
 
