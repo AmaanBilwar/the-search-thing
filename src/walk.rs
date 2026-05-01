@@ -4,6 +4,8 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use walkdir::WalkDir;
 
+type TextFileBatch = (Vec<(String, String)>, usize, bool, usize, usize);
+
 #[pyfunction]
 pub fn walk_and_get_files(dir: String) -> PyResult<Vec<String>> {
     let mut paths = Vec::new();
@@ -42,7 +44,7 @@ pub fn walk_and_get_text_file_batch(
     ignore_files: Vec<String>,
     cursor: usize,
     batch_size: usize,
-) -> PyResult<(Vec<(String, String)>, usize, bool, usize, usize)> {
+) -> PyResult<TextFileBatch> {
     let mut text_ext_set = HashSet::new();
     for ext in text_exts {
         let mut normalized = ext.to_lowercase();
