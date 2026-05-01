@@ -324,7 +324,15 @@ const Results: React.FC<ResultsWithContextProps> = ({
                   }`}
                 >
                   <div className="pr-2 shrink-0">
-                    {result.label === "video" && result.thumbnail_url ? (
+                    {result.label === "image" && !brokenImagePaths.has(result.path) ? (
+                      <img
+                        src={toImageSrc(result.path)}
+                        alt=""
+                        className="w-9 h-9 rounded-md object-cover bg-zinc-900"
+                        loading="lazy"
+                        onError={() => markImageAsBroken(result.path)}
+                      />
+                    ) : result.label === "video" && result.thumbnail_url ? (
                       <img
                         src={result.thumbnail_url}
                         alt=""
@@ -351,15 +359,22 @@ const Results: React.FC<ResultsWithContextProps> = ({
         {/* Content preview */}
         <div className="flex-1 h-full min-w-0">
           {selectedItem ? (
+<<<<<<< HEAD
             <div className="pl-4 py-2 h-full min-w-0">
               {selectedItem.label === "image" ? (
                 <div className="p-5 rounded-2xl h-full bg-zinc-900/60 overflow-hidden flex flex-col min-h-0">
                   <div className="w-full h-[320px] rounded-xl overflow-hidden mb-4 bg-zinc-950 flex items-center justify-center shrink-0">
+=======
+            <div className="pl-4 py-2 h-full">
+              {selectedItem.label === "image" ? (
+                <div className="p-5 rounded-2xl h-full bg-zinc-900/60 overflow-hidden flex flex-col min-h-0">
+                  <div className="w-full h-[320px] rounded-xl overflow-hidden mb-4 bg-zinc-950">
+>>>>>>> 38778ff (image preview rendering via `localimg://preview?path=...`)
                     {!brokenImagePaths.has(selectedItem.path) ? (
                       <img
                         src={toImageSrc(selectedItem.path)}
                         alt=""
-                        className="max-w-full max-h-full object-contain"
+                        className="w-full h-full object-contain"
                         onError={() => markImageAsBroken(selectedItem.path)}
                       />
                     ) : (
