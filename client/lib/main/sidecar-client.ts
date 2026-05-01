@@ -109,7 +109,10 @@ class SidecarClient {
     const bundledFfmpegDir = this.resolveBundledFfmpegDir();
     const env = { ...process.env };
     if (bundledFfmpegDir) {
+      console.log(`[ffmpeg] using bundled dir: ${bundledFfmpegDir}`);
       env.PATH = `${bundledFfmpegDir}${delimiter}${env.PATH ?? ""}`;
+    } else if (process.platform === "win32") {
+      console.warn("[ffmpeg] bundled dir not found; relying on PATH");
     }
     this.process = spawn(launchSpec.command, launchSpec.args, {
       stdio: ["pipe", "pipe", "pipe"],
