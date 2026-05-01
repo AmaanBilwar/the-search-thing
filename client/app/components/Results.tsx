@@ -1,6 +1,5 @@
 import * as React from "react";
 import { useState, useEffect, useRef, useCallback } from "react";
-import noFiles from "@/resources/no-files-found.svg";
 import { FileX } from "lucide-react";
 import { ResultProps, SearchResultItem } from "../types/types";
 import * as fileIcons from "@/resources/filetype icons";
@@ -32,6 +31,7 @@ const Results: React.FC<ResultsWithContextProps> = ({
   onRecentSearchSelect,
 }) => {
   const [selectedItem, setSelectedItem] = useState<ResultItem | null>(null);
+  const [brokenImagePaths, setBrokenImagePaths] = useState<Set<string>>(new Set());
   const [hasInitiatedIndexing, setHasInitiatedIndexing] = useState(false);
   const hasOpenedDialogRef = useRef(false);
   const search = useConveyor("search");
@@ -52,6 +52,7 @@ const Results: React.FC<ResultsWithContextProps> = ({
 
   useEffect(() => {
     setSelectedItem(null);
+    setBrokenImagePaths(new Set());
   }, [searchResults]);
 
   useEffect(() => {
@@ -74,6 +75,23 @@ const Results: React.FC<ResultsWithContextProps> = ({
   const getFileExt = (path: string) => {
     const parts = path.split(".");
     return parts.length > 1 ? parts[parts.length - 1] : "";
+  };
+
+  const toImageSrc = (path: string) => {
+    if (!path) return "";
+    if (/^(https?:|data:|blob:|res:|localimg:)/i.test(path)) return path;
+
+    // Use a custom protocol so renderer pages served via http://localhost
+    // can still load local filesystem images safely.
+    return `localimg://preview?path=${encodeURIComponent(path)}`;
+  };
+
+  const markImageAsBroken = (path: string) => {
+    setBrokenImagePaths((prev) => {
+      const next = new Set(prev);
+      next.add(path);
+      return next;
+    });
   };
 
   const handleStartIndexing = useCallback(async () => {
@@ -306,7 +324,15 @@ const Results: React.FC<ResultsWithContextProps> = ({
                   }`}
                 >
                   <div className="pr-2 shrink-0">
-                    {result.label === "video" && result.thumbnail_url ? (
+                    {result.label === "image" && !brokenImagePaths.has(result.path) ? (
+                      <img
+                        src={toImageSrc(result.path)}
+                        alt=""
+                        className="w-9 h-9 rounded-md object-cover bg-zinc-900"
+                        loading="lazy"
+                        onError={() => markImageAsBroken(result.path)}
+                      />
+                    ) : result.label === "video" && result.thumbnail_url ? (
                       <img
                         src={result.thumbnail_url}
                         alt=""
@@ -334,23 +360,52 @@ const Results: React.FC<ResultsWithContextProps> = ({
         <div className="flex-1 h-full">
           {selectedItem ? (
             <div className="pl-4 py-2 h-full">
-              {selectedItem.label === "video" && selectedItem.thumbnail_url ? (
-                <div className="p-5 rounded-2xl min-h-[320px] bg-zinc-900/60 overflow-hidden">
+              {selectedItem.label === "image" ? (
+                <div className="p-5 rounded-2xl h-full bg-zinc-900/60 overflow-hidden flex flex-col min-h-0">
+                  <div className="w-full h-[320px] rounded-xl overflow-hidden mb-4 bg-zinc-950">
+                    {!brokenImagePaths.has(selectedItem.path) ? (
+                      <img
+                        src={toImageSrc(selectedItem.path)}
+                        alt=""
+                        className="w-full h-full object-contain"
+                        onError={() => markImageAsBroken(selectedItem.path)}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-zinc-500 text-sm text-center px-4">
+                        Image preview unavailable. The source file may have been moved or deleted.
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-zinc-300 whitespace-pre-wrap break-words overflow-y-auto overflow-x-hidden min-h-0 flex-1">
+                    {selectedItem.content ?? "No preview available for this result."}
+                  </div>
+                  <div
+                    className="text-zinc-400 text-xs mt-3 truncate shrink-0"
+                    title={selectedItem.path}
+                  >
+                    {selectedItem.path}
+                  </div>
+                </div>
+              ) : selectedItem.label === "video" && selectedItem.thumbnail_url ? (
+                <div className="p-5 rounded-2xl h-full bg-zinc-900/60 overflow-hidden flex flex-col min-h-0">
                   <img
                     src={selectedItem.thumbnail_url}
                     alt=""
-                    className="w-full max-h-[360px] object-contain rounded-xl bg-zinc-950"
+                    className="w-full h-[320px] object-contain rounded-xl bg-zinc-950 shrink-0"
                   />
-                  <div className="text-zinc-300 whitespace-pre-wrap overflow-y-auto max-h-[calc(100vh-260px)] mt-4">
+                  <div className="text-zinc-300 whitespace-pre-wrap break-words overflow-y-auto overflow-x-hidden min-h-0 flex-1 mt-4">
                     {selectedItem.content ?? "No preview available for this result."}
                   </div>
-                  <div className="text-zinc-400 text-xs mt-3 truncate" title={selectedItem.path}>
+                  <div
+                    className="text-zinc-400 text-xs mt-3 truncate shrink-0"
+                    title={selectedItem.path}
+                  >
                     {selectedItem.path}
                   </div>
                 </div>
               ) : (
-                <div className="p-5 rounded-2xl min-h-[320px] bg-zinc-700/60 overflow-hidden">
-                  <div className="text-zinc-300 whitespace-pre-wrap overflow-y-auto max-h-[calc(100vh-200px)]">
+                <div className="p-5 rounded-2xl h-full bg-zinc-700/60 overflow-hidden flex flex-col min-h-0">
+                  <div className="text-zinc-300 whitespace-pre-wrap break-words overflow-y-auto overflow-x-hidden min-h-0 flex-1">
                     {selectedItem.content ?? "No preview available for this result."}
                   </div>
                 </div>
