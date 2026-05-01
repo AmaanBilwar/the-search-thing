@@ -50,6 +50,7 @@ pub fn err_response(id: Value, code: i32, message: &str, data: Option<Value>) ->
     }
 }
 
+#[allow(clippy::result_large_err)]
 pub fn parse_params<T: for<'de> Deserialize<'de>>(
     request: &JsonRpcRequest,
 ) -> Result<T, JsonRpcResponse> {
