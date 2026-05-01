@@ -29,6 +29,11 @@ extraResources:
     filter:
       - "**/*"
 win:
+  extraResources:
+    - from: resources/ffmpeg
+      to: ffmpeg
+      filter:
+        - "**/*"
   executableName: the-search-thing
   icon: resources/build/logo-256.ico
 nsis:
