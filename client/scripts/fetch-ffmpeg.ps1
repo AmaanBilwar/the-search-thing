@@ -14,6 +14,7 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $clientRoot = Resolve-Path (Join-Path $scriptDir "..")
 $resourcesRoot = Join-Path $clientRoot "resources"
 $cacheDir = Join-Path $resourcesRoot "ffmpeg-cache\win-x64"
+$destDir = Join-Path $resourcesRoot "ffmpeg\win-x64"
 
 $ffmpegVersion = if ($env:FFMPEG_VERSION) { $env:FFMPEG_VERSION } else { "7.1" }
 $zipName = "ffmpeg-$ffmpegVersion-full_build-shared"
@@ -48,3 +49,32 @@ if (-not $rootDir -or -not (Test-Path $rootDir)) {
 }
 
 Write-Info "Extracted ffmpeg to $rootDir"
+
+$binDir = Join-Path $rootDir "bin"
+if (-not (Test-Path $binDir)) {
+  $binDir = Get-ChildItem -Path $rootDir -Recurse -Directory -Filter "bin" |
+    Where-Object { Test-Path (Join-Path $_.FullName "ffmpeg.exe") } |
+    Select-Object -First 1 |
+    ForEach-Object { $_.FullName }
+}
+
+if (-not $binDir -or -not (Test-Path $binDir)) {
+  throw "Could not locate ffmpeg bin directory."
+}
+
+if (Test-Path $destDir) {
+  Remove-Item $destDir -Recurse -Force
+}
+
+New-Item -ItemType Directory -Force $destDir | Out-Null
+Copy-Item -Path (Join-Path $binDir "*") -Destination $destDir -Recurse -Force
+
+if (-not (Test-Path (Join-Path $destDir "ffmpeg.exe"))) {
+  throw "ffmpeg.exe missing after staging."
+}
+
+if (-not (Test-Path (Join-Path $destDir "ffprobe.exe"))) {
+  throw "ffprobe.exe missing after staging."
+}
+
+Write-Info "Staged ffmpeg binaries to $destDir"
