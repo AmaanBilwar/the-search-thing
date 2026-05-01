@@ -10,7 +10,7 @@ const SVG_PATHS = {
   minimize: 'M 0,5 10,5 10,6 0,6 Z',
 } as const
 
-export const Titlebar = () => {
+const Titlebar = () => {
   const { title, icon, titleCentered, menuItems } = useWindowContext().titlebar
   const { menusVisible, setMenusVisible, closeActiveMenu } = useTitlebarContext()
   const { window: wcontext } = useWindowContext()

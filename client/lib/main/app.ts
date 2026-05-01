@@ -80,7 +80,7 @@ const computeWindowBoundsForPlacement = (
   return { ...position, width: windowWidth, height: windowHeight }
 }
 
-export const positionAppWindowWithPlacement = (
+const positionAppWindowWithPlacement = (
   window: BrowserWindow,
   placement: WindowPlacementSetting
 ) => {

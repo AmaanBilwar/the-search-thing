@@ -129,4 +129,4 @@ interface TitlebarMenu {
   items: TitlebarMenuItem[]
 }
 
-export { TitlebarMenu, TitlebarMenuItem, TitlebarMenuPopup, TitlebarMenuPopupItem }
+export { TitlebarMenu }

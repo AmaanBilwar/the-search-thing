@@ -4,7 +4,7 @@ import { join } from 'path'
 import { createAppWindow, getMainWindow, initializeApp, positionAppWindow } from './app'
 import { createBetterSqliteAdapter } from '@/lib/storage/sqlite-adapter'
 import { createKeybindsStore } from '@/lib/storage/keybinds-db-store'
-import type { KeyCombo, KeybindMap } from '@/lib/storage/keybind-store'
+import { comboModifierTokens, type KeyCombo, type KeybindMap } from '@/lib/storage/keybind-store'
 import { sidecarClient } from '@/lib/main/sidecar-client'
 
 let keybindsStore: ReturnType<typeof createKeybindsStore> | null = null
@@ -38,11 +38,7 @@ const normalizeAcceleratorKey = (key: string): string => {
 }
 
 const comboToAccelerator = (combo: KeyCombo): string | null => {
-  const parts: string[] = []
-  if (combo.ctrlKey) parts.push('Ctrl')
-  if (combo.altKey) parts.push('Alt')
-  if (combo.shiftKey) parts.push('Shift')
-  if (combo.metaKey) parts.push(process.platform === 'darwin' ? 'Command' : 'Super')
+  const parts = comboModifierTokens(combo, process.platform === 'darwin' ? 'Command' : 'Super')
 
   const key = normalizeAcceleratorKey(combo.key)
   if (!key) return null

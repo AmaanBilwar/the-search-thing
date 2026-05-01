@@ -8,7 +8,7 @@ export type SearchHistoryInsert = {
   path_scope?: string
 }
 
-export type SearchHistoryEntry = {
+type SearchHistoryEntry = {
   id: number
   search_string: string
   timestamp: number

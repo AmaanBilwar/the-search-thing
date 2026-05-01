@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { Titlebar, TitlebarProps } from './Titlebar'
-import { TitlebarContextProvider } from './TitlebarContext'
+import type { TitlebarProps } from './Titlebar'
 import type { ChannelReturn } from '@/lib/conveyor/schemas'
 import { useConveyor } from '@/app/hooks/use-conveyor'
 

@@ -35,22 +35,23 @@ export const DEFAULT_KEYBINDS: KeybindMap = {
 export const KEYBIND_CHANGE_EVENT = 'keybind-store:change'
 
 // helpers
-export const formatCombo = (combo: KeyCombo): string => {
+export const comboModifierTokens = (combo: KeyCombo, metaLabel = 'Meta'): string[] => {
   const parts: string[] = []
   if (combo.ctrlKey) parts.push('Ctrl')
   if (combo.altKey) parts.push('Alt')
   if (combo.shiftKey) parts.push('Shift')
-  if (combo.metaKey) parts.push('Meta')
+  if (combo.metaKey) parts.push(metaLabel)
+  return parts
+}
+
+export const formatCombo = (combo: KeyCombo): string => {
+  const parts = comboModifierTokens(combo)
   parts.push(formatKey(combo.key))
   return parts.join(' + ')
 }
 
 export const comboTokens = (combo: KeyCombo): string[] => {
-  const parts: string[] = []
-  if (combo.ctrlKey) parts.push('Ctrl')
-  if (combo.altKey) parts.push('Alt')
-  if (combo.shiftKey) parts.push('Shift')
-  if (combo.metaKey) parts.push('Meta')
+  const parts = comboModifierTokens(combo)
   parts.push(formatKey(combo.key))
   return parts
 }
