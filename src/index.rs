@@ -11,7 +11,7 @@ use std::process::Command;
 // check video duration
 fn check_video_duration(video_path: &str) -> PyResult<String> {
     // Validate file exists
-    validate_file_exists(&video_path)?;
+    validate_file_exists(video_path)?;
     //normalize paths
     let normalized_path = video_path.replace("\\", "/");
     // let (video_path, output_path) = normalize_paths(&video_path);
@@ -56,13 +56,11 @@ fn chunk_videos_with_rust(
     ensure_output_dir(&output_path)?;
 
     // Handle existing output file
-    if Path::new(&output_path).exists() {
-        if let Err(_) = fs::remove_file(&output_path) {
-            // If removal fails, try with _1 suffix
-            if let Some((base, ext)) = output_path.rsplit_once('.') {
-                let new_path = format!("{}_1.{}", base, ext);
-                return trim_video_with_rust(video_path, start_time, end_time, new_path);
-            }
+    if Path::new(&output_path).exists() && fs::remove_file(&output_path).is_err() {
+        // If removal fails, try with _1 suffix
+        if let Some((base, ext)) = output_path.rsplit_once('.') {
+            let new_path = format!("{}_1.{}", base, ext);
+            return trim_video_with_rust(video_path, start_time, end_time, new_path);
         }
     }
 
@@ -102,7 +100,7 @@ fn chunk_videos_with_rust(
             .arg("-f")
             .arg("segment")
             .arg("-segment_time")
-            .arg(&chunk_duration_secs.to_string())
+            .arg(chunk_duration_secs.to_string())
             .arg("-reset_timestamps")
             .arg("1")
             .arg(&output_path)
@@ -268,7 +266,7 @@ pub fn chunk_multiple_videos_with_rust(
                 .arg("-f")
                 .arg("segment")
                 .arg("-segment_time")
-                .arg(&chunk_duration_secs.to_string())
+                .arg(chunk_duration_secs.to_string())
                 .arg("-reset_timestamps")
                 .arg("1")
                 .arg(&output_template)
@@ -360,7 +358,7 @@ pub fn rust_indexer(
                 .arg("-f")
                 .arg("segment")
                 .arg("-segment_time")
-                .arg(&chunk_duration_secs.to_string())
+                .arg(chunk_duration_secs.to_string())
                 .arg("-reset_timestamps")
                 .arg("1")
                 .arg(&output_template)
@@ -440,7 +438,7 @@ pub fn rust_indexer(
     });
 
     // Convert Result<Vec<String>, String> to PyResult<Vec<String>>
-    results.map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e))
+    results.map_err(PyErr::new::<pyo3::exceptions::PyRuntimeError, _>)
 }
 
 // Helper function to check if video has audio stream
@@ -482,10 +480,8 @@ fn extract_audio_internal(video_path: &str, output_dir: &str) -> Result<String, 
 
     let mut output_path = format!("{}/{}.mp3", normalized_out_dir, video_filename);
 
-    if Path::new(&output_path).exists() {
-        if fs::remove_file(&output_path).is_err() {
-            output_path = format!("{}/{}_1.mp3", normalized_out_dir, video_filename);
-        }
+    if Path::new(&output_path).exists() && fs::remove_file(&output_path).is_err() {
+        output_path = format!("{}/{}_1.mp3", normalized_out_dir, video_filename);
     }
 
     let (codec, bitrate_or_samplerate) = helpers::get_audio_encoding_params(&output_path);
@@ -496,12 +492,12 @@ fn extract_audio_internal(video_path: &str, output_dir: &str) -> Result<String, 
         .arg(&normalized_vp)
         .arg("-vn")
         .arg("-acodec")
-        .arg(&codec);
+        .arg(codec);
 
     if codec == "pcm_s16le" {
-        cmd.arg("-ar").arg(&bitrate_or_samplerate);
+        cmd.arg("-ar").arg(bitrate_or_samplerate);
     } else if codec != "flac" {
-        cmd.arg("-b:a").arg(&bitrate_or_samplerate);
+        cmd.arg("-b:a").arg(bitrate_or_samplerate);
     }
 
     cmd.arg(&output_path);
@@ -527,7 +523,7 @@ fn extract_thumbnails_internal(
     validate_file_exists(video_path).map_err(|e| e.to_string())?;
 
     // Normalize paths
-    let (normalized_video_path, normalized_output_path) = normalize_path(&video_path, &output_path);
+    let (normalized_video_path, normalized_output_path) = normalize_path(video_path, output_path);
 
     // Create the thumbnail subdirectory for this specific chunk
     fs::create_dir_all(&normalized_output_path).map_err(|e| {
