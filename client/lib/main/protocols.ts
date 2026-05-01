@@ -68,19 +68,7 @@ export function registerResourcesProtocol() {
         return new Response("Missing image path", { status: 400 });
       }
 
-      if (!ALLOWED_IMAGE_EXTENSIONS) {
-        return new Response(
-          "Image type configuration unavailable. file not found in config/file_types.json",
-          { status: 503 },
-        );
-      }
-
-      const decodedPath = rawPath;
-      const extension = extname(decodedPath).toLowerCase();
-      if (!ALLOWED_IMAGE_EXTENSIONS.has(extension)) {
-        return new Response("Unsupported image type", { status: 400 });
-      }
-
+      const decodedPath = decodeURIComponent(rawPath);
       if (!existsSync(decodedPath)) {
         return new Response("Image not found", { status: 404 });
       }
