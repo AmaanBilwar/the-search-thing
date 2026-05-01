@@ -1,34 +1,34 @@
-import eslint from '@eslint/js'
-import tseslint from 'typescript-eslint'
-import reactPlugin from 'eslint-plugin-react'
-import reactHooksPlugin from 'eslint-plugin-react-hooks'
+import eslint from "@eslint/js";
+import tseslint from "typescript-eslint";
+import reactPlugin from "eslint-plugin-react";
+import reactHooksPlugin from "eslint-plugin-react-hooks";
 
 export default [
   {
     ignores: [
-      'node_modules/**',
-      'dist/**',
-      'build/**',
-      'out/**',
-      '.vscode/**',
-      '.git/**',
-      '.gitignore',
-      '.eslintignore',
-      '.eslintrc',
-      '.prettierrc',
+      "node_modules/**",
+      "dist/**",
+      "build/**",
+      "out/**",
+      ".vscode/**",
+      ".git/**",
+      ".gitignore",
+      ".eslintignore",
+      ".eslintrc",
+      ".prettierrc",
     ],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['**/*.{js,jsx,ts,tsx}'],
+    files: ["**/*.{js,jsx,ts,tsx}"],
     plugins: {
       react: reactPlugin,
-      'react-hooks': reactHooksPlugin,
+      "react-hooks": reactHooksPlugin,
     },
     languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
+      ecmaVersion: "latest",
+      sourceType: "module",
       parser: tseslint.parser,
       parserOptions: {
         ecmaFeatures: { jsx: true },
@@ -36,74 +36,74 @@ export default [
       },
       globals: {
         // Browser globals that should be readonly
-        window: 'readonly',
-        document: 'readonly',
-        location: 'readonly',
-        history: 'readonly',
-        navigator: 'readonly',
+        window: "readonly",
+        document: "readonly",
+        location: "readonly",
+        history: "readonly",
+        navigator: "readonly",
 
         // Browser globals that can be modified
-        console: 'writable',
-        localStorage: 'writable',
-        sessionStorage: 'writable',
+        console: "writable",
+        localStorage: "writable",
+        sessionStorage: "writable",
 
         // Timer functions that can be modified
-        setTimeout: 'writable',
-        clearTimeout: 'writable',
-        setInterval: 'writable',
-        clearInterval: 'writable',
+        setTimeout: "writable",
+        clearTimeout: "writable",
+        setInterval: "writable",
+        clearInterval: "writable",
 
         // Node.js globals
-        process: 'readonly',
-        __dirname: 'readonly',
-        __filename: 'readonly',
+        process: "readonly",
+        __dirname: "readonly",
+        __filename: "readonly",
 
         // React globals
-        React: 'readonly',
+        React: "readonly",
       },
     },
     settings: {
       react: {
-        version: 'detect',
+        version: "detect",
       },
     },
     rules: {
       // React specific rules
-      'react/react-in-jsx-scope': 'off',
-      'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
+      "react/react-in-jsx-scope": "off",
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
 
       // TypeScript specific rules
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
         {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
         },
       ],
 
       // General rules
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
-      '@typescript-eslint/no-explicit-any': 'off',
+      "no-console": ["warn", { allow: ["warn", "error"] }],
+      "@typescript-eslint/no-explicit-any": "off",
 
       // Global modification rules
-      'no-global-assign': [
-        'error',
+      "no-global-assign": [
+        "error",
         {
-          exceptions: ['console', 'localStorage', 'sessionStorage'],
+          exceptions: ["console", "localStorage", "sessionStorage"],
         },
       ],
     },
   },
   // Add specific configuration for preload files
   {
-    files: ['app/**/*.ts', 'lib/**/*.ts', 'app/**/*.tsx', 'lib/**/*.tsx'],
+    files: ["app/**/*.ts", "lib/**/*.ts", "app/**/*.tsx", "lib/**/*.tsx"],
     languageOptions: {
       globals: {
-        process: 'readonly',
-        console: 'readonly',
-        window: 'readonly',
+        process: "readonly",
+        console: "readonly",
+        window: "readonly",
       },
     },
   },
-]
+];

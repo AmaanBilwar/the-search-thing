@@ -219,7 +219,6 @@ async def goated_search(search_query: str) -> dict:
     JSONDict = dict[str, Any]
 
     def normalize_file_results(response: object) -> None:
-
         if not response:
             return
 
@@ -475,7 +474,9 @@ async def goated_search(search_query: str) -> dict:
         content_hash = item.get("content_hash")
         if isinstance(content_hash, str) and content_hash:
             if has_thumbnail(content_hash):
-                item["thumbnail_url"] = f"{backend_origin}/api/thumbnails/{content_hash}"
+                item["thumbnail_url"] = (
+                    f"{backend_origin}/api/thumbnails/{content_hash}"
+                )
 
     return {
         "query": search_query,

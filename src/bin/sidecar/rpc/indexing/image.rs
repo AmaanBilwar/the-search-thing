@@ -1,10 +1,10 @@
+use crate::sidecar::rpc::indexing::adapters::groq::TranscriptionClient;
+use crate::sidecar::rpc::indexing::adapters::store::ImageIndexStore;
 use async_trait::async_trait;
-use serde_json::{Value};
+use serde_json::Value;
 use std::fs;
 use std::path::Path;
 use uuid::Uuid;
-use crate::sidecar::rpc::indexing::adapters::groq::TranscriptionClient;
-use crate::sidecar::rpc::indexing::adapters::store::ImageIndexStore;
 
 #[derive(Clone, Debug)]
 pub struct ImageIndexResult {
@@ -116,7 +116,10 @@ pub(crate) mod helpers {
             .unwrap_or_default()
     }
 
-    pub(crate) fn normalized_summary_from_map(map: &Map<String, Value>, fallback_text: &str) -> Value {
+    pub(crate) fn normalized_summary_from_map(
+        map: &Map<String, Value>,
+        fallback_text: &str,
+    ) -> Value {
         let mut summary = string_field(map, "summary");
         if summary.starts_with("```") {
             summary = normalize_summary_content(&summary)
@@ -156,7 +159,6 @@ pub(crate) mod helpers {
         }
     }
 }
-
 
 pub fn build_embedding_text(summary: &Value) -> String {
     let mut parts = Vec::new();

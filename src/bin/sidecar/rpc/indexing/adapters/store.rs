@@ -102,11 +102,7 @@ pub trait VideoIndexStore: Send + Sync {
         content: &str,
     ) -> Result<(), String>;
 
-    async fn create_frame_summary_node(
-        &self,
-        chunk_id: &str,
-        content: &str,
-    ) -> Result<(), String>;
+    async fn create_frame_summary_node(&self, chunk_id: &str, content: &str) -> Result<(), String>;
 
     async fn create_frame_summary_embeddings(
         &self,

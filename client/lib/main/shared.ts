@@ -1,5 +1,11 @@
-import { ipcMain } from 'electron'
-import { ipcSchemas, validateArgs, validateReturn, type ChannelArgs, type ChannelReturn } from '@/lib/conveyor/schemas'
+import { ipcMain } from "electron";
+import {
+  ipcSchemas,
+  validateArgs,
+  validateReturn,
+  type ChannelArgs,
+  type ChannelReturn,
+} from "@/lib/conveyor/schemas";
 
 /**
  * Helper to register IPC handlers
@@ -9,17 +15,17 @@ import { ipcSchemas, validateArgs, validateReturn, type ChannelArgs, type Channe
  */
 export const handle = <T extends keyof typeof ipcSchemas>(
   channel: T,
-  handler: (...args: ChannelArgs<T>) => ChannelReturn<T> | Promise<ChannelReturn<T>>
+  handler: (...args: ChannelArgs<T>) => ChannelReturn<T> | Promise<ChannelReturn<T>>,
 ) => {
   ipcMain.handle(channel, async (_, ...args) => {
     try {
-      const validatedArgs = validateArgs(channel, args)
-      const result = await handler(...validatedArgs)
+      const validatedArgs = validateArgs(channel, args);
+      const result = await handler(...validatedArgs);
 
-      return validateReturn(channel, result)
+      return validateReturn(channel, result);
     } catch (error) {
-      console.error(`IPC Error in ${channel}:`, error)
-      throw error
+      console.error(`IPC Error in ${channel}:`, error);
+      throw error;
     }
-  })
-}
+  });
+};

@@ -6,7 +6,8 @@ use pyo3::prelude::*;
 pub fn get_file_type_with_extension(file_path: String) -> PyResult<String> {
     let file_extension = file_path
         .split('.')
-        .last()
+        // .last()
+        .next_back()
         .unwrap_or(file_path.as_str())
         .to_string();
     let file_types = FileType::from_extension(file_extension);

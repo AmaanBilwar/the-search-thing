@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from "zod";
 
 const keyCombo = z.object({
   key: z.string(),
@@ -6,32 +6,32 @@ const keyCombo = z.object({
   altKey: z.boolean(),
   shiftKey: z.boolean(),
   metaKey: z.boolean(),
-})
+});
 
 const keybindMap = z.object({
-  'toggle-app': keyCombo,
+  "toggle-app": keyCombo,
   search: keyCombo,
   index: keyCombo,
   settings: keyCombo,
-})
+});
 
-const keybindAction = z.enum(['toggle-app', 'search', 'index', 'settings'])
+const keybindAction = z.enum(["toggle-app", "search", "index", "settings"]);
 
 export const keybindsIpcSchema = {
-  'keybinds/get': {
+  "keybinds/get": {
     args: z.tuple([]),
     return: keybindMap,
   },
-  'keybinds/set': {
+  "keybinds/set": {
     args: z.tuple([keybindMap]),
     return: keybindMap,
   },
-  'keybinds/update': {
+  "keybinds/update": {
     args: z.tuple([keybindAction, keyCombo]),
     return: keybindMap,
   },
-  'keybinds/reset': {
+  "keybinds/reset": {
     args: z.tuple([]),
     return: keybindMap,
   },
-} as const
+} as const;

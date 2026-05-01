@@ -95,7 +95,8 @@ fn normalize_file_results(response: &Value) -> Vec<SearchItem> {
             continue;
         }
 
-        let file_id = value_as_string(map.get("file_id")).or_else(|| value_as_string(map.get("id")));
+        let file_id =
+            value_as_string(map.get("file_id")).or_else(|| value_as_string(map.get("id")));
         let content = value_as_string(map.get("content"));
 
         if file_id.is_none() && content.is_none() {
@@ -133,12 +134,18 @@ fn normalize_video_results(response: &Value) -> Vec<SearchItem> {
 
         let chunk_id = value_as_string(map.get("chunk_id"));
         let video_id = value_as_string(map.get("video_id"));
-        let file_id = value_as_string(map.get("file_id")).or_else(|| value_as_string(map.get("id")));
+        let file_id =
+            value_as_string(map.get("file_id")).or_else(|| value_as_string(map.get("id")));
         let path = value_as_string(map.get("path"));
         let content = value_as_string(map.get("content"));
         let content_hash = value_as_string(map.get("content_hash"));
 
-        if chunk_id.is_none() && video_id.is_none() && file_id.is_none() && path.is_none() && content.is_none() {
+        if chunk_id.is_none()
+            && video_id.is_none()
+            && file_id.is_none()
+            && path.is_none()
+            && content.is_none()
+        {
             continue;
         }
 
@@ -186,7 +193,8 @@ fn normalize_image_results(response: &Value) -> Vec<SearchItem> {
             continue;
         };
 
-        let image_id = value_as_string(map.get("image_id")).or_else(|| value_as_string(map.get("id")));
+        let image_id =
+            value_as_string(map.get("image_id")).or_else(|| value_as_string(map.get("id")));
         let path = value_as_string(map.get("path"));
         let content = value_as_string(map.get("content"));
 
@@ -338,7 +346,10 @@ async fn rust_helix_search_query(query: &str) -> Result<Value, String> {
     for item in combined {
         let key = (
             item.label.clone(),
-            item.file_id.clone().or(item.chunk_id.clone()).unwrap_or_default(),
+            item.file_id
+                .clone()
+                .or(item.chunk_id.clone())
+                .unwrap_or_default(),
             item.video_id.clone().unwrap_or_default(),
             item.image_id.clone().unwrap_or_default(),
             item.path.clone(),
@@ -364,8 +375,10 @@ async fn rust_helix_search_query(query: &str) -> Result<Value, String> {
         if result.get("label").and_then(Value::as_str) == Some("video") {
             if let Some(content_hash) = item.content_hash {
                 if has_thumbnail(&content_hash) {
-                    result["thumbnail_url"] =
-                        Value::String(format!("{}/api/thumbnails/{}", backend_origin, content_hash));
+                    result["thumbnail_url"] = Value::String(format!(
+                        "{}/api/thumbnails/{}",
+                        backend_origin, content_hash
+                    ));
                 }
             }
         }

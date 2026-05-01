@@ -1,5 +1,5 @@
-use super::*;
 use super::helpers::*;
+use super::*;
 use async_trait::async_trait;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
@@ -246,7 +246,12 @@ async fn image_indexer_randomized_pipeline_properties() {
         )
         .await;
 
-        assert_eq!(results.len(), scenario.items.len(), "seed {}: result count mismatch", seed);
+        assert_eq!(
+            results.len(),
+            scenario.items.len(),
+            "seed {}: result count mismatch",
+            seed
+        );
 
         let indexed_count = results.iter().filter(|result| result.indexed).count();
         let duplicate_count = results
@@ -255,8 +260,7 @@ async fn image_indexer_randomized_pipeline_properties() {
             .count();
 
         assert_eq!(
-            indexed_count,
-            scenario.unique_hashes,
+            indexed_count, scenario.unique_hashes,
             "seed {}: indexed unique hash count mismatch",
             seed
         );

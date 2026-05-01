@@ -26,10 +26,7 @@ export default function RootLayout({
               the-search-thing
             </Link>
             <div className="flex items-center gap-6">
-              <Link
-                className="underline underline-offset-4 hover:cursor-pointer"
-                href="/roadmap"
-              >
+              <Link className="underline underline-offset-4 hover:cursor-pointer" href="/roadmap">
                 roadmap
               </Link>
               <a

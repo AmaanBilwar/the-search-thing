@@ -1,2 +1,2 @@
-export { WindowContextProvider, useWindowContext } from './WindowContext'
-export { menuItems } from './menus'
+export { WindowContextProvider, useWindowContext } from "./WindowContext";
+export { menuItems } from "./menus";

@@ -1,46 +1,46 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import type { TitlebarProps } from './Titlebar'
-import type { ChannelReturn } from '@/lib/conveyor/schemas'
-import { useConveyor } from '@/app/hooks/use-conveyor'
+import { createContext, useContext, useEffect, useState } from "react";
+import type { TitlebarProps } from "./Titlebar";
+import type { ChannelReturn } from "@/lib/conveyor/schemas";
+import { useConveyor } from "@/app/hooks/use-conveyor";
 
-type WindowInitProps = ChannelReturn<'window-init'>
+type WindowInitProps = ChannelReturn<"window-init">;
 
 interface WindowContextProps {
-  titlebar: TitlebarProps
-  readonly window: WindowInitProps | undefined
+  titlebar: TitlebarProps;
+  readonly window: WindowInitProps | undefined;
 }
 
-const WindowContext = createContext<WindowContextProps | undefined>(undefined)
+const WindowContext = createContext<WindowContextProps | undefined>(undefined);
 
 export const WindowContextProvider = ({
   children,
   titlebar = {
-    title: 'the-search-thing',
-    icon: 'logo-white-bg.webp',
+    title: "the-search-thing",
+    icon: "logo-white-bg.webp",
     titleCentered: false,
     menuItems: [],
   },
 }: {
-  children: React.ReactNode
-  titlebar?: TitlebarProps
+  children: React.ReactNode;
+  titlebar?: TitlebarProps;
 }) => {
-  const [initProps, setInitProps] = useState<WindowInitProps>()
-  const { windowInit } = useConveyor('window')
+  const [initProps, setInitProps] = useState<WindowInitProps>();
+  const { windowInit } = useConveyor("window");
 
   useEffect(() => {
-    windowInit().then(setInitProps)
+    windowInit().then(setInitProps);
 
     // Add Tailwind classes to parent element
-    const parent = document.querySelector('.window-content')?.parentElement
+    const parent = document.querySelector(".window-content")?.parentElement;
     parent?.classList.add(
-      'flex',
-      'flex-col',
-      'select-none',
-      'bg-[var(--window-c-background)]',
-      'transition-colors',
-      'duration-300'
-    )
-  }, [windowInit])
+      "flex",
+      "flex-col",
+      "select-none",
+      "bg-[var(--window-c-background)]",
+      "transition-colors",
+      "duration-300",
+    );
+  }, [windowInit]);
 
   return (
     <WindowContext.Provider value={{ titlebar, window: initProps }}>
@@ -51,13 +51,13 @@ export const WindowContextProvider = ({
         {children}
       </div>
     </WindowContext.Provider>
-  )
-}
+  );
+};
 
 export const useWindowContext = () => {
-  const context = useContext(WindowContext)
+  const context = useContext(WindowContext);
   if (!context) {
-    throw new Error('useWindowContext must be used within a WindowContextProvider')
+    throw new Error("useWindowContext must be used within a WindowContextProvider");
   }
-  return context
-}
+  return context;
+};

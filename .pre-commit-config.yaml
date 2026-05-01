@@ -1,0 +1,84 @@
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  # Rust hooks
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: cargo fmt --
+        language: system
+        types: [rust]
+        pass_filenames: true
+
+      - id: cargo-clippy
+        name: cargo clippy
+        entry: cargo clippy -- -D warnings
+        language: system
+        types: [rust]
+        pass_filenames: false
+        always_run: true
+
+      - id: cargo-test
+        name: cargo test
+        entry: cargo test
+        language: system
+        types: [rust]
+        pass_filenames: false
+        always_run: true
+
+  # Python hooks (ruff)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.10
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^backend/.*\.py$
+      - id: ruff-format
+        files: ^backend/.*\.py$
+
+  # Client (Electron/React) hooks - using oxfmt and oxlint
+  - repo: local
+    hooks:
+      - id: client-oxlint
+        name: oxlint (client)
+        entry: bash -c "cd client && npx oxlint --fix"
+        language: system
+        files: ^client/.*\.(js|jsx|ts|tsx)$
+        pass_filenames: true
+
+      - id: client-oxfmt
+        name: oxfmt (client)
+        entry: bash -c "cd client && npx oxfmt"
+        language: system
+        files: ^client/.*\.(js|jsx|ts|tsx|json)$
+        pass_filenames: true
+
+  # Website (Next.js) hooks
+  - repo: local
+    hooks:
+      - id: website-oxlint
+        name: oxlint (website)
+        entry: bash -c "cd website && npx oxlint --fix"
+        language: system
+        files: ^website/.*\.(js|jsx|ts|tsx)$
+        pass_filenames: true
+
+      - id: website-oxfmt
+        name: oxfmt (website)
+        entry: bash -c "cd website && npx oxfmt"
+        language: system
+        files: ^website/.*\.(js|jsx|ts|tsx|json)$
+        pass_filenames: true

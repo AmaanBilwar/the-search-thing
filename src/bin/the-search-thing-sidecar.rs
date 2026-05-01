@@ -42,7 +42,7 @@ fn write_response(stdout: &mut io::StdoutLock<'_>, response: JsonRpcResponse) ->
 
 fn main() {
     dotenv::dotenv().ok();
-    
+
     let stdin = io::stdin();
     let mut stdout = io::stdout().lock();
 

@@ -2,18 +2,20 @@
   "name": "the-search-thing",
   "version": "12.0.0",
   "description": "A modern Electron application template with React, Vite, TypeScript, Shadcn UI and TailwindCSS",
-  "main": "./out/main/main.js",
   "license": "MIT",
   "author": {
     "name": "the-search-thing",
     "url": "https://github.com/AmaanBilwar/the-search-thing"
   },
+  "main": "./out/main/main.js",
   "scripts": {
     "dev": "cross-env ELECTRON_DISABLE_SANDBOX=1 electron-vite dev -w",
     "dev:rust-text": "cross-env ELECTRON_DISABLE_SANDBOX=1 SIDECAR_INDEX_MODE=rust-text electron-vite dev -w",
     "dev:rust-core": "cross-env ELECTRON_DISABLE_SANDBOX=1 SIDECAR_INDEX_MODE=rust-text SIDECAR_SEARCH_MODE=rust-helix electron-vite dev -w",
-    "format": "prettier --write .",
-    "lint": "eslint . --ext .ts,.tsx --fix",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
     "start": "electron-vite preview",
     "sidecar:build:debug": "cargo build --manifest-path ../Cargo.toml --bin the-search-thing-sidecar",
     "sidecar:test:jrpc": "cargo test --manifest-path ../Cargo.toml --test sidecar_jrpc -- --test-threads=1",
@@ -28,12 +30,6 @@
     "build:win": "run-s sidecar:stage vite:build:app electron:build:win",
     "build:mac": "run-s sidecar:stage vite:build:app electron:build:mac",
     "build:linux": "run-s sidecar:stage vite:build:app electron:build:linux"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "electron",
-      "esbuild"
-    ]
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
@@ -65,12 +61,19 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "npm-run-all": "^4.1.5",
-    "prettier": "^3.6.2",
+    "oxfmt": "^0.27.0",
+    "oxlint": "^1.62.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "tailwindcss": "^4.1.12",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.41.0",
     "vite": "^7.1.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild"
+    ]
   }
 }

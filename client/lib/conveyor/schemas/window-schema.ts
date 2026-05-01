@@ -1,7 +1,7 @@
-import { z } from 'zod'
+import { z } from "zod";
 
 export const windowIpcSchema = {
-  'window-init': {
+  "window-init": {
     args: z.tuple([]),
     return: z.object({
       width: z.number(),
@@ -11,94 +11,94 @@ export const windowIpcSchema = {
       platform: z.string(),
     }),
   },
-  'window-is-minimizable': {
+  "window-is-minimizable": {
     args: z.tuple([]),
     return: z.boolean(),
   },
-  'window-is-maximizable': {
+  "window-is-maximizable": {
     args: z.tuple([]),
     return: z.boolean(),
   },
-  'window-minimize': {
+  "window-minimize": {
     args: z.tuple([]),
     return: z.void(),
   },
-  'window-maximize': {
+  "window-maximize": {
     args: z.tuple([]),
     return: z.void(),
   },
-  'window-close': {
+  "window-close": {
     args: z.tuple([]),
     return: z.void(),
   },
-  'window-maximize-toggle': {
+  "window-maximize-toggle": {
     args: z.tuple([]),
     return: z.void(),
   },
-  'window-apply-placement': {
-    args: z.tuple([z.enum(['center', 'center-above', 'center-below', 'cursor'])]),
+  "window-apply-placement": {
+    args: z.tuple([z.enum(["center", "center-above", "center-below", "cursor"])]),
     return: z.void(),
   },
 
   // Web content operations
-  'web-undo': {
+  "web-undo": {
     args: z.tuple([]),
     return: z.void(),
   },
-  'web-redo': {
+  "web-redo": {
     args: z.tuple([]),
     return: z.void(),
   },
-  'web-cut': {
+  "web-cut": {
     args: z.tuple([]),
     return: z.void(),
   },
-  'web-copy': {
+  "web-copy": {
     args: z.tuple([]),
     return: z.void(),
   },
-  'web-paste': {
+  "web-paste": {
     args: z.tuple([]),
     return: z.void(),
   },
-  'web-delete': {
+  "web-delete": {
     args: z.tuple([]),
     return: z.void(),
   },
-  'web-select-all': {
+  "web-select-all": {
     args: z.tuple([]),
     return: z.void(),
   },
-  'web-reload': {
+  "web-reload": {
     args: z.tuple([]),
     return: z.void(),
   },
-  'web-force-reload': {
+  "web-force-reload": {
     args: z.tuple([]),
     return: z.void(),
   },
-  'web-toggle-devtools': {
+  "web-toggle-devtools": {
     args: z.tuple([]),
     return: z.void(),
   },
-  'web-actual-size': {
+  "web-actual-size": {
     args: z.tuple([]),
     return: z.void(),
   },
-  'web-zoom-in': {
+  "web-zoom-in": {
     args: z.tuple([]),
     return: z.void(),
   },
-  'web-zoom-out': {
+  "web-zoom-out": {
     args: z.tuple([]),
     return: z.void(),
   },
-  'web-toggle-fullscreen': {
+  "web-toggle-fullscreen": {
     args: z.tuple([]),
     return: z.void(),
   },
-  'web-open-url': {
+  "web-open-url": {
     args: z.tuple([z.string()]),
     return: z.void(),
   },
-}
+};

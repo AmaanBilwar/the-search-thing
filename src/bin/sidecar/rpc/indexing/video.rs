@@ -312,7 +312,8 @@ async fn build_chunk_artifacts(
                 .and_then(|s| s.to_str())
                 .unwrap_or("chunk")
                 .to_string();
-            let chunk_thumb_dir = format!("{}/{}", normalize_path(&thumbnails_dir_clone), chunk_name);
+            let chunk_thumb_dir =
+                format!("{}/{}", normalize_path(&thumbnails_dir_clone), chunk_name);
             let audio = extract_audio(&chunk_path, &audio_dir_clone)?;
             let thumbs = extract_thumbnails(&chunk_path, &chunk_thumb_dir)?;
 
@@ -543,7 +544,9 @@ where
         if let Some(entries) = frame_summaries.get(&chunk_stem) {
             let raw = Value::Array(entries.clone()).to_string();
             store.create_frame_summary_node(&chunk_id, &raw).await?;
-            store.create_frame_summary_embeddings(&chunk_id, &raw).await?;
+            store
+                .create_frame_summary_embeddings(&chunk_id, &raw)
+                .await?;
         }
 
         chunks_created += 1;

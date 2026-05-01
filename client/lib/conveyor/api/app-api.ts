@@ -1,5 +1,5 @@
-import { ConveyorApi } from '@/lib/preload/shared'
+import { ConveyorApi } from "@/lib/preload/shared";
 
 export class AppApi extends ConveyorApi {
-  version = () => this.invoke('version')
+  version = () => this.invoke("version");
 }

@@ -1,11 +1,11 @@
-import { z } from 'zod'
+import { z } from "zod";
 
 export const searchIpcSchema = {
   index: {
     args: z.tuple([z.string()]),
     return: z.object({ success: z.boolean(), job_id: z.string() }),
   },
-  'index-status': {
+  "index-status": {
     args: z.tuple([z.string()]),
     return: z.object({
       job_id: z.string(),
@@ -41,11 +41,11 @@ export const searchIpcSchema = {
           content: z.string().nullable().optional(),
           path: z.string(),
           thumbnail_url: z.string().nullable().optional(),
-        })
+        }),
       ),
     }),
   },
-  'sidecar-ping': {
+  "sidecar-ping": {
     args: z.tuple([]),
     return: z.object({
       ok: z.boolean(),
@@ -56,7 +56,7 @@ export const searchIpcSchema = {
       search_mode: z.string().optional(),
     }),
   },
-  'sidecar-walk-text-batch': {
+  "sidecar-walk-text-batch": {
     args: z.tuple([
       z.object({
         dir: z.string(),
@@ -76,12 +76,12 @@ export const searchIpcSchema = {
     }),
   },
   // system operations
-  'open-file-dialog': {
+  "open-file-dialog": {
     args: z.tuple([]),
     return: z.string(),
   },
-  'open-file': {
+  "open-file": {
     args: z.tuple([z.string()]),
     return: z.null(),
   },
-}
+};

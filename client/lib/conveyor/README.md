@@ -19,45 +19,45 @@ The Conveyor system consists of four main components:
 
 ```typescript
 // Access the conveyor APIs through the global window object
-const appVersion = await window.conveyor.app.version()
-const windowInfo = await window.conveyor.window.windowInit()
+const appVersion = await window.conveyor.app.version();
+const windowInfo = await window.conveyor.window.windowInit();
 
 // Window operations
-await window.conveyor.window.windowMinimize()
-await window.conveyor.window.windowMaximize()
-await window.conveyor.window.windowClose()
+await window.conveyor.window.windowMinimize();
+await window.conveyor.window.windowMaximize();
+await window.conveyor.window.windowClose();
 
 // Web content operations
-await window.conveyor.window.webCopy()
-await window.conveyor.window.webPaste()
-await window.conveyor.window.webOpenUrl('https://example.com')
+await window.conveyor.window.webCopy();
+await window.conveyor.window.webPaste();
+await window.conveyor.window.webOpenUrl("https://example.com");
 ```
 
 ### In React Components
 
 ```typescript
-import { useConveyor } from '@/app/hooks/use-conveyor'
+import { useConveyor } from "@/app/hooks/use-conveyor";
 
 // Use specific API (recommended for components)
-const appApi = useConveyor('app')
-const windowApi = useConveyor('window')
+const appApi = useConveyor("app");
+const windowApi = useConveyor("window");
 
 // Or use all APIs
-const conveyor = useConveyor()
+const conveyor = useConveyor();
 
 // Examples with specific APIs
-const appVersion = await appApi.version()
-const windowInfo = await windowApi.windowInit()
+const appVersion = await appApi.version();
+const windowInfo = await windowApi.windowInit();
 
 // Window operations
-await windowApi.windowMinimize()
-await windowApi.windowMaximize()
-await windowApi.windowClose()
+await windowApi.windowMinimize();
+await windowApi.windowMaximize();
+await windowApi.windowClose();
 
 // Web content operations
-await windowApi.webCopy()
-await windowApi.webPaste()
-await windowApi.webOpenUrl('https://example.com')
+await windowApi.webCopy();
+await windowApi.webPaste();
+await windowApi.webOpenUrl("https://example.com");
 ```
 
 ### In Main Process
@@ -66,10 +66,10 @@ Handlers are registered by importing their registrar modules in the main process
 
 ```typescript
 // lib/main/app.ts
-import { registerAppHandlers } from '@/lib/conveyor/handlers/app-handler'
+import { registerAppHandlers } from "@/lib/conveyor/handlers/app-handler";
 
 // In your app initialization
-registerAppHandlers(app)
+registerAppHandlers(app);
 ```
 
 <br />
@@ -84,25 +84,26 @@ Create a schema file in `lib/conveyor/schemas/`:
 
 ```typescript
 // lib/conveyor/schemas/file-schema.ts
-import { z } from 'zod'
+import { z } from "zod";
 
 export const fileIpcSchema = {
-  'file-read': {
+  "file-read": {
     args: z.tuple([z.string()]),
     return: z.string(),
   },
-  'file-write': {
+  "file-write": {
     args: z.tuple([z.string(), z.string()]),
     return: z.void(),
   },
-  'file-delete': {
+  "file-delete": {
     args: z.tuple([z.string()]),
     return: z.void(),
   },
-}
+};
 ```
 
 **Schema Purpose:**
+
 - **`args`**: Defines the expected arguments that will be passed from the renderer to the main process. These are validated at runtime using Zod.
 - **`return`**: Defines the expected return type from the main process back to the renderer. This ensures type safety and runtime validation of the response.
 
@@ -110,13 +111,13 @@ export const fileIpcSchema = {
 
 ```typescript
 // lib/conveyor/schemas/index.ts
-import { fileIpcSchema } from './file-schema'
+import { fileIpcSchema } from "./file-schema";
 
 export const ipcSchemas = {
   ...windowIpcSchema,
   ...appIpcSchema,
   ...fileIpcSchema, // Add your new schema
-} as const
+} as const;
 ```
 
 ### 3. Create the API class
@@ -125,12 +126,12 @@ Create a new API class in `lib/conveyor/api/`:
 
 ```typescript
 // lib/conveyor/api/file-api.ts
-import { ConveyorApi } from '@/lib/preload/shared'
+import { ConveyorApi } from "@/lib/preload/shared";
 
 export class FileApi extends ConveyorApi {
-  readFile = (path: string) => this.invoke('file-read', path)
-  writeFile = (path: string, content: string) => this.invoke('file-write', path, content)
-  deleteFile = (path: string) => this.invoke('file-delete', path)
+  readFile = (path: string) => this.invoke("file-read", path);
+  writeFile = (path: string, content: string) => this.invoke("file-write", path, content);
+  deleteFile = (path: string) => this.invoke("file-delete", path);
 }
 ```
 
@@ -138,15 +139,15 @@ export class FileApi extends ConveyorApi {
 
 ```typescript
 // lib/conveyor/api/index.ts
-import { FileApi } from './file-api'
+import { FileApi } from "./file-api";
 
 export const conveyor = {
   app: new AppApi(electronAPI),
   window: new WindowApi(electronAPI),
   file: new FileApi(electronAPI), // Add your new API
-}
+};
 
-export type ConveyorApi = typeof conveyor
+export type ConveyorApi = typeof conveyor;
 ```
 
 The `ConveyorApi` type is automatically derived from the conveyor object structure, ensuring type safety and eliminating the need for manual type maintenance.
@@ -157,37 +158,35 @@ Create a handler file in `lib/conveyor/handlers/`:
 
 ```typescript
 // lib/conveyor/handlers/file-handler.ts
-import { handle } from '@/lib/main/shared'
-import { readFileSync, writeFileSync, unlinkSync } from 'fs'
+import { handle } from "@/lib/main/shared";
+import { readFileSync, writeFileSync, unlinkSync } from "fs";
 
 export const registerFileHandlers = () => {
-  handle('file-read', (path: string) => {
-    return readFileSync(path, 'utf-8')
-  })
+  handle("file-read", (path: string) => {
+    return readFileSync(path, "utf-8");
+  });
 
-  handle('file-write', (path: string, content: string) => {
-    writeFileSync(path, content, 'utf-8')
-  })
+  handle("file-write", (path: string, content: string) => {
+    writeFileSync(path, content, "utf-8");
+  });
 
-  handle('file-delete', (path: string) => {
-    unlinkSync(path)
-  })
-}
+  handle("file-delete", (path: string) => {
+    unlinkSync(path);
+  });
+};
 ```
 
 ### 6. Register handlers in main process
 
 ```typescript
 // lib/main/app.ts
-import { registerFileHandlers } from '@/lib/conveyor/handlers/file-handler'
+import { registerFileHandlers } from "@/lib/conveyor/handlers/file-handler";
 
 // In your app initialization
-registerFileHandlers()
+registerFileHandlers();
 ```
 
 **Note**: Global types are automatically updated when you add new APIs to the conveyor export, so no manual updates are needed!
-
-
 
 ## Type Safety Features
 
@@ -202,17 +201,17 @@ The preload script exposes the conveyor APIs to the renderer with proper error h
 
 ```typescript
 // lib/preload/preload.ts
-import { contextBridge } from 'electron'
-import { conveyor } from '@/lib/conveyor/api'
+import { contextBridge } from "electron";
+import { conveyor } from "@/lib/conveyor/api";
 
 if (process.contextIsolated) {
   try {
-    contextBridge.exposeInMainWorld('conveyor', conveyor)
+    contextBridge.exposeInMainWorld("conveyor", conveyor);
   } catch (error) {
-    console.error(error)
+    console.error(error);
   }
 } else {
-  window.conveyor = conveyor
+  window.conveyor = conveyor;
 }
 ```
 

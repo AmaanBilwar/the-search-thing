@@ -1,6 +1,6 @@
+use async_trait::async_trait;
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
-use async_trait::async_trait;
 use reqwest::multipart::{Form, Part};
 use reqwest::Client;
 use serde_json::{json, Map, Value};
@@ -168,7 +168,11 @@ impl GroqClient {
         mime_hint: &str,
         image_bytes: Vec<u8>,
     ) -> Result<Value, String> {
-        let data_uri = format!("data:image/{};base64,{}", mime_hint, STANDARD.encode(image_bytes));
+        let data_uri = format!(
+            "data:image/{};base64,{}",
+            mime_hint,
+            STANDARD.encode(image_bytes)
+        );
         let prompt = "You are an expert vision assistant. Provide a concise JSON summary for the provided image. Respond with JSON only (no code fences). Use the schema: {\"summary\": \"<1-2 sentences>\", \"objects\": [\"...\"], \"actions\": [\"...\"], \"setting\": \"<location or scene>\", \"ocr\": \"<visible text or empty>\", \"quality\": \"<good|low>\"}";
 
         let payload = json!({

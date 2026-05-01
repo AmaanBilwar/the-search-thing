@@ -1,25 +1,25 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react'
-import { Button } from './ui/button'
-import { Badge } from './ui/badge'
+import React, { Component, ErrorInfo, ReactNode } from "react";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
 
 interface Props {
-  children: ReactNode
-  fallback?: ReactNode
+  children: ReactNode;
+  fallback?: ReactNode;
 }
 
 interface State {
-  hasError: boolean
-  error?: Error
+  hasError: boolean;
+  error?: Error;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
-    super(props)
-    this.state = { hasError: false }
+    super(props);
+    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error }
+    return { hasError: true, error };
   }
 
   componentDidCatch(_error: Error, _errorInfo: ErrorInfo) {
@@ -57,8 +57,8 @@ export class ErrorBoundary extends Component<Props, State> {
                 <div className="space-y-2">
                   <h1 className="text-2xl font-semibold text-foreground">Something went wrong</h1>
                   <p className="text-muted-foreground text-sm leading-relaxed">
-                    An unexpected error occurred in the application. Please try refreshing the page or contact support
-                    if the problem persists.
+                    An unexpected error occurred in the application. Please try refreshing the page
+                    or contact support if the problem persists.
                   </p>
                 </div>
 
@@ -73,7 +73,12 @@ export class ErrorBoundary extends Component<Props, State> {
                           stroke="currentColor"
                           viewBox="0 0 24 24"
                         >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
                         </svg>
                         Error Details
                       </Badge>
@@ -106,7 +111,12 @@ export class ErrorBoundary extends Component<Props, State> {
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <Button onClick={() => window.location.reload()} className="flex-1" size="lg">
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -122,7 +132,12 @@ export class ErrorBoundary extends Component<Props, State> {
                     className="flex-1"
                     size="lg"
                   >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -137,9 +152,9 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
           </div>
         )
-      )
+      );
     }
 
-    return this.props.children
+    return this.props.children;
   }
 }

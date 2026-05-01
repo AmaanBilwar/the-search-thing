@@ -17,12 +17,15 @@ pub struct HelixTextStore {
 
 impl HelixTextStore {
     pub fn from_env() -> Result<Self, String> {
-        let endpoint = env::var("HELIX_ENDPOINT").unwrap_or_else(|_| "http://localhost".to_string());
+        let endpoint =
+            env::var("HELIX_ENDPOINT").unwrap_or_else(|_| "http://localhost".to_string());
         let port = env::var("HELIX_PORT")
             .unwrap_or_else(|_| "7003".to_string())
             .parse::<u16>()
             .map_err(|e| format!("invalid HELIX_PORT: {}", e))?;
-        let api_key = env::var("HELIX_API_KEY").ok().filter(|v| !v.trim().is_empty());
+        let api_key = env::var("HELIX_API_KEY")
+            .ok()
+            .filter(|v| !v.trim().is_empty());
 
         Ok(Self {
             endpoint,
@@ -217,9 +220,8 @@ impl ImageIndexStore for HelixTextStore {
                 }
             })?;
 
-        Ok(Self::extract_existing_image_id(&result).map(|image_id| ExistingImageRecord {
-            image_id,
-        }))
+        Ok(Self::extract_existing_image_id(&result)
+            .map(|image_id| ExistingImageRecord { image_id }))
     }
 
     async fn create_image(
@@ -283,7 +285,8 @@ impl VideoIndexStore for HelixTextStore {
                 }
             })?;
 
-        Ok(Self::extract_existing_video_id(&result).map(|video_id| ExistingVideoRecord { video_id }))
+        Ok(Self::extract_existing_video_id(&result)
+            .map(|video_id| ExistingVideoRecord { video_id }))
     }
 
     async fn create_video(
@@ -370,11 +373,7 @@ impl VideoIndexStore for HelixTextStore {
         Ok(())
     }
 
-    async fn create_frame_summary_node(
-        &self,
-        chunk_id: &str,
-        content: &str,
-    ) -> Result<(), String> {
+    async fn create_frame_summary_node(&self, chunk_id: &str, content: &str) -> Result<(), String> {
         let payload = json!({
             "chunk_id": chunk_id,
             "content": content,

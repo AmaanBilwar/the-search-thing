@@ -6,9 +6,7 @@ export default function Home() {
       {/* Hero section - full viewport, content centered */}
       <section className="min-h-screen w-full flex flex-col items-center justify-center px-12 py-16">
         <div className="max-w-2xl w-full flex flex-col items-center text-center">
-          <h1 className="text-4xl font-sans-code font-bold mb-8">
-            the-search-thing
-          </h1>
+          <h1 className="text-4xl font-sans-code font-bold mb-8">the-search-thing</h1>
           <p>
             <span className="font-semibold">hi everyone,</span>
             <br />

@@ -65,11 +65,21 @@ enum StoreCall {
         start_time: i64,
         end_time: i64,
     },
-    CreateVideoChunkRelationship { chunk_id: String },
-    CreateTranscriptNode { chunk_id: String },
-    CreateTranscriptEmbeddings { chunk_id: String },
-    CreateFrameSummaryNode { chunk_id: String },
-    CreateFrameSummaryEmbeddings { chunk_id: String },
+    CreateVideoChunkRelationship {
+        chunk_id: String,
+    },
+    CreateTranscriptNode {
+        chunk_id: String,
+    },
+    CreateTranscriptEmbeddings {
+        chunk_id: String,
+    },
+    CreateFrameSummaryNode {
+        chunk_id: String,
+    },
+    CreateFrameSummaryEmbeddings {
+        chunk_id: String,
+    },
     UpdateVideoChunkCount,
 }
 
@@ -108,7 +118,10 @@ impl MockStore {
 
 #[async_trait]
 impl VideoIndexStore for MockStore {
-    async fn get_video_by_hash(&self, _content_hash: &str) -> Result<Option<ExistingVideoRecord>, String> {
+    async fn get_video_by_hash(
+        &self,
+        _content_hash: &str,
+    ) -> Result<Option<ExistingVideoRecord>, String> {
         Ok(None)
     }
 
@@ -156,7 +169,11 @@ impl VideoIndexStore for MockStore {
         })
     }
 
-    async fn create_frame_summary_node(&self, chunk_id: &str, _content: &str) -> Result<(), String> {
+    async fn create_frame_summary_node(
+        &self,
+        chunk_id: &str,
+        _content: &str,
+    ) -> Result<(), String> {
         self.push_or_fail(StoreCall::CreateFrameSummaryNode {
             chunk_id: chunk_id.to_string(),
         })
@@ -313,7 +330,9 @@ async fn video_indexer_randomized_pipeline_properties() {
 
         if expected_chunks > 0 {
             assert!(
-                calls.iter().any(|c| matches!(c, StoreCall::UpdateVideoChunkCount)),
+                calls
+                    .iter()
+                    .any(|c| matches!(c, StoreCall::UpdateVideoChunkCount)),
                 "seed {}: update_video_chunk_count should run when chunks exist",
                 seed
             );
@@ -331,7 +350,12 @@ async fn video_indexer_randomized_pipeline_properties() {
             })
             .collect::<Vec<_>>();
 
-        assert_eq!(chunks.len(), expected_chunks, "seed {}: chunk count mismatch", seed);
+        assert_eq!(
+            chunks.len(),
+            expected_chunks,
+            "seed {}: chunk count mismatch",
+            seed
+        );
         assert_eq!(result.chunks_created, expected_chunks);
         assert_eq!(result.indexed, expected_chunks > 0);
 

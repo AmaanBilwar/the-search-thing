@@ -55,4 +55,3 @@ def _build_video_to_path_map(videos: list) -> dict[str, str]:
         if video_id and path:
             video_to_path[video_id] = path
     return video_to_path
-

@@ -94,7 +94,7 @@ if __name__ == "__main__":
     import uvicorn
 
     try:
-       port_value = int(PORT) if PORT is not None else 8000
+        port_value = int(PORT) if PORT is not None else 8000
     except ValueError:
-        port_value = 8000 
+        port_value = 8000
     uvicorn.run(app, host="0.0.0.0", port=port_value)

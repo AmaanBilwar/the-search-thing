@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
-import { cn } from '@/lib/utils'
-import { useKeybinds } from '@/app/hooks/use-keybinds'
+import { useEffect, useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
+import { useKeybinds } from "@/app/hooks/use-keybinds";
 import {
   type KeybindAction,
   type KeyCombo,
@@ -11,14 +11,18 @@ import {
   combosEqual,
   findConflict,
   formatCombo,
-} from '@/lib/storage/keybind-store'
+} from "@/lib/storage/keybind-store";
 
 function KeyToken({ children }: { children: string }) {
-  return <kbd className="px-2 py-1 text-xs text-zinc-300 bg-zinc-700/50 border border-zinc-600 rounded">{children}</kbd>
+  return (
+    <kbd className="px-2 py-1 text-xs text-zinc-300 bg-zinc-700/50 border border-zinc-600 rounded">
+      {children}
+    </kbd>
+  );
 }
 
 function ComboDisplay({ combo }: { combo: KeyCombo }) {
-  const tokens = comboTokens(combo)
+  const tokens = comboTokens(combo);
   return (
     <div className="flex items-center gap-2">
       {tokens.map((token, i) => (
@@ -28,20 +32,20 @@ function ComboDisplay({ combo }: { combo: KeyCombo }) {
         </span>
       ))}
     </div>
-  )
+  );
 }
 
 type KeybindRowProps = {
-  action: KeybindAction
-  label: string
-  description: string
-  combo: KeyCombo
-  isRecording: boolean
-  onStartRecording: () => void
-  onCancelRecording: () => void
-  onRecorded: (combo: KeyCombo) => void
-  conflict: string | null
-}
+  action: KeybindAction;
+  label: string;
+  description: string;
+  combo: KeyCombo;
+  isRecording: boolean;
+  onStartRecording: () => void;
+  onCancelRecording: () => void;
+  onRecorded: (combo: KeyCombo) => void;
+  conflict: string | null;
+};
 
 function KeybindRow({
   label,
@@ -54,45 +58,52 @@ function KeybindRow({
   conflict,
 }: KeybindRowProps) {
   useEffect(() => {
-    if (!isRecording) return
+    if (!isRecording) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
+      e.preventDefault();
+      e.stopPropagation();
 
-      if (e.key === 'Escape') {
-        onCancelRecording()
-        return
+      if (e.key === "Escape") {
+        onCancelRecording();
+        return;
       }
 
-      const newCombo = comboFromEvent(e)
+      const newCombo = comboFromEvent(e);
       if (newCombo) {
-        onRecorded(newCombo)
+        onRecorded(newCombo);
       }
-    }
+    };
 
-    window.addEventListener('keydown', handleKeyDown, true)
-    return () => window.removeEventListener('keydown', handleKeyDown, true)
-  }, [isRecording, onCancelRecording, onRecorded])
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, [isRecording, onCancelRecording, onRecorded]);
 
   return (
     <div
       className={cn(
-        'flex items-center justify-between gap-4 px-3 py-2 rounded-md transition-colors',
-        isRecording && 'bg-amber-100/70 ring-1 ring-amber-700/70 dark:bg-zinc-700/40 dark:ring-amber-500/50',
-        conflict && 'bg-rose-500/10 ring-1 ring-rose-400/40'
+        "flex items-center justify-between gap-4 px-3 py-2 rounded-md transition-colors",
+        isRecording &&
+          "bg-amber-100/70 ring-1 ring-amber-700/70 dark:bg-zinc-700/40 dark:ring-amber-500/50",
+        conflict && "bg-rose-500/10 ring-1 ring-rose-400/40",
       )}
     >
       <div className="flex flex-col gap-0.5 min-w-0">
         <div className="text-sm text-zinc-200">{label}</div>
         <div className="text-xs text-zinc-500">{description}</div>
-        {conflict && <div className="text-xs text-rose-700/80 dark:text-rose-300/80 mt-0.5">Conflicts with: {conflict}</div>}
+        {conflict && (
+          <div className="text-xs text-rose-700/80 dark:text-rose-300/80 mt-0.5">
+            Conflicts with: {conflict}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-3 flex-shrink-0">
         {isRecording ? (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-amber-600 dark:text-amber-600 animate-pulse">Press keys...</span>
+            <span className="text-xs text-amber-600 dark:text-amber-600 animate-pulse">
+              Press keys...
+            </span>
             <button
               type="button"
               onClick={onCancelRecording}
@@ -106,9 +117,9 @@ function KeybindRow({
             type="button"
             onClick={onStartRecording}
             className={cn(
-              'flex items-center gap-2 group cursor-pointer',
-              'rounded-md px-2 py-1 -mx-2 -my-1',
-              'hover:bg-zinc-700/50 transition-colors'
+              "flex items-center gap-2 group cursor-pointer",
+              "rounded-md px-2 py-1 -mx-2 -my-1",
+              "hover:bg-zinc-700/50 transition-colors",
             )}
             title="Click to rebind"
           >
@@ -117,88 +128,90 @@ function KeybindRow({
         )}
       </div>
     </div>
-  )
+  );
 }
 
 export default function Keybinds() {
-  const { keybinds, setAllKeybinds } = useKeybinds()
-  const [recordingAction, setRecordingAction] = useState<KeybindAction | null>(null)
-  const [draftKeybinds, setDraftKeybinds] = useState(() => ({ ...keybinds }))
-  const [isConflictModalOpen, setIsConflictModalOpen] = useState(false)
+  const { keybinds, setAllKeybinds } = useKeybinds();
+  const [recordingAction, setRecordingAction] = useState<KeybindAction | null>(null);
+  const [draftKeybinds, setDraftKeybinds] = useState(() => ({ ...keybinds }));
+  const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
 
   useEffect(() => {
-    setDraftKeybinds({ ...keybinds })
-  }, [keybinds])
+    setDraftKeybinds({ ...keybinds });
+  }, [keybinds]);
 
   useEffect(() => {
-    const isRecording = recordingAction !== null
+    const isRecording = recordingAction !== null;
     if (isRecording) {
-      document.body.dataset.keybindRecording = 'true'
+      document.body.dataset.keybindRecording = "true";
     } else {
-      delete document.body.dataset.keybindRecording
+      delete document.body.dataset.keybindRecording;
     }
 
     return () => {
-      delete document.body.dataset.keybindRecording
-    }
-  }, [recordingAction])
+      delete document.body.dataset.keybindRecording;
+    };
+  }, [recordingAction]);
 
   const handleStartRecording = (action: KeybindAction) => {
-    setRecordingAction(action)
-  }
+    setRecordingAction(action);
+  };
 
   const handleCancelRecording = () => {
-    setRecordingAction(null)
-  }
+    setRecordingAction(null);
+  };
 
   const handleRecorded = (action: KeybindAction, combo: KeyCombo) => {
-    setDraftKeybinds((prev) => ({ ...prev, [action]: combo }))
-    setRecordingAction(null)
-  }
+    setDraftKeybinds((prev) => ({ ...prev, [action]: combo }));
+    setRecordingAction(null);
+  };
 
   const hasCustomBindings = KEYBIND_ACTIONS.some(
-    ({ action }) => !combosEqual(draftKeybinds[action], DEFAULT_KEYBINDS[action])
-  )
+    ({ action }) => !combosEqual(draftKeybinds[action], DEFAULT_KEYBINDS[action]),
+  );
 
   const hasUnsavedChanges = useMemo(() => {
-    return KEYBIND_ACTIONS.some(({ action }) => !combosEqual(draftKeybinds[action], keybinds[action]))
-  }, [draftKeybinds, keybinds])
+    return KEYBIND_ACTIONS.some(
+      ({ action }) => !combosEqual(draftKeybinds[action], keybinds[action]),
+    );
+  }, [draftKeybinds, keybinds]);
 
   const conflictMap = useMemo(() => {
-    const map = new Map<KeybindAction, string>()
+    const map = new Map<KeybindAction, string>();
     for (const { action } of KEYBIND_ACTIONS) {
-      const conflictAction = findConflict(draftKeybinds[action], draftKeybinds, action)
+      const conflictAction = findConflict(draftKeybinds[action], draftKeybinds, action);
       if (conflictAction) {
-        const meta = KEYBIND_ACTIONS.find((m) => m.action === conflictAction)
-        map.set(action, meta?.label ?? conflictAction)
+        const meta = KEYBIND_ACTIONS.find((m) => m.action === conflictAction);
+        map.set(action, meta?.label ?? conflictAction);
       }
     }
-    return map
-  }, [draftKeybinds])
+    return map;
+  }, [draftKeybinds]);
 
   const conflictItems = useMemo(() => {
     const items: {
-      action: KeybindAction
-      conflictAction: KeybindAction
-      previousOwner: KeybindAction | null
-      comboLabel: string
-    }[] = []
-    const seen = new Set<string>()
+      action: KeybindAction;
+      conflictAction: KeybindAction;
+      previousOwner: KeybindAction | null;
+      comboLabel: string;
+    }[] = [];
+    const seen = new Set<string>();
 
     for (const { action } of KEYBIND_ACTIONS) {
-      const combo = draftKeybinds[action]
-      const conflictAction = findConflict(combo, draftKeybinds, action)
-      if (!conflictAction) continue
+      const combo = draftKeybinds[action];
+      const conflictAction = findConflict(combo, draftKeybinds, action);
+      if (!conflictAction) continue;
 
-      const key = [action, conflictAction].sort().join('|') + `|${formatCombo(combo)}`
-      if (seen.has(key)) continue
-      seen.add(key)
+      const key = [action, conflictAction].sort().join("|") + `|${formatCombo(combo)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
 
-      let previousOwner: KeybindAction | null = null
+      let previousOwner: KeybindAction | null = null;
       if (combosEqual(keybinds[action], combo)) {
-        previousOwner = action
+        previousOwner = action;
       } else if (combosEqual(keybinds[conflictAction], combo)) {
-        previousOwner = conflictAction
+        previousOwner = conflictAction;
       }
 
       items.push({
@@ -206,46 +219,54 @@ export default function Keybinds() {
         conflictAction,
         previousOwner,
         comboLabel: formatCombo(combo),
-      })
+      });
     }
 
-    return items
-  }, [draftKeybinds, keybinds])
+    return items;
+  }, [draftKeybinds, keybinds]);
 
   const handleDiscard = () => {
-    setRecordingAction(null)
-    setDraftKeybinds({ ...keybinds })
-  }
+    setRecordingAction(null);
+    setDraftKeybinds({ ...keybinds });
+  };
 
   const handleSave = () => {
-    setRecordingAction(null)
+    setRecordingAction(null);
     if (conflictItems.length > 0) {
-      setIsConflictModalOpen(true)
-      return
+      setIsConflictModalOpen(true);
+      return;
     }
 
-    void setAllKeybinds(draftKeybinds)
-  }
+    void setAllKeybinds(draftKeybinds);
+  };
 
   const handleResetDefaults = () => {
-    setRecordingAction(null)
-    setDraftKeybinds({ ...DEFAULT_KEYBINDS })
-  }
+    setRecordingAction(null);
+    setDraftKeybinds({ ...DEFAULT_KEYBINDS });
+  };
 
   return (
     <div
       className={cn(
-        'flex flex-col gap-4',
-        'w-full h-full',
-        'border-1 border-zinc-700/80 bg-zinc-800/60',
-        'p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]'
+        "flex flex-col gap-4",
+        "w-full h-full",
+        "border-1 border-zinc-700/80 bg-zinc-800/60",
+        "p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
       )}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="text-xs uppercase tracking-wider text-zinc-500">Keybinds</div>
-          {hasUnsavedChanges && <div className="text-[11px] text-amber-700/80 dark:text-amber-600/80">Unsaved changes</div>}
-          {conflictItems.length > 0 && <div className="text-[11px] text-rose-700/80 dark:text-rose-300/80">Conflicting keybinds</div>}
+          {hasUnsavedChanges && (
+            <div className="text-[11px] text-amber-700/80 dark:text-amber-600/80">
+              Unsaved changes
+            </div>
+          )}
+          {conflictItems.length > 0 && (
+            <div className="text-[11px] text-rose-700/80 dark:text-rose-300/80">
+              Conflicting keybinds
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {hasCustomBindings && (
@@ -260,10 +281,10 @@ export default function Keybinds() {
             onClick={handleDiscard}
             disabled={!hasUnsavedChanges}
             className={cn(
-              'text-xs transition-colors px-2 py-1 rounded border',
+              "text-xs transition-colors px-2 py-1 rounded border",
               hasUnsavedChanges
-                ? 'text-zinc-300 hover:text-zinc-200 border-zinc-600 hover:border-zinc-500 dark:text-zinc-400 dark:hover:text-zinc-200 dark:border-zinc-700 dark:hover:border-zinc-500'
-                : 'text-zinc-500 border-zinc-700 cursor-not-allowed dark:text-zinc-600 dark:border-zinc-800'
+                ? "text-zinc-300 hover:text-zinc-200 border-zinc-600 hover:border-zinc-500 dark:text-zinc-400 dark:hover:text-zinc-200 dark:border-zinc-700 dark:hover:border-zinc-500"
+                : "text-zinc-500 border-zinc-700 cursor-not-allowed dark:text-zinc-600 dark:border-zinc-800",
             )}
           >
             Discard
@@ -272,10 +293,10 @@ export default function Keybinds() {
             onClick={handleSave}
             disabled={!hasUnsavedChanges}
             className={cn(
-              'text-xs transition-colors px-2 py-1 rounded border',
+              "text-xs transition-colors px-2 py-1 rounded border",
               hasUnsavedChanges
-                ? 'text-emerald-700 border-emerald-700/70 hover:border-emerald-600 dark:text-emerald-200 dark:border-emerald-500/60 dark:hover:border-emerald-400'
-                : 'text-zinc-500 border-zinc-700 cursor-not-allowed dark:text-zinc-600 dark:border-zinc-800'
+                ? "text-emerald-700 border-emerald-700/70 hover:border-emerald-600 dark:text-emerald-200 dark:border-emerald-500/60 dark:hover:border-emerald-400"
+                : "text-zinc-500 border-zinc-700 cursor-not-allowed dark:text-zinc-600 dark:border-zinc-800",
             )}
           >
             Save
@@ -312,12 +333,16 @@ export default function Keybinds() {
       </div>
 
       <div className="text-[11px] text-zinc-400 dark:text-zinc-600 mt-auto">
-        Click a shortcut to rebind it. Press <kbd className="px-1 text-zinc-300 dark:text-zinc-500">Esc</kbd> to cancel.
+        Click a shortcut to rebind it. Press{" "}
+        <kbd className="px-1 text-zinc-300 dark:text-zinc-500">Esc</kbd> to cancel.
       </div>
 
       {isConflictModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setIsConflictModalOpen(false)} />
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setIsConflictModalOpen(false)}
+          />
           <div className="relative z-10 w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-900/95 p-4 shadow-xl">
             <div className="text-sm text-zinc-200">Conflicting keybinds</div>
             <div className="text-xs text-zinc-400 mt-1">
@@ -325,13 +350,14 @@ export default function Keybinds() {
             </div>
             <div className="mt-3 flex flex-col gap-2">
               {conflictItems.map((item) => {
-                const currentMeta = KEYBIND_ACTIONS.find((m) => m.action === item.action)
-                const conflictMeta = KEYBIND_ACTIONS.find((m) => m.action === item.conflictAction)
+                const currentMeta = KEYBIND_ACTIONS.find((m) => m.action === item.action);
+                const conflictMeta = KEYBIND_ACTIONS.find((m) => m.action === item.conflictAction);
                 const previousMeta = item.previousOwner
                   ? KEYBIND_ACTIONS.find((m) => m.action === item.previousOwner)
-                  : null
-                const otherAction = item.previousOwner === item.action ? item.conflictAction : item.action
-                const otherMeta = KEYBIND_ACTIONS.find((m) => m.action === otherAction)
+                  : null;
+                const otherAction =
+                  item.previousOwner === item.action ? item.conflictAction : item.action;
+                const otherMeta = KEYBIND_ACTIONS.find((m) => m.action === otherAction);
 
                 return (
                   <div
@@ -339,14 +365,18 @@ export default function Keybinds() {
                     className="rounded-md border border-zinc-800 bg-zinc-900/60 px-3 py-2"
                   >
                     <div className="text-xs text-zinc-200">
-                      <span className="text-zinc-100">{item.comboLabel}</span> is assigned to{' '}
-                      <span className="text-zinc-100">{currentMeta?.label ?? item.action}</span> and{' '}
-                      <span className="text-zinc-100">{conflictMeta?.label ?? item.conflictAction}</span>.
+                      <span className="text-zinc-100">{item.comboLabel}</span> is assigned to{" "}
+                      <span className="text-zinc-100">{currentMeta?.label ?? item.action}</span> and{" "}
+                      <span className="text-zinc-100">
+                        {conflictMeta?.label ?? item.conflictAction}
+                      </span>
+                      .
                     </div>
                     <div className="text-[11px] text-zinc-500 mt-1">
                       {previousMeta ? (
                         <>
-                          Saving will unbind <span className="text-zinc-300">{previousMeta.label}</span> in favor of{' '}
+                          Saving will unbind{" "}
+                          <span className="text-zinc-300">{previousMeta.label}</span> in favor of{" "}
                           <span className="text-zinc-300">{otherMeta?.label ?? otherAction}</span>.
                         </>
                       ) : (
@@ -354,7 +384,7 @@ export default function Keybinds() {
                       )}
                     </div>
                   </div>
-                )
+                );
               })}
             </div>
             <div className="mt-4 flex items-center justify-end gap-2">
@@ -366,8 +396,8 @@ export default function Keybinds() {
               </button>
               <button
                 onClick={() => {
-                  setIsConflictModalOpen(false)
-                  void setAllKeybinds(draftKeybinds)
+                  setIsConflictModalOpen(false);
+                  void setAllKeybinds(draftKeybinds);
                 }}
                 className="text-xs text-rose-200 border border-rose-500/60 hover:border-rose-400 transition-colors px-2 py-1 rounded"
               >
@@ -378,5 +408,5 @@ export default function Keybinds() {
         </div>
       )}
     </div>
-  )
+  );
 }

@@ -529,7 +529,8 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
             job_id, image_found
         );
 
-        let image_results = runtime.block_on(image_indexer_with_sidecar(image_files, &groq, &store));
+        let image_results =
+            runtime.block_on(image_indexer_with_sidecar(image_files, &groq, &store));
         let first_image_error = image_results.iter().find_map(|result| {
             result
                 .error
@@ -556,7 +557,10 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
                     "[sidecar:index] job {} image indexing failed for {}: {}",
                     job_id,
                     result.path,
-                    result.error.clone().unwrap_or_else(|| "unknown error".to_string())
+                    result
+                        .error
+                        .clone()
+                        .unwrap_or_else(|| "unknown error".to_string())
                 );
             }
 
