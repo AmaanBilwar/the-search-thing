@@ -226,13 +226,13 @@ async fn image_indexer_randomized_pipeline_properties() {
         let mut rng = StdRng::seed_from_u64(seed);
         let scenario = random_scenario(&mut rng);
 
-        let deps = MockDeps {
-            summaries_by_hash: scenario
-                .items
-                .iter()
-                .map(|item| (item.content_hash.clone(), item.summary.clone()))
-                .collect(),
-        };
+        // Build summaries_by_hash ensuring first occurrence of each hash wins
+        // (avoids overwrites when there are duplicate images)
+        let mut summaries_by_hash = HashMap::new();
+        for item in scenario.items.iter().rev() {
+            summaries_by_hash.insert(item.content_hash.clone(), item.summary.clone());
+        }
+        let deps = MockDeps { summaries_by_hash };
         let store = MockStore::default();
 
         let results = index_images_with_deps(
