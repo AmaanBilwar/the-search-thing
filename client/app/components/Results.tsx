@@ -1,6 +1,5 @@
 import * as React from "react";
 import { useState, useEffect, useRef, useCallback } from "react";
-import noFiles from "@/resources/no-files-found.svg";
 import { FileX } from "lucide-react";
 import { ResultProps, SearchResultItem } from "../types/types";
 import * as fileIcons from "@/resources/filetype icons";
