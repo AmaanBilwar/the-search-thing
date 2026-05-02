@@ -19,7 +19,7 @@
     "sidecar:build:debug": "cargo build --manifest-path ../Cargo.toml --bin the-search-thing-sidecar",
     "sidecar:test:jrpc": "cargo test --manifest-path ../Cargo.toml --test sidecar_jrpc -- --test-threads=1",
     "sidecar:stage": "node ./scripts/stage-sidecar.cjs",
-    "ffmpeg:fetch": "powershell -ExecutionPolicy Bypass -File ./scripts/fetch-ffmpeg.ps1",
+    "ffmpeg:fetch": "bash ./scripts/fetch-ffmpeg.sh",
     "ffmpeg:fetch-linux": "bash ./scripts/fetch-ffmpeg-linux.sh",
     "postinstall": "electron-builder install-app-deps",
     "vite:build:app": "electron-vite build",
