@@ -324,15 +324,7 @@ const Results: React.FC<ResultsWithContextProps> = ({
                   }`}
                 >
                   <div className="pr-2 shrink-0">
-                    {result.label === "image" && !brokenImagePaths.has(result.path) ? (
-                      <img
-                        src={toImageSrc(result.path)}
-                        alt=""
-                        className="w-9 h-9 rounded-md object-cover bg-zinc-900"
-                        loading="lazy"
-                        onError={() => markImageAsBroken(result.path)}
-                      />
-                    ) : result.label === "video" && result.thumbnail_url ? (
+                    {result.label === "video" && result.thumbnail_url ? (
                       <img
                         src={result.thumbnail_url}
                         alt=""
