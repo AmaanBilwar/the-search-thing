@@ -1,7 +1,50 @@
-import { protocol, net } from "electron";
-import { existsSync, statSync } from "fs";
-import { join } from "path";
+import { app, protocol, net } from "electron";
+import { existsSync, readFileSync, statSync } from "fs";
+import { extname, join, resolve } from "path";
 import { pathToFileURL } from "url";
+
+type FileTypesConfig = {
+  image?: string[];
+};
+
+function getConfigPath(): string {
+  // In packaged builds, config is bundled to resources/config/
+  // In dev, it's at project root (3 levels up from lib/main/)
+  return app.isPackaged
+    ? resolve(process.resourcesPath, "config/file_types.json")
+    : resolve(__dirname, "../../../config/file_types.json");
+}
+
+function loadAllowedImageExtensions() {
+  const configPath = getConfigPath();
+
+  if (!existsSync(configPath)) {
+    console.error(`file_types.json not found at: ${configPath}`);
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(readFileSync(configPath, "utf-8")) as FileTypesConfig;
+    const imageExtensions = parsed.image ?? [];
+    const normalized = imageExtensions
+      .filter((extension) => typeof extension === "string" && extension.startsWith("."))
+      .map((extension) => extension.toLowerCase());
+
+    if (normalized.length === 0) {
+      console.error(
+        "file_types.json image extension list is empty or invalid for localimg protocol",
+      );
+      return null;
+    }
+
+    return new Set(normalized);
+  } catch (error) {
+    console.error("Failed to parse file_types.json for localimg protocol:", error);
+    return null;
+  }
+}
+
+const ALLOWED_IMAGE_EXTENSIONS = loadAllowedImageExtensions();
 
 export function registerResourcesProtocol() {
   protocol.handle("res", async (request) => {
@@ -25,7 +68,19 @@ export function registerResourcesProtocol() {
         return new Response("Missing image path", { status: 400 });
       }
 
+      if (!ALLOWED_IMAGE_EXTENSIONS) {
+        return new Response(
+          "Image type configuration unavailable. file not found in config/file_types.json",
+          { status: 503 },
+        );
+      }
+
       const decodedPath = rawPath;
+      const extension = extname(decodedPath).toLowerCase();
+      if (!ALLOWED_IMAGE_EXTENSIONS.has(extension)) {
+        return new Response("Unsupported image type", { status: 400 });
+      }
+
       if (!existsSync(decodedPath)) {
         return new Response("Image not found", { status: 404 });
       }
