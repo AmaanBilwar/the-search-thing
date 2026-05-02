@@ -24,10 +24,6 @@ extraResources:
     to: "config"
     filter:
       - "file_types.json"
-  - from: resources/ffmpeg
-    to: ffmpeg
-    filter:
-      - "**/*"
 win:
   extraResources:
     - from: resources/ffmpeg
