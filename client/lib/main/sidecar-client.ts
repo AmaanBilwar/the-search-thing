@@ -1,7 +1,7 @@
 import { app } from "electron";
 import { spawn, type ChildProcessWithoutNullStreams } from "child_process";
 import { existsSync } from "fs";
-import { resolve, join } from "path";
+import {resolve, join, delimiter} from "path";
 import { createInterface } from "readline";
 import { config } from "dotenv";
 
@@ -34,6 +34,8 @@ type SidecarLaunchSpec = {
 
 const SIDECAR_NAME =
   process.platform === "win32" ? "the-search-thing-sidecar.exe" : "the-search-thing-sidecar";
+const FFMPEG_DIRNAME =
+  process.platform === "win32" ? "win-x64" : process.platform === "linux" ? "linux-x64" : "";
 
 class SidecarClient {
   private process: ChildProcessWithoutNullStreams | null = null;
@@ -43,6 +45,23 @@ class SidecarClient {
 
   private resolveRepoRoot() {
     return resolve(__dirname, "../../..");
+  }
+
+  private resolveBundledFfmpegDir() {
+    if (!FFMPEG_DIRNAME) return null;
+
+    const packagedDir = join(process.resourcesPath, "ffmpeg", FFMPEG_DIRNAME);
+    if (app.isPackaged && existsSync(packagedDir)) {
+      return packagedDir;
+    }
+
+    const repoRoot = this.resolveRepoRoot();
+    const devDir = join(repoRoot, "client", "resources", "ffmpeg", FFMPEG_DIRNAME);
+    if (existsSync(devDir)) {
+      return devDir;
+    }
+
+    return null;
   }
 
   private resolveLaunchSpec(): SidecarLaunchSpec {
@@ -88,6 +107,14 @@ class SidecarClient {
     if (this.process) return;
 
     const launchSpec = this.resolveLaunchSpec();
+    const bundledFfmpegDir = this.resolveBundledFfmpegDir();
+    const env = { ...process.env };
+    if (bundledFfmpegDir) {
+      console.warn(`[ffmpeg] using bundled dir: ${bundledFfmpegDir}`);
+      env.PATH = `${bundledFfmpegDir}${delimiter}${env.PATH ?? ""}`;
+    } else if (process.platform === "win32" || process.platform === "linux") {
+      console.warn("[ffmpeg] bundled dir not found; relying on PATH");
+    }
     this.process = spawn(launchSpec.command, launchSpec.args, {
       stdio: ["pipe", "pipe", "pipe"],
       windowsHide: true,
