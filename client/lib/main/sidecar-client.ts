@@ -1,7 +1,7 @@
 import { app } from "electron";
 import { spawn, type ChildProcessWithoutNullStreams } from "child_process";
 import { existsSync } from "fs";
-import {resolve, join, delimiter} from "path";
+import { resolve, join, delimiter } from "path";
 import { createInterface } from "readline";
 import { config } from "dotenv";
 
