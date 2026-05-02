@@ -25,7 +25,7 @@ export function registerResourcesProtocol() {
         return new Response("Missing image path", { status: 400 });
       }
 
-      const decodedPath = decodeURIComponent(rawPath);
+      const decodedPath = rawPath;
       if (!existsSync(decodedPath)) {
         return new Response("Image not found", { status: 404 });
       }
