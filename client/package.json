@@ -29,7 +29,6 @@
     "electron:build:mac": "electron-builder --mac",
     "electron:build:linux": "electron-builder --linux",
     "electron:build:dir": "electron-builder --dir",
-    "build:unpack": "run-s ffmpeg:fetch sidecar:stage vite:build:app electron:build:dir",
     "build:win": "run-s ffmpeg:fetch sidecar:stage vite:build:app electron:build:win",
     "build:mac": "run-s sidecar:stage vite:build:app electron:build:mac",
     "build:linux": "run-s ffmpeg:fetch-linux sidecar:stage vite:build:app electron:build:linux"
