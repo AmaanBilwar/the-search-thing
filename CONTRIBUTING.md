@@ -62,11 +62,9 @@ ffprobe -version
 ```bash
 # one-time
 npm --prefix client install
-
-# terminal 1
-cargo run
-
-# terminal 2
+```
+then
+```bash
 npm --prefix client run dev:rust-core
 ```
 
@@ -137,12 +135,11 @@ Ignored extensions/files live in `config/ignore.json`.
 
 ## Frontend website (Next.js)
 
-The marketing site lives in `website/`. It is a standalone Next.js app.
+The site lives in `website/`. It is a standalone Next.js app.
 
 ```bash
 cd website
 npm install
 npm run dev
 ```
-
 Open `http://localhost:3000` and edit files under `website/src/`.
