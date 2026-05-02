@@ -6,30 +6,36 @@ Thanks for your interest in contributing to the-search-thing. This guide covers 
 
 - Python 3.11+
 - Rust (for sidecar + indexing/search core)
-- ffmpeg + ffprobe on PATH
-- Helix DB running locally
+- Node.js + npm (for desktop client and website)
+- Docker (for running Helix locally)
+- `ffmpeg` and `ffprobe` available on your `PATH`
 - Groq API key (for transcription + vision summaries)
 
 ## Setup
 
-3) Configure environment
+### 1) Configure environment
 
 ```bash
 cp .env.example .env
-# set GROQ_API_KEY, HELIX_LOCAL=true, HELIX_PORT=7003 (or whatever port you like).
 ```
 
-4) Setup Helix Docker image to run locally
+Set these values in `.env`:
 
-Make sure you have docker running before proceeding
+- `GROQ_API_KEY`
+- `HELIX_LOCAL=true`
+- `HELIX_PORT=7003` (or any available port)
+
+### 2) Start Helix locally
+
+Make sure Docker is running, then:
 
 ```bash
 helix push dev
 ```
 
-> Note: Because we already have [helix.toml](./helix.toml) defined, we don't need to run `helix init`
+> Note: `helix.toml` is already present, so you do **not** need to run `helix init`.
 
-5) Install ffmpeg/ffprobe and verify PATH
+### 3) Install ffmpeg/ffprobe
 
 macOS (Homebrew):
 
@@ -49,96 +55,93 @@ Windows (winget):
 winget install --id Gyan.FFmpeg -e
 ```
 
-Verify both binaries are available:
+Verify both tools are available:
 
 ```bash
 ffmpeg -version
 ffprobe -version
 ```
 
-
-6) Run locally
+### 4) Install client dependencies
 
 ```bash
-# one-time
 npm --prefix client install
 ```
-then
+
+### 5) Run the desktop app locally
+
 ```bash
-npm --prefix client run dev:rust-core
+npm --prefix client run dev
 ```
 
 ## Runtime configuration
 
 The desktop app routes through the Rust sidecar JSON-RPC path by default.
 
-- `HELIX_ENDPOINT` (default `http://localhost`)
-- `HELIX_PORT` (default `7003`)
+- `HELIX_ENDPOINT` (default: `http://localhost`)
+- `HELIX_PORT` (default: `7003`)
 - `HELIX_API_KEY` (optional, for secured Helix deployments)
 
-Convenience scripts:
 
-```bash
-npm --prefix client run dev           # default
+## Usage notes
 
-## Usage
-
-### Index a directory (API)
-
-macOS / Linux:
-
-```bash
-curl "http://localhost:8000/api/index?dir=/path/to/folder"
-```
-
-Windows (PowerShell):
-
-```powershell
-curl.exe --get "http://localhost:8000/api/index" --data-urlencode "dir=C:\path with spaces"
-```
-
-### Search (API)
-
-```bash
-curl "http://localhost:8000/api/search?q=meeting notes"
-```
-## Supported types
+### Supported types
 
 File types are defined in `config/file_types.json`.
 Ignored extensions/files live in `config/ignore.json`.
 
-## Notes
+### Indexing behavior
 
-- Indexing is non-blocking and returns a job id.
+- Indexing is non-blocking and returns a job ID.
 - Video indexing splits videos into chunks, extracts audio + thumbnails, and embeds transcripts + frame summaries.
 - Image indexing generates a structured summary, then embeds that summary for search.
 
 ## Development notes
 
-- If you change Rust code, rebuild with `maturin develop --release`.
-- Build the sidecar with `npm --prefix client run sidecar:build:debug`.
-- Electron uses IPC through Rust sidecar for `index`, `index-status`, and `search` by default.
+- If you change Rust code, rebuild with:
+  ```bash
+  maturin develop --release
+  ```
+- Build the sidecar with:
+  ```bash
+  npm --prefix client run sidecar:build:debug
+  ```
+- Electron uses IPC through the Rust sidecar for `index`, `index-status`, and `search` by default.
 - JSON-RPC route tests live in `tests/sidecar_jrpc.rs`.
-- Run JSON-RPC integration tests with `npm --prefix client run sidecar:test:jrpc`.
-- Property-based sidecar tests for the video indexer live in `src/bin/sidecar/rpc/indexing/video/property_tests.rs`.
-- Run video indexer property tests with `cargo test --bin the-search-thing-sidecar sidecar::rpc::indexing::video::property_tests::`.
+- Run JSON-RPC integration tests with:
+  ```bash
+  npm --prefix client run sidecar:test:jrpc
+  ```
+- Property-based sidecar tests for the video indexer live in:
+  `src/bin/sidecar/rpc/indexing/video/property_tests.rs`
+- Run video indexer property tests with:
+  ```bash
+  cargo test --bin the-search-thing-sidecar sidecar::rpc::indexing::video::property_tests::
+  ```
 - Property tests in this repo follow a Zed-style randomized approach: seeded RNG, generated scenarios, and invariant assertions over orchestration behavior.
-- Local search history is stored in a SQLite DB at `app.getPath('userData')/search-history.db` (schema in `client/lib/storage/search-history-store.ts`).
-  - Windows: `C:\Users\<you>\AppData\Roaming\<YourApp>\search-history.db`
-  - macOS: `~/Library/Application Support/<YourApp>/search-history.db`
-  - Linux: `~/.config/<YourApp>/search-history.db`
-- Keybinds are stored in a separate SQLite DB at `app.getPath('userData')/keybinds.db` (schema in `client/lib/storage/keybinds-db-store.ts`).
-  - Windows: `C:\Users\<you>\AppData\Roaming\<YourApp>\keybinds.db`
-  - macOS: `~/Library/Application Support/<YourApp>/keybinds.db`
-  - Linux: `~/.config/<YourApp>/keybinds.db`
+
+### Local app databases
+
+- Search history DB: `app.getPath('userData')/search-history.db`
+  - Schema: `client/lib/storage/search-history-store.ts`
+  - Windows: `C:\Users\<you>\AppData\Roaming\the-search-thing\search-history.db`
+  - macOS: `~/Library/Application Support/the-search-thing/search-history.db`
+  - Linux: `~/.config/the-search-thing/search-history.db`
+
+- Keybinds DB: `app.getPath('userData')/keybinds.db`
+  - Schema: `client/lib/storage/keybinds-db-store.ts`
+  - Windows: `C:\Users\<you>\AppData\Roaming\the-search-thing\keybinds.db`
+  - macOS: `~/Library/Application Support/the-search-thing/keybinds.db`
+  - Linux: `~/.config/the-search-thing/keybinds.db`
 
 ## Frontend website (Next.js)
 
-The site lives in `website/`. It is a standalone Next.js app.
+The site lives in `website/` and is a standalone Next.js app.
 
 ```bash
 cd website
 npm install
 npm run dev
 ```
+
 Open `http://localhost:3000` and edit files under `website/src/`.
