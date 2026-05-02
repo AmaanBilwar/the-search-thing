@@ -553,9 +553,15 @@ where
     }
 
     if video_registered {
-        store
+        if let Err(error) = store
             .update_video_chunk_count(video_id, chunks_created)
-            .await?;
+            .await
+        {
+            eprintln!(
+                "[sidecar:index:video] warning: failed to update chunk count for video_id={} chunks={}: {}",
+                video_id, chunks_created, error
+            );
+        }
     }
 
     Ok(VideoIndexResult {
