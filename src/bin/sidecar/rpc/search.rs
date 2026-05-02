@@ -6,7 +6,6 @@ use std::collections::HashSet;
 use std::env;
 use std::path::PathBuf;
 
-use crate::sidecar::backend_proxy::{backend_base_url, proxy_search_query};
 use crate::sidecar::protocol::{
     err_response, ok_response, parse_params, JsonRpcRequest, JsonRpcResponse,
 };
@@ -28,10 +27,6 @@ struct SearchItem {
     content_hash: Option<String>,
     score: f64,
     source: String,
-}
-
-fn search_mode() -> String {
-    env::var("SIDECAR_SEARCH_MODE").unwrap_or_else(|_| "python-proxy".to_string())
 }
 
 fn extract_keywords(query: &str) -> Vec<String> {
@@ -248,6 +243,18 @@ fn has_thumbnail(content_hash: &str) -> bool {
     file_path.exists()
 }
 
+fn percent_encode(value: &str) -> String {
+    let mut encoded = String::with_capacity(value.len());
+    for &byte in value.as_bytes() {
+        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b'~' | b'/' | b':') {
+            encoded.push(byte as char);
+        } else {
+            encoded.push_str(&format!("%{:02X}", byte));
+        }
+    }
+    encoded
+}
+
 fn is_empty_vector_index_error(message: &str) -> bool {
     let lowered = message.to_ascii_lowercase();
     lowered.contains("no entry point found for hnsw index")
@@ -362,8 +369,6 @@ async fn rust_helix_search_query(query: &str) -> Result<Value, String> {
         deduped.push(item);
     }
 
-    let backend_origin = backend_base_url();
-
     let mut results: Vec<Value> = Vec::new();
     for item in deduped {
         let mut result = json!({
@@ -375,9 +380,13 @@ async fn rust_helix_search_query(query: &str) -> Result<Value, String> {
         if result.get("label").and_then(Value::as_str) == Some("video") {
             if let Some(content_hash) = item.content_hash {
                 if has_thumbnail(&content_hash) {
+                    let thumbnail_path =
+                        infer_thumbnails_dir().join(format!("{}.jpg", content_hash));
+                    let thumbnail_path = thumbnail_path.to_string_lossy().replace('\\', "/");
+                    // this new localimg://preview  is untested
                     result["thumbnail_url"] = Value::String(format!(
-                        "{}/api/thumbnails/{}",
-                        backend_origin, content_hash
+                        "localimg://preview?path={}",
+                        percent_encode(&thumbnail_path)
                     ));
                 }
             }
@@ -397,18 +406,6 @@ pub fn handle_query(request: &JsonRpcRequest) -> JsonRpcResponse {
         Ok(parsed) => parsed,
         Err(error_response) => return error_response,
     };
-
-    if search_mode() == "python-proxy" {
-        return match proxy_search_query(&parsed.q) {
-            Ok(result) => ok_response(request.id.clone(), result),
-            Err((code, message)) => err_response(
-                request.id.clone(),
-                code,
-                "Search query failed",
-                Some(json!({ "reason": message })),
-            ),
-        };
-    }
 
     let runtime = match tokio::runtime::Builder::new_current_thread()
         .enable_all()

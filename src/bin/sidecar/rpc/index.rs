@@ -11,7 +11,6 @@ use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
 use walkdir::WalkDir;
 
-use crate::sidecar::backend_proxy::{proxy_index_start, proxy_index_status};
 use crate::sidecar::protocol::{
     err_response, ok_response, parse_params, JsonRpcRequest, JsonRpcResponse,
 };
@@ -70,10 +69,6 @@ fn now_string() -> String {
         .unwrap_or_default()
         .as_secs()
         .to_string()
-}
-
-fn index_mode() -> String {
-    env::var("SIDECAR_INDEX_MODE").unwrap_or_else(|_| "python-proxy".to_string())
 }
 
 fn normalize_extension(ext: &str) -> String {
@@ -629,18 +624,6 @@ pub fn handle_start(request: &JsonRpcRequest) -> JsonRpcResponse {
         Err(error_response) => return error_response,
     };
 
-    if index_mode() != "rust-text" && index_mode() != "rust-full" {
-        return match proxy_index_start(&parsed.dir) {
-            Ok(result) => ok_response(request.id.clone(), result),
-            Err((code, message)) => err_response(
-                request.id.clone(),
-                code,
-                "Index start failed",
-                Some(json!({ "reason": message })),
-            ),
-        };
-    }
-
     let job_id = make_job_id();
     let now = now_string();
     let status = IndexJobStatus {
@@ -691,25 +674,18 @@ pub fn handle_status(request: &JsonRpcRequest) -> JsonRpcResponse {
     };
 
     match get_job(&parsed.job_id) {
-        Ok(Some(status)) => return ok_response(request.id.clone(), json!(status)),
-        Ok(None) => {}
-        Err(error) => {
-            return err_response(
-                request.id.clone(),
-                -32603,
-                "Index status failed",
-                Some(json!({ "reason": error })),
-            )
-        }
-    }
-
-    match proxy_index_status(&parsed.job_id) {
-        Ok(result) => ok_response(request.id.clone(), result),
-        Err((code, message)) => err_response(
+        Ok(Some(status)) => ok_response(request.id.clone(), json!(status)),
+        Ok(None) => err_response(
             request.id.clone(),
-            code,
+            -32004,
             "Index status failed",
-            Some(json!({ "reason": message })),
+            Some(json!({ "reason": format!("Job not found: {}", parsed.job_id) })),
+        ),
+        Err(error) => err_response(
+            request.id.clone(),
+            -32603,
+            "Index status failed",
+            Some(json!({ "reason": error })),
         ),
     }
 }
