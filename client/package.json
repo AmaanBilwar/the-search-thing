@@ -2,7 +2,7 @@
   "name": "the-search-thing",
   "version": "12.0.0",
   "description": "A modern Electron application template with React, Vite, TypeScript, Shadcn UI and TailwindCSS",
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "author": {
     "name": "the-search-thing",
     "url": "https://github.com/AmaanBilwar/the-search-thing"
