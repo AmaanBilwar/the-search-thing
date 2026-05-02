@@ -1,10 +1,10 @@
 # Contributing
 
-Thanks for your interest in contributing to the-search-thing. This guide covers the dev setup, local workflow, and the frontend website in `website/`.
+Thanks for your interest in contributing to **the-search-thing**.
+This guide covers local setup, daily development workflow, and the frontend website in `website/`.
 
 ## Prerequisites
 
-- Python 3.11+
 - Rust (for sidecar + indexing/search core)
 - Node.js + npm (for desktop client and website)
 - Docker (for running Helix locally)
@@ -143,5 +143,4 @@ cd website
 npm install
 npm run dev
 ```
-
 Open `http://localhost:3000` and edit files under `website/src/`.
