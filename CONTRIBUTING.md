@@ -72,12 +72,6 @@ npm --prefix client run dev:rust-core
 
 The desktop app now routes through Rust sidecar JSON-RPC by default. You can choose migration modes with env vars:
 
-- `SIDECAR_INDEX_MODE`
-  - `python-proxy` (default compatibility path)
-  - `rust-text` (Rust text indexing orchestrator + Rust Helix adapter)
-- `SIDECAR_SEARCH_MODE`
-  - `python-proxy` (compatibility path)
-  - `rust-helix` (Rust Helix-backed search)
 - `HELIX_ENDPOINT` (default `http://localhost`)
 - `HELIX_PORT` (default `7003`)
 - `HELIX_API_KEY` (optional, for secured Helix deployments)
