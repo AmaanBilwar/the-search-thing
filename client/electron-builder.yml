@@ -20,6 +20,10 @@ extraResources:
     to: sidecar
     filter:
       - "**/*"
+  - from: "../config"
+    to: "config"
+    filter:
+      - "file_types.json"
 win:
   extraResources:
     - from: resources/ffmpeg
