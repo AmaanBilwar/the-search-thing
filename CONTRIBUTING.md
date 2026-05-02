@@ -102,7 +102,6 @@ curl.exe --get "http://localhost:8000/api/index" --data-urlencode "dir=C:\path w
 ```bash
 curl "http://localhost:8000/api/search?q=meeting notes"
 ```
-
 ## Supported types
 
 File types are defined in `config/file_types.json`.
