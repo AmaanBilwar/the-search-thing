@@ -11,8 +11,6 @@
   "main": "./out/main/main.js",
   "scripts": {
     "dev": "cross-env ELECTRON_DISABLE_SANDBOX=1 electron-vite dev -w",
-    "dev:rust-text": "cross-env ELECTRON_DISABLE_SANDBOX=1 SIDECAR_INDEX_MODE=rust-text electron-vite dev -w",
-    "dev:rust-core": "cross-env ELECTRON_DISABLE_SANDBOX=1 SIDECAR_INDEX_MODE=rust-text SIDECAR_SEARCH_MODE=rust-helix electron-vite dev -w",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "lint": "oxlint",
