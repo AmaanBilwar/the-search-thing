@@ -2,6 +2,7 @@
   "name": "the-search-thing",
   "version": "12.0.0",
   "description": "A modern Electron application template with React, Vite, TypeScript, Shadcn UI and TailwindCSS",
+  "homepage": "https://the-search-thing.vercel.app",
   "license": "GPL-3.0-only",
   "author": {
     "name": "the-search-thing",
@@ -20,6 +21,8 @@
     "sidecar:build:debug": "cargo build --manifest-path ../Cargo.toml --bin the-search-thing-sidecar",
     "sidecar:test:jrpc": "cargo test --manifest-path ../Cargo.toml --test sidecar_jrpc -- --test-threads=1",
     "sidecar:stage": "node ./scripts/stage-sidecar.cjs",
+    "ffmpeg:fetch": "powershell -ExecutionPolicy Bypass -File ./scripts/fetch-ffmpeg.ps1",
+    "ffmpeg:fetch-linux": "bash ./scripts/fetch-ffmpeg-linux.sh",
     "postinstall": "electron-builder install-app-deps",
     "vite:build:app": "electron-vite build",
     "electron:build:win": "electron-builder --win",
@@ -29,7 +32,7 @@
     "build:unpack": "run-s sidecar:stage vite:build:app electron:build:dir",
     "build:win": "run-s sidecar:stage vite:build:app electron:build:win",
     "build:mac": "run-s sidecar:stage vite:build:app electron:build:mac",
-    "build:linux": "run-s sidecar:stage vite:build:app electron:build:linux"
+    "build:linux": "run-s ffmpeg:fetch-linux sidecar:stage vite:build:app electron:build:linux"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
