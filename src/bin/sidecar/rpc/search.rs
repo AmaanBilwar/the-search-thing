@@ -5,6 +5,7 @@ use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::env;
 use std::path::PathBuf;
+use std::time::{Duration, Instant};
 
 use crate::sidecar::protocol::{
     err_response, ok_response, parse_params, JsonRpcRequest, JsonRpcResponse,
@@ -263,6 +264,15 @@ fn is_empty_vector_index_error(message: &str) -> bool {
         || (lowered.contains("graph_error") && lowered.contains("reranker error"))
 }
 
+fn is_transient_embedding_error(message: &str) -> bool {
+    let lowered = message.to_ascii_lowercase();
+    lowered.contains("embeddingerror")
+        || lowered.contains("embedding error")
+        || lowered.contains("error while embedding text")
+        || lowered.contains("failed to send request to openai")
+        || lowered.contains("error sending request for url")
+}
+
 fn normalize_vector_query_result(
     label: &str,
     result: Result<Value, helix_rs::HelixError>,
@@ -277,9 +287,31 @@ fn normalize_vector_query_result(
                     label, message
                 );
                 Ok(Value::Array(Vec::new()))
+            } else if is_transient_embedding_error(&message) {
+                eprintln!(
+                    "[sidecar:search] {} search embedding backend failed; treating as no results: {}",
+                    label, message
+                );
+                Ok(Value::Array(Vec::new()))
             } else {
                 Err(format!("{} search failed: {}", label, message))
             }
+        }
+    }
+}
+
+fn normalize_timed_vector_query_result(
+    label: &str,
+    result: Result<Result<Value, helix_rs::HelixError>, tokio::time::error::Elapsed>,
+) -> Result<Value, String> {
+    match result {
+        Ok(inner) => normalize_vector_query_result(label, inner),
+        Err(_) => {
+            eprintln!(
+                "[sidecar:search] {} search timed out; treating as no results",
+                label
+            );
+            Ok(Value::Array(Vec::new()))
         }
     }
 }
@@ -295,15 +327,30 @@ async fn rust_helix_search_query(query: &str) -> Result<Value, String> {
     let client = HelixDB::new(Some(endpoint.as_str()), Some(port), api_key.as_deref());
     let payload = json!({ "search_text": query });
 
-    let file_future = client.query::<_, Value>("SearchFileEmbeddings", &payload);
-    let video_future = client.query::<_, Value>("SearchTranscriptAndFrameEmbeddings", &payload);
-    let image_future = client.query::<_, Value>("SearchImageEmbeddings", &payload);
+    let backend_timeout_ms = env::var("SIDECAR_SEARCH_BACKEND_TIMEOUT_MS")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(12_000);
+    let backend_timeout = Duration::from_millis(backend_timeout_ms);
+
+    let file_future = tokio::time::timeout(
+        backend_timeout,
+        client.query::<_, Value>("SearchFileEmbeddings", &payload),
+    );
+    let video_future = tokio::time::timeout(
+        backend_timeout,
+        client.query::<_, Value>("SearchTranscriptAndFrameEmbeddings", &payload),
+    );
+    let image_future = tokio::time::timeout(
+        backend_timeout,
+        client.query::<_, Value>("SearchImageEmbeddings", &payload),
+    );
 
     let (file_raw, video_raw, image_raw) = tokio::join!(file_future, video_future, image_future);
 
-    let file_value = normalize_vector_query_result("file", file_raw)?;
-    let video_value = normalize_vector_query_result("video", video_raw)?;
-    let image_value = normalize_vector_query_result("image", image_raw)?;
+    let file_value = normalize_timed_vector_query_result("file", file_raw)?;
+    let video_value = normalize_timed_vector_query_result("video", video_raw)?;
+    let image_value = normalize_timed_vector_query_result("image", image_raw)?;
 
     let mut file_items = normalize_file_results(&file_value);
     let mut video_items = normalize_video_results(&video_value);
@@ -407,6 +454,8 @@ pub fn handle_query(request: &JsonRpcRequest) -> JsonRpcResponse {
         Err(error_response) => return error_response,
     };
 
+    let started = Instant::now();
+
     let runtime = match tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
@@ -423,12 +472,31 @@ pub fn handle_query(request: &JsonRpcRequest) -> JsonRpcResponse {
     };
 
     match runtime.block_on(rust_helix_search_query(&parsed.q)) {
-        Ok(result) => ok_response(request.id.clone(), result),
-        Err(message) => err_response(
-            request.id.clone(),
-            -32603,
-            "Search query failed",
-            Some(json!({ "reason": message })),
-        ),
+        Ok(result) => {
+            let count = result
+                .get("results")
+                .and_then(Value::as_array)
+                .map(|items| items.len())
+                .unwrap_or(0);
+            eprintln!(
+                "[sidecar:search] completed in {}ms with {} results",
+                started.elapsed().as_millis(),
+                count
+            );
+            ok_response(request.id.clone(), result)
+        }
+        Err(message) => {
+            eprintln!(
+                "[sidecar:search] failed in {}ms: {}",
+                started.elapsed().as_millis(),
+                message
+            );
+            err_response(
+                request.id.clone(),
+                -32603,
+                "Search query failed",
+                Some(json!({ "reason": message })),
+            )
+        }
     }
 }

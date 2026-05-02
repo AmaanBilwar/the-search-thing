@@ -118,6 +118,7 @@ class SidecarClient {
     this.process = spawn(launchSpec.command, launchSpec.args, {
       stdio: ["pipe", "pipe", "pipe"],
       windowsHide: true,
+      env,
     });
 
     const stdoutReader = createInterface({ input: this.process.stdout });

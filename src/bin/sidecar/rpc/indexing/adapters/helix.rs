@@ -413,10 +413,28 @@ impl VideoIndexStore for HelixTextStore {
             "no_of_chunks": no_of_chunks,
         });
         let client = self.client();
-        let _: Value = client
-            .query("UpdateVideoChunkCount", &payload)
+        match client
+            .query::<_, Value>("UpdateVideoChunkCount", &payload)
             .await
-            .map_err(|e| e.to_string())?;
-        Ok(())
+        {
+            Ok(_) => Ok(()),
+            Err(error) => {
+                let message = error.to_string();
+                let lowered = message.to_ascii_lowercase();
+                if lowered.contains("updatevideochunkcount")
+                    && (lowered.contains("not_found")
+                        || lowered.contains("not found")
+                        || lowered.contains("couldn't find"))
+                {
+                    eprintln!(
+                        "[sidecar:index:video] warning: UpdateVideoChunkCount query missing; skipping chunk-count update for video_id={} chunks={}",
+                        video_id, no_of_chunks
+                    );
+                    Ok(())
+                } else {
+                    Err(message)
+                }
+            }
+        }
     }
 }

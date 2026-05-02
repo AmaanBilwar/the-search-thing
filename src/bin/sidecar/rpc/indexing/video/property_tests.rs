@@ -485,9 +485,22 @@ async fn video_indexer_randomized_store_failure_propagates() {
         )
         .await;
 
-        assert!(result.is_err(), "seed {}: failure should propagate", seed);
+        let calls = store.snapshot();
+        let maybe_swallowed_update_failure = fail_at == calls.len()
+            && matches!(calls.last(), Some(StoreCall::UpdateVideoChunkCount));
+
+        if maybe_swallowed_update_failure {
+            assert!(
+                result.is_ok(),
+                "seed {}: update_video_chunk_count failure should be non-fatal",
+                seed
+            );
+        } else {
+            assert!(result.is_err(), "seed {}: failure should propagate", seed);
+        }
+
         assert!(
-            store.snapshot().len() <= fail_at,
+            calls.len() <= fail_at,
             "seed {}: store should stop at failure point",
             seed
         );
