@@ -349,17 +349,17 @@ const Results: React.FC<ResultsWithContextProps> = ({
         </div>
 
         {/* Content preview */}
-        <div className="flex-1 h-full">
+        <div className="flex-1 h-full min-w-0">
           {selectedItem ? (
-            <div className="pl-4 py-2 h-full">
+            <div className="pl-4 py-2 h-full min-w-0">
               {selectedItem.label === "image" ? (
                 <div className="p-5 rounded-2xl h-full bg-zinc-900/60 overflow-hidden flex flex-col min-h-0">
-                  <div className="w-full h-[320px] rounded-xl overflow-hidden mb-4 bg-zinc-950">
+                  <div className="w-full h-[320px] rounded-xl overflow-hidden mb-4 bg-zinc-950 flex items-center justify-center shrink-0">
                     {!brokenImagePaths.has(selectedItem.path) ? (
                       <img
                         src={toImageSrc(selectedItem.path)}
                         alt=""
-                        className="w-full h-full object-contain"
+                        className="max-w-full max-h-full object-contain"
                         onError={() => markImageAsBroken(selectedItem.path)}
                       />
                     ) : (
