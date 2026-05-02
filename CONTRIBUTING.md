@@ -70,16 +70,10 @@ cargo run
 npm --prefix client run dev:rust-core
 ```
 
-## Runtime modes (rewrite migration)
+## Runtime configuration
 
-The desktop app now routes through Rust sidecar JSON-RPC by default. You can choose migration modes with env vars:
+The desktop app routes through the Rust sidecar JSON-RPC path by default.
 
-- `SIDECAR_INDEX_MODE`
-  - `python-proxy` (default compatibility path)
-  - `rust-text` (Rust text indexing orchestrator + Rust Helix adapter)
-- `SIDECAR_SEARCH_MODE`
-  - `python-proxy` (compatibility path)
-  - `rust-helix` (Rust Helix-backed search)
 - `HELIX_ENDPOINT` (default `http://localhost`)
 - `HELIX_PORT` (default `7003`)
 - `HELIX_API_KEY` (optional, for secured Helix deployments)
@@ -87,10 +81,7 @@ The desktop app now routes through Rust sidecar JSON-RPC by default. You can cho
 Convenience scripts:
 
 ```bash
-npm --prefix client run dev               # default
-npm --prefix client run dev:rust-text     # rust text indexing mode
-npm --prefix client run dev:rust-core     # rust text indexing + rust helix search
-```
+npm --prefix client run dev           # default
 
 ## Usage
 
