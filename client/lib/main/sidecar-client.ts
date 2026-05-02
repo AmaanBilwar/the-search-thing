@@ -34,7 +34,8 @@ type SidecarLaunchSpec = {
 
 const SIDECAR_NAME =
   process.platform === "win32" ? "the-search-thing-sidecar.exe" : "the-search-thing-sidecar";
-const FFMPEG_DIRNAME = process.platform === "win32" ? "win-x64" : "";
+const FFMPEG_DIRNAME =
+  process.platform === "win32" ? "win-x64" : process.platform === "linux" ? "linux-x64" : "";
 
 class SidecarClient {
   private process: ChildProcessWithoutNullStreams | null = null;
@@ -47,7 +48,7 @@ class SidecarClient {
   }
 
   private resolveBundledFfmpegDir() {
-    if (process.platform !== "win32") return null;
+    if (!FFMPEG_DIRNAME) return null;
 
     const packagedDir = join(process.resourcesPath, "ffmpeg", FFMPEG_DIRNAME);
     if (app.isPackaged && existsSync(packagedDir)) {
@@ -109,9 +110,9 @@ class SidecarClient {
     const bundledFfmpegDir = this.resolveBundledFfmpegDir();
     const env = { ...process.env };
     if (bundledFfmpegDir) {
-      console.log(`[ffmpeg] using bundled dir: ${bundledFfmpegDir}`);
+      console.warn(`[ffmpeg] using bundled dir: ${bundledFfmpegDir}`);
       env.PATH = `${bundledFfmpegDir}${delimiter}${env.PATH ?? ""}`;
-    } else if (process.platform === "win32") {
+    } else if (process.platform === "win32" || process.platform === "linux") {
       console.warn("[ffmpeg] bundled dir not found; relying on PATH");
     }
     this.process = spawn(launchSpec.command, launchSpec.args, {
