@@ -43,7 +43,10 @@ mkdir -p "$cache_dir"
 
 if [[ ! -f "$zip_path" ]]; then
   log "Downloading ${zip_name}..."
-  curl -fL --retry 3 --retry-delay 2 -o "$zip_path" "$zip_url"
+  if ! curl -fL --retry 3 --retry-delay 2 -o "$zip_path" "$zip_url"; then
+    rm -f "$zip_path"
+    fail "Download failed. Run ffmpeg:fetch again to retry."
+  fi
   log "Downloaded ${zip_name}"
 else
   log "Using cached ffmpeg archive: $zip_path"
