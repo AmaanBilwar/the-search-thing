@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use tokio::task::JoinSet;
 use uuid::Uuid;
@@ -101,6 +101,46 @@ where
 
 fn normalize_path(path: &str) -> String {
     path.replace('\\', "/")
+}
+
+fn infer_thumbnail_cache_dir(output_dir: &str) -> PathBuf {
+    Path::new(output_dir).join("thumbnail_cache")
+}
+
+fn cache_video_thumbnail(
+    content_hash: &str,
+    output_dir: &str,
+    artifacts: &[ChunkArtifact],
+) -> Result<Option<String>, String> {
+    if content_hash.trim().is_empty() {
+        return Ok(None);
+    }
+
+    let source_thumb = artifacts
+        .iter()
+        .flat_map(|artifact| artifact.thumbnail_paths.iter())
+        .find(|path| Path::new(path).exists());
+
+    let Some(source_thumb) = source_thumb else {
+        return Ok(None);
+    };
+
+    let cache_dir = infer_thumbnail_cache_dir(output_dir);
+    fs::create_dir_all(&cache_dir).map_err(|e| e.to_string())?;
+
+    let target = cache_dir.join(format!("{}.jpg", content_hash));
+    if !target.exists() {
+        fs::copy(source_thumb, &target).map_err(|e| {
+            format!(
+                "failed to cache video thumbnail from {} to {}: {}",
+                source_thumb,
+                target.to_string_lossy(),
+                e
+            )
+        })?;
+    }
+
+    Ok(Some(normalize_path(&target.to_string_lossy())))
 }
 
 fn check_video_duration(video_path: &str) -> Result<f64, String> {
@@ -478,6 +518,14 @@ where
     let artifacts = deps
         .build_chunk_artifacts(chunk_paths, audio_dir.clone(), thumbnails_dir.clone())
         .await?;
+
+    if let Err(error) = cache_video_thumbnail(content_hash, &normalized_out_dir, &artifacts) {
+        eprintln!(
+            "[sidecar:index:video] warning: failed to cache preview thumbnail for {}: {}",
+            video_path, error
+        );
+    }
+
     let transcripts = deps.generate_transcripts(&artifacts).await;
     let frame_summaries = deps.generate_frame_summaries(&artifacts).await;
 

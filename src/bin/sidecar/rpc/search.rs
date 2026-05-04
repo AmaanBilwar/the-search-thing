@@ -4,7 +4,8 @@ use serde_json::{json, Value};
 use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::env;
-use std::path::PathBuf;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 use crate::sidecar::protocol::{
@@ -233,15 +234,88 @@ fn infer_thumbnails_dir() -> PathBuf {
     std::env::current_dir()
         .unwrap_or_else(|_| PathBuf::from("."))
         .join("videos")
+        .join("output_indexer")
+        .join("thumbnail_cache")
+}
+
+fn infer_extracted_thumbnails_dir() -> PathBuf {
+    if let Ok(custom_dir) = env::var("EXTRACTED_THUMBNAILS_DIR") {
+        return PathBuf::from(custom_dir);
+    }
+
+    std::env::current_dir()
+        .unwrap_or_else(|_| PathBuf::from("."))
+        .join("videos")
+        .join("output_indexer")
         .join("thumbnails")
 }
 
-fn has_thumbnail(content_hash: &str) -> bool {
-    if content_hash.is_empty() {
-        return false;
+fn find_extracted_thumbnail(video_path: &str) -> Option<PathBuf> {
+    let stem = Path::new(video_path)
+        .file_stem()?
+        .to_string_lossy()
+        .to_string();
+    if stem.is_empty() {
+        return None;
     }
-    let file_path = infer_thumbnails_dir().join(format!("{}.jpg", content_hash));
-    file_path.exists()
+
+    let extracted_dir = infer_extracted_thumbnails_dir();
+
+    for name in ["middle.jpg", "start.jpg", "end.jpg"] {
+        let direct = extracted_dir.join(&stem).join(name);
+        if direct.exists() {
+            return Some(direct);
+        }
+    }
+
+    let prefix = format!("{}_chunk_", stem);
+    let mut candidates = fs::read_dir(&extracted_dir)
+        .ok()?
+        .flatten()
+        .filter_map(|entry| {
+            let file_type = entry.file_type().ok()?;
+            if !file_type.is_dir() {
+                return None;
+            }
+            let name = entry.file_name().to_string_lossy().to_string();
+            if name.starts_with(&prefix) {
+                Some((name, entry.path()))
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>();
+
+    candidates.sort_by(|a, b| a.0.cmp(&b.0));
+
+    for (_, dir) in candidates {
+        for name in ["middle.jpg", "start.jpg", "end.jpg"] {
+            let candidate = dir.join(name);
+            if candidate.exists() {
+                return Some(candidate);
+            }
+        }
+    }
+
+    None
+}
+
+fn resolve_thumbnail_path(content_hash: &str, video_path: &str) -> Option<String> {
+    if content_hash.is_empty() {
+        return None;
+    }
+
+    let cache_dir = infer_thumbnails_dir();
+    let cached = cache_dir.join(format!("{}.jpg", content_hash));
+    if cached.exists() {
+        return Some(cached.to_string_lossy().replace('\\', "/"));
+    }
+
+    let source = find_extracted_thumbnail(video_path)?;
+    fs::create_dir_all(&cache_dir).ok()?;
+    fs::copy(source, &cached).ok()?;
+
+    Some(cached.to_string_lossy().replace('\\', "/"))
 }
 
 fn percent_encode(value: &str) -> String {
@@ -426,11 +500,7 @@ async fn rust_helix_search_query(query: &str) -> Result<Value, String> {
 
         if result.get("label").and_then(Value::as_str) == Some("video") {
             if let Some(content_hash) = item.content_hash {
-                if has_thumbnail(&content_hash) {
-                    let thumbnail_path =
-                        infer_thumbnails_dir().join(format!("{}.jpg", content_hash));
-                    let thumbnail_path = thumbnail_path.to_string_lossy().replace('\\', "/");
-                    // this new localimg://preview  is untested
+                if let Some(thumbnail_path) = resolve_thumbnail_path(&content_hash, &item.path) {
                     result["thumbnail_url"] = Value::String(format!(
                         "localimg://preview?path={}",
                         percent_encode(&thumbnail_path)

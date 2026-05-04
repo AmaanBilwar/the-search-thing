@@ -324,20 +324,11 @@ const Results: React.FC<ResultsWithContextProps> = ({
                   }`}
                 >
                   <div className="pr-2 shrink-0">
-                    {result.label === "video" && result.thumbnail_url ? (
-                      <img
-                        src={result.thumbnail_url}
-                        alt=""
-                        className="w-7 h-7 rounded-md object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <img
-                        src={fileIcons[getFileExt(result.path).toLowerCase()] || fileIcons.txt}
-                        className="w-5 h-5"
-                        alt=""
-                      />
-                    )}
+                    <img
+                      src={fileIcons[getFileExt(result.path).toLowerCase()] || fileIcons.txt}
+                      className="w-5 h-5"
+                      alt=""
+                    />
                   </div>
                   <div className="min-w-0 flex-1 text-zinc-100 truncate" title={result.path}>
                     {getFileName(result.path)}
@@ -381,7 +372,7 @@ const Results: React.FC<ResultsWithContextProps> = ({
               ) : selectedItem.label === "video" && selectedItem.thumbnail_url ? (
                 <div className="p-5 rounded-2xl h-full bg-zinc-900/60 overflow-hidden flex flex-col min-h-0">
                   <img
-                    src={selectedItem.thumbnail_url}
+                    src={toImageSrc(selectedItem.thumbnail_url)}
                     alt=""
                     className="w-full h-[320px] object-contain rounded-xl bg-zinc-950 shrink-0"
                   />
