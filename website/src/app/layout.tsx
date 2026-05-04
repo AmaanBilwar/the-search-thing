@@ -19,29 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${mono.className} antialiased`}>
-        <nav className="w-full px-12 pt-10 pb-6">
-          <div className="max-w-6xl mx-auto flex items-center justify-between text-sm">
-            <Link className="font-semibold" href="/">
-              the-search-thing
-            </Link>
-            <div className="flex items-center gap-6">
-              <Link className="underline underline-offset-4 hover:cursor-pointer" href="/roadmap">
-                roadmap
-              </Link>
-              <a
-                className="underline underline-offset-4 hover:cursor-pointer"
-                href="https://github.com/amaanBilwar/the-search-thing"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                github
-              </a>
-            </div>
-          </div>
-        </nav>
-        {children}
-      </body>
+      <body className={`${mono.className} antialiased`}>{children}</body>
     </html>
   );
 }
