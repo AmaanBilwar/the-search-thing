@@ -113,7 +113,7 @@ Ignored extensions/files live in `config/ignore.json`.
   npm --prefix client run sidecar:test:jrpc
   ```
 - Property-based sidecar tests for the video indexer live in:
-  `src/bin/sidecar/rpc/indexing/video/property_tests.rs`
+  `src/sidecar/rpc/indexing/video/property_tests.rs`
 - Run video indexer property tests with:
   ```bash
   cargo test --bin the-search-thing-sidecar sidecar::rpc::indexing::video::property_tests::

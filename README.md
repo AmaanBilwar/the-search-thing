@@ -21,7 +21,7 @@ the-search-thing is a local-first search system that makes your files, images, a
 ## Architecture (high level)
 
 - Electron UI (`client/`): desktop search experience
-- Rust sidecar (`src/bin/the-search-thing-sidecar.rs` + `src/bin/sidecar/`): JSON-RPC (NDJSON over stdio), route handlers, adapters
+- Rust sidecar (`src/bin/the-search-thing-sidecar.rs` + `src/sidecar/`): JSON-RPC (NDJSON over stdio), route handlers, adapters
 - Helix DB (`db/schema.hx`, `db/queries.hx`): graph + vector storage
 - FastAPI (`backend/app.py`): still used during migration for remaining Python-backed paths
 - Python (`backend/`): transitional runtime for non-migrated internals (image/video pipeline migration in progress)
