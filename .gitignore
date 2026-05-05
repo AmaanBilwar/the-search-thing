@@ -10,7 +10,6 @@ dist/
 
 # rust
 target/
-Cargo.lock
 
 # python
 uv.lock

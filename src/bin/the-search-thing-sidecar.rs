@@ -4,12 +4,11 @@ use std::io;
 use std::io::BufRead;
 use std::io::Write;
 
-mod sidecar;
-
 use sidecar::protocol::err_response;
 use sidecar::protocol::JsonRpcError;
 use sidecar::protocol::JsonRpcRequest;
 use sidecar::protocol::JsonRpcResponse;
+use the_search_thing::sidecar;
 
 fn handle_request(request: JsonRpcRequest) -> JsonRpcResponse {
     if request.jsonrpc != "2.0" {
