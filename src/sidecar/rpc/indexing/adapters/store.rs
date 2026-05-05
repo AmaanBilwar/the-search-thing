@@ -2,7 +2,7 @@ use async_trait::async_trait;
 
 #[derive(Debug, Clone)]
 pub struct ExistingFileRecord {
-    pub file_id: String,
+    pub asset_id: String,
 }
 
 #[derive(Debug, Clone)]
@@ -32,19 +32,18 @@ pub trait TextIndexStore: Send + Sync {
         content_hash: &str,
     ) -> Result<Option<ExistingFileRecord>, String>;
 
-    async fn create_file(
+    async fn create_file_asset(
         &self,
-        file_id: &str,
         content_hash: &str,
-        content: &str,
+        kind: &str,
         path: &str,
     ) -> Result<(), String>;
 
-    async fn create_file_embeddings(
+    async fn create_file_asset_embeddings(
         &self,
-        file_id: &str,
+        content_hash: &str,
+        unit_kind: &str,
         content: &str,
-        path: &str,
     ) -> Result<(), String>;
 }
 

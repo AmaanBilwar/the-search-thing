@@ -42,28 +42,26 @@ impl HelixTextStore {
         )
     }
 
-    fn extract_existing_file_id(value: &Value) -> Option<String> {
-        if let Some(file_id) = value.get("file_id").and_then(Value::as_str) {
-            return Some(file_id.to_string());
+    fn extract_asset_id(value: &Value) -> Option<String> {
+        if let Some(id) = value.get("asset_id").and_then(Value::as_str) {
+            return Some(id.to_string());
+        }
+        if let Some(id) = value.get("id").and_then(Value::as_str) {
+            return Some(id.to_string());
         }
 
-        if let Some(file_node) = value.get("file") {
-            if let Some(file_id) = file_node.get("file_id").and_then(Value::as_str) {
-                return Some(file_id.to_string());
-            }
-            if let Some(file_array) = file_node.as_array() {
-                if let Some(first) = file_array.first() {
-                    if let Some(file_id) = first.get("file_id").and_then(Value::as_str) {
-                        return Some(file_id.to_string());
-                    }
+        if let Some(array) = value.as_array() {
+            for item in array {
+                if let Some(id) = Self::extract_asset_id(item) {
+                    return Some(id);
                 }
             }
         }
 
-        if let Some(array) = value.as_array() {
-            if let Some(first) = array.first() {
-                if let Some(file_id) = first.get("file_id").and_then(Value::as_str) {
-                    return Some(file_id.to_string());
+        if let Some(obj) = value.as_object() {
+            for nested in obj.values() {
+                if let Some(id) = Self::extract_asset_id(nested) {
+                    return Some(id);
                 }
             }
         }
@@ -145,7 +143,7 @@ impl TextIndexStore for HelixTextStore {
         let payload = json!({ "content_hash": content_hash });
         let client = self.client();
         let result: Value = client
-            .query("GetFileByHash", &payload)
+            .query("GetAssetByHash", &payload)
             .await
             .map_err(|e| e.to_string())
             .or_else(|error| {
@@ -156,44 +154,44 @@ impl TextIndexStore for HelixTextStore {
                 }
             })?;
 
-        Ok(Self::extract_existing_file_id(&result).map(|file_id| ExistingFileRecord { file_id }))
+        Ok(Self::extract_asset_id(&result).map(|asset_id| ExistingFileRecord { asset_id }))
     }
 
-    async fn create_file(
+    // need to make sure the correct information is being passed into these fields in the second pass we do with these files
+    async fn create_file_asset(
         &self,
-        file_id: &str,
         content_hash: &str,
-        content: &str,
+        kind: &str,
         path: &str,
     ) -> Result<(), String> {
         let payload = json!({
-            "file_id": file_id,
             "content_hash": content_hash,
-            "content": content,
+            "kind": kind,
             "path": path,
         });
         let client = self.client();
         let _: Value = client
-            .query("CreateFile", &payload)
+            .query("CreateAsset", &payload)
             .await
             .map_err(|e| e.to_string())?;
         Ok(())
     }
 
-    async fn create_file_embeddings(
+    async fn create_file_asset_embeddings(
         &self,
-        file_id: &str,
+        content_hash: &str,
+        unit_kind: &str,
         content: &str,
-        path: &str,
     ) -> Result<(), String> {
         let payload = json!({
-            "file_id": file_id,
+            "content_hash": content_hash,
+            "unit_kind": unit_kind,
             "content": content,
-            "path": path,
         });
+
         let client = self.client();
         let _: Value = client
-            .query("CreateFileEmbeddings", &payload)
+            .query("CreateAssetEmbeddingByHash", &payload)
             .await
             .map_err(|e| e.to_string())?;
         Ok(())
