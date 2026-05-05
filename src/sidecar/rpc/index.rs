@@ -19,7 +19,7 @@ use crate::sidecar::rpc::indexing::adapters::hash::{PathHasher, Sha256PathHasher
 use crate::sidecar::rpc::indexing::adapters::helix::HelixTextStore;
 use crate::sidecar::rpc::indexing::adapters::store::VideoIndexStore;
 use crate::sidecar::rpc::indexing::image::image_indexer_with_sidecar;
-use crate::sidecar::rpc::indexing::text_indexer::file_indexer;
+use crate::sidecar::rpc::indexing::text::file_indexer;
 use crate::sidecar::rpc::indexing::video::index_video_with_sidecar;
 
 #[derive(Debug, Deserialize)]

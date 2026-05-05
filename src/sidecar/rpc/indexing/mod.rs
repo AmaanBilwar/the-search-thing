@@ -1,4 +1,4 @@
 pub mod adapters;
 pub mod image;
-pub mod text_indexer;
+pub mod text;
 pub mod video;
