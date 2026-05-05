@@ -7,4 +7,10 @@ container_runtime = "docker"
 port = 7003
 build_mode = "dev"
 
-[cloud]
+[cloud.tst.fly]
+build_mode = "dev"
+vm_size = "shared-cpu-4x"
+volume = "hx_tst_data:/data"
+volume_initial_size = 20
+private = false
+auth_type = "Cli"

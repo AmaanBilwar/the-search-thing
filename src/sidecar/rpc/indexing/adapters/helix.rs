@@ -17,10 +17,40 @@ pub struct HelixTextStore {
 
 impl HelixTextStore {
     pub fn from_env() -> Result<Self, String> {
-        let endpoint =
-            env::var("HELIX_ENDPOINT").unwrap_or_else(|_| "http://localhost".to_string());
+        let helix_local = env::var("HELIX_LOCAL")
+            .map(|v| {
+                matches!(
+                    v.trim().to_ascii_lowercase().as_str(),
+                    "1" | "true" | "yes" | "y"
+                )
+            })
+            .unwrap_or(true);
+
+        let endpoint = env::var("HELIX_ENDPOINT")
+            .ok()
+            .map(|v| v.trim().to_string())
+            .filter(|v| !v.is_empty())
+            .unwrap_or_else(|| {
+                if helix_local {
+                    "http://localhost".to_string()
+                } else {
+                    String::new()
+                }
+            });
+
+        if endpoint.is_empty() {
+            return Err(
+                "HELIX_ENDPOINT is required when HELIX_LOCAL=false (example: https://<app>.fly.dev)"
+                    .to_string(),
+            );
+        }
+
+        let default_port = if helix_local { 7003 } else { 443 };
         let port = env::var("HELIX_PORT")
-            .unwrap_or_else(|_| "7003".to_string())
+            .ok()
+            .map(|v| v.trim().to_string())
+            .filter(|v| !v.is_empty())
+            .unwrap_or_else(|| default_port.to_string())
             .parse::<u16>()
             .map_err(|e| format!("invalid HELIX_PORT: {}", e))?;
         let api_key = env::var("HELIX_API_KEY")
