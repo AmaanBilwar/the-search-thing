@@ -71,8 +71,8 @@ repos:
         name: checks (client)
         entry: bash -c "cd client && npx oxlint && npx oxfmt --check"
         language: system
+        files: ^client/.*\.(js|jsx|ts|tsx|json)$
         pass_filenames: false
-        always_run: true
         stages: [pre-push]
 
   # Website (Next.js) hooks
@@ -96,6 +96,6 @@ repos:
         name: checks (website)
         entry: bash -c "cd website && npx oxlint && npx oxfmt --check"
         language: system
+        files: ^website/.*\.(js|jsx|ts|tsx|json)$
         pass_filenames: false
-        always_run: true
         stages: [pre-push]
