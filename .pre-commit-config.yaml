@@ -1,3 +1,12 @@
+default_install_hook_types:
+  - pre-commit
+  - pre-push
+
+default_stages:
+  - pre-commit
+
+fail_fast: false
+
 repos:
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -30,6 +39,7 @@ repos:
         types: [rust]
         pass_filenames: false
         always_run: true
+        stages: [pre-push]
 
       - id: cargo-test
         name: cargo test
@@ -38,6 +48,7 @@ repos:
         types: [rust]
         pass_filenames: false
         always_run: true
+        stages: [pre-push]
 
   # Client (Electron/React) hooks - using oxfmt and oxlint
   - repo: local
@@ -56,6 +67,14 @@ repos:
         files: ^client/.*\.(js|jsx|ts|tsx|json)$
         pass_filenames: true
 
+      - id: client-checks
+        name: checks (client)
+        entry: bash -c "cd client && npx oxlint && npx oxfmt --check"
+        language: system
+        files: ^client/.*\.(js|jsx|ts|tsx|json)$
+        pass_filenames: false
+        stages: [pre-push]
+
   # Website (Next.js) hooks
   - repo: local
     hooks:
@@ -72,3 +91,11 @@ repos:
         language: system
         files: ^website/.*\.(js|jsx|ts|tsx|json)$
         pass_filenames: true
+
+      - id: website-checks
+        name: checks (website)
+        entry: bash -c "cd website && npx oxlint && npx oxfmt --check"
+        language: system
+        files: ^website/.*\.(js|jsx|ts|tsx|json)$
+        pass_filenames: false
+        stages: [pre-push]
