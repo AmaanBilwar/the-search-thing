@@ -11,7 +11,7 @@ QUERY GetAssetByHash(content_hash: String) =>
     asset <- N<Asset>({content_hash: content_hash})
     RETURN asset
 
-QUERY CreateAssetEmbeddingByHash(content_hash: String, unit_kind: String, unit_key: String, content: String) =>
+QUERY CreateAssetEmbeddingByHash(content_hash: String, unit_kind: String, unit_key: String, content: String, created_at: Date) =>
     asset <- N<Asset>({content_hash: content_hash})
     existing_embedding <- asset::Out<HasAssetEmbedding>
         ::WHERE(_::{unit_kind}::EQ(unit_kind))
@@ -22,7 +22,7 @@ QUERY CreateAssetEmbeddingByHash(content_hash: String, unit_kind: String, unit_k
         content: content
     })
     existing_edge <- E<HasAssetEmbedding>
-    has_embedding <- existing_edge::UpsertE({})::From(asset)::To(embedding)
+    has_embedding <- existing_edge::UpsertE({created_at: created_at})::From(asset)::To(embedding)
     RETURN embedding
 
 QUERY SearchAssetEmbeddings(query: String) =>
