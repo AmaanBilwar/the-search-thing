@@ -1,7 +1,7 @@
 use helix_rs::{HelixDB, HelixDBClient};
 use serde::Deserialize;
 use serde_json::{json, Value};
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -208,28 +208,51 @@ async fn rust_helix_search_query(query: &str) -> Result<Value, String> {
     .await;
 
     let response = normalize_timed_vector_query_result("asset", raw)?;
-    let asset_nodes: Vec<Value> = response
+    let assets_raw = response
         .get("assets")
         .and_then(Value::as_array)
         .cloned()
-        .unwrap_or_default()
-        .into_iter()
-        .rev()
-        .collect();
+        .unwrap_or_default();
+    let embeddings_raw = response
+        .get("embeddings")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
 
-    let mut seen_paths: HashSet<String> = HashSet::new();
+    // Pair each asset with its embedding score, keeping the best score per path.
+    // assets and embeddings are parallel: embeddings[i] drove the traversal to assets[i].
+    let mut best: HashMap<String, (f64, Value)> = HashMap::new();
+    for (asset, embedding) in assets_raw.iter().zip(embeddings_raw.iter()) {
+        let Some(asset_map) = asset.as_object() else {
+            continue;
+        };
+        let Some(path) = value_as_string(asset_map.get("path")) else {
+            continue;
+        };
+        let score = embedding
+            .get("score")
+            .and_then(Value::as_f64)
+            .unwrap_or(0.0);
+        best.entry(path)
+            .and_modify(|e| {
+                if score > e.0 {
+                    *e = (score, asset.clone());
+                }
+            })
+            .or_insert_with(|| (score, asset.clone()));
+    }
+
+    let mut ranked: Vec<(f64, Value)> = best.into_values().collect();
+    ranked.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+
     let mut results: Vec<Value> = Vec::new();
-
-    for node in asset_nodes {
+    for (_, node) in ranked {
         let Some(map) = node.as_object() else {
             continue;
         };
         let Some(path) = value_as_string(map.get("path")) else {
             continue;
         };
-        if !seen_paths.insert(path.clone()) {
-            continue;
-        }
 
         let kind = value_as_string(map.get("kind")).unwrap_or_else(|| "file".to_string());
         let content_hash = value_as_string(map.get("content_hash")).unwrap_or_default();

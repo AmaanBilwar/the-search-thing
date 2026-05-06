@@ -30,4 +30,4 @@ QUERY SearchAssetEmbeddings(query: String) =>
         ::RerankMMR(lambda: 0.7)
         ::RANGE(0, 50)
     assets <- embeddings::In<HasAssetEmbedding>
-    RETURN assets
+    RETURN assets, embeddings
