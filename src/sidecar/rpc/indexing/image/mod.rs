@@ -1,6 +1,7 @@
 use crate::sidecar::rpc::indexing::adapters::groq::TranscriptionClient;
 use crate::sidecar::rpc::indexing::adapters::hash::PathHasher;
 use crate::sidecar::rpc::indexing::adapters::store::ImageIndexStore;
+use crate::sidecar::rpc::indexing::embedding::build_embedding_text;
 use async_trait::async_trait;
 use serde_json::Value;
 use std::fs;
@@ -161,57 +162,6 @@ pub(crate) mod helpers {
     }
 }
 
-pub fn build_embedding_text(summary: &Value) -> String {
-    let mut parts = Vec::new();
-
-    let add_part = |parts: &mut Vec<String>, label: &str, value: String| {
-        let trimmed = value.trim();
-        if !trimmed.is_empty() {
-            parts.push(format!("{}: {}", label, trimmed));
-        }
-    };
-
-    if let Some(text) = summary.get("summary").and_then(Value::as_str) {
-        add_part(&mut parts, "summary", text.to_string());
-    }
-
-    if let Some(items) = summary.get("objects").and_then(Value::as_array) {
-        let joined = items
-            .iter()
-            .filter_map(Value::as_str)
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .collect::<Vec<&str>>()
-            .join(", ");
-        add_part(&mut parts, "objects", joined);
-    }
-
-    if let Some(items) = summary.get("actions").and_then(Value::as_array) {
-        let joined = items
-            .iter()
-            .filter_map(Value::as_str)
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .collect::<Vec<&str>>()
-            .join(", ");
-        add_part(&mut parts, "actions", joined);
-    }
-
-    if let Some(text) = summary.get("setting").and_then(Value::as_str) {
-        add_part(&mut parts, "setting", text.to_string());
-    }
-
-    if let Some(text) = summary.get("ocr").and_then(Value::as_str) {
-        add_part(&mut parts, "ocr", text.to_string());
-    }
-
-    if let Some(text) = summary.get("quality").and_then(Value::as_str) {
-        add_part(&mut parts, "quality", text.to_string());
-    }
-
-    parts.join(" | ")
-}
-
 fn normalize_paths(file_paths: Vec<String>) -> Vec<String> {
     file_paths
         .into_iter()
@@ -358,7 +308,7 @@ where
             .create_image_asset_embeddings(
                 &content_hash,
                 "image_caption",
-                "image_caption_0",
+                "image_caption",
                 &embedding_text,
             )
             .await
@@ -404,6 +354,3 @@ where
     let deps = SidecarImageIndexerDeps { groq: groq.clone() };
     index_images_with_deps(file_paths, &deps, store).await
 }
-
-#[cfg(test)]
-mod property_tests;

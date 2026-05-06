@@ -102,7 +102,7 @@ pub async fn file_indexer(
             }
 
             if let Err(error) = store
-                .create_file_asset_embeddings(&content_hash, "file_body", &content)
+                .create_file_asset_embeddings(&content_hash, "file_body", "file_body", &content)
                 .await
             {
                 results.push(TextIndexResult {
