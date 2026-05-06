@@ -531,6 +531,23 @@ where
         .create_video_asset(content_hash, "video", video_path)
         .await?;
 
+    let filename_text = Path::new(video_path)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or_default()
+        .replace(['#', '_', '-', '.'], " ");
+    if !filename_text.trim().is_empty() {
+        if let Err(error) = store
+            .create_video_asset_embeddings(content_hash, "file_path", "file_path", &filename_text)
+            .await
+        {
+            eprintln!(
+                "[sidecar:index:video] warning: failed to create path embedding for {}: {}",
+                video_path, error
+            );
+        }
+    }
+
     let mut transcript_idx = 0usize;
     let mut frame_idx = 0usize;
 

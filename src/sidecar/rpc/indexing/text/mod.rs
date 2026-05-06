@@ -1,6 +1,7 @@
 use crate::sidecar::rpc::fs::walk_and_get_files_content;
 use crate::sidecar::rpc::indexing::adapters::hash::PathHasher;
 use crate::sidecar::rpc::indexing::adapters::store::TextIndexStore;
+use std::path::Path;
 
 #[derive(Debug, Clone)]
 pub struct TextIndexResult {
@@ -113,6 +114,28 @@ pub async fn file_indexer(
                     error: Some(error),
                 });
                 continue;
+            }
+
+            let filename_text = Path::new(&file_path)
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or_default()
+                .replace(['#', '_', '-', '.'], " ");
+            if !filename_text.trim().is_empty() {
+                if let Err(error) = store
+                    .create_file_asset_embeddings(
+                        &content_hash,
+                        "file_path",
+                        "file_path",
+                        &filename_text,
+                    )
+                    .await
+                {
+                    eprintln!(
+                        "[sidecar:index:text] warning: failed to create path embedding for {}: {}",
+                        file_path, error
+                    );
+                }
             }
 
             results.push(TextIndexResult {

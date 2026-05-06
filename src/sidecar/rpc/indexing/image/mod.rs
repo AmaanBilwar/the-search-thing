@@ -238,6 +238,28 @@ where
             continue;
         }
 
+        let filename_text = Path::new(&normalized_path)
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or_default()
+            .replace(['#', '_', '-', '.'], " ");
+        if !filename_text.trim().is_empty() {
+            if let Err(error) = store
+                .create_image_asset_embeddings(
+                    &content_hash,
+                    "file_path",
+                    "file_path",
+                    &filename_text,
+                )
+                .await
+            {
+                eprintln!(
+                    "[sidecar:index:image] warning: failed to create path embedding for {}: {}",
+                    normalized_path, error
+                );
+            }
+        }
+
         eprintln!(
             "[sidecar:index:image] indexed {} successfully (image_id={})",
             normalized_path, image_id

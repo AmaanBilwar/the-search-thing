@@ -26,8 +26,6 @@ QUERY CreateAssetEmbeddingByHash(content_hash: String, unit_kind: String, unit_k
     RETURN embedding
 
 QUERY SearchAssetEmbeddings(query: String) =>
-    embeddings <- SearchV<AssetEmbedding>(Embed(query), 120)
-        ::RerankMMR(lambda: 0.7)
-        ::RANGE(0, 50)
+    embeddings <- SearchV<AssetEmbedding>(Embed(query), 50)
     assets <- embeddings::In<HasAssetEmbedding>
-    RETURN assets, embeddings
+    RETURN assets

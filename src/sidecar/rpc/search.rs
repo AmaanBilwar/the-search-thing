@@ -213,37 +213,22 @@ async fn rust_helix_search_query(query: &str) -> Result<Value, String> {
         .and_then(Value::as_array)
         .cloned()
         .unwrap_or_default();
-    let embeddings_raw = response
-        .get("embeddings")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
-
-    // Pair each asset with its embedding score, keeping the best score per path.
     // assets and embeddings are parallel: embeddings[i] drove the traversal to assets[i].
-    let mut best: HashMap<String, (f64, Value)> = HashMap::new();
-    for (asset, embedding) in assets_raw.iter().zip(embeddings_raw.iter()) {
+    // Helix returns embeddings most-relevant-first, so lowest index = best rank.
+    // For assets with multiple chunks (videos), keep the earliest-appearing chunk index.
+    let mut best_pos: HashMap<String, (usize, Value)> = HashMap::new();
+    for (idx, asset) in assets_raw.iter().enumerate() {
         let Some(asset_map) = asset.as_object() else {
             continue;
         };
         let Some(path) = value_as_string(asset_map.get("path")) else {
             continue;
         };
-        let score = embedding
-            .get("score")
-            .and_then(Value::as_f64)
-            .unwrap_or(0.0);
-        best.entry(path)
-            .and_modify(|e| {
-                if score > e.0 {
-                    *e = (score, asset.clone());
-                }
-            })
-            .or_insert_with(|| (score, asset.clone()));
+        best_pos.entry(path).or_insert_with(|| (idx, asset.clone()));
     }
 
-    let mut ranked: Vec<(f64, Value)> = best.into_values().collect();
-    ranked.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+    let mut ranked: Vec<(usize, Value)> = best_pos.into_values().collect();
+    ranked.sort_by_key(|(idx, _)| *idx);
 
     let mut results: Vec<Value> = Vec::new();
     for (_, node) in ranked {
