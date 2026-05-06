@@ -17,7 +17,6 @@ use crate::sidecar::protocol::{
 use crate::sidecar::rpc::indexing::adapters::groq::GroqClient;
 use crate::sidecar::rpc::indexing::adapters::hash::{PathHasher, Sha256PathHasher};
 use crate::sidecar::rpc::indexing::adapters::helix::HelixTextStore;
-use crate::sidecar::rpc::indexing::adapters::store::VideoIndexStore;
 use crate::sidecar::rpc::indexing::image::image_indexer_with_sidecar;
 use crate::sidecar::rpc::indexing::text::file_indexer;
 use crate::sidecar::rpc::indexing::video::index_video_with_sidecar;
@@ -401,7 +400,7 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
         let video_found = video_files.len();
         let mut video_indexed = 0usize;
         let mut video_errors = 0usize;
-        let mut video_skipped = 0usize;
+        let video_skipped = 0usize;
         let mut first_video_error: Option<String> = None;
 
         let output_dir = env::current_dir()
@@ -435,28 +434,7 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
                 }
             };
 
-            let existing = runtime.block_on(store.get_video_by_hash(&content_hash));
-            match existing {
-                Ok(Some(_)) => {
-                    video_skipped += 1;
-                    eprintln!(
-                        "[sidecar:index] job {} skipping duplicate video {}",
-                        job_id, video_path
-                    );
-                    let _ = update_job(&job_id, |job| {
-                        job.video_indexed = video_indexed;
-                        job.video_errors = video_errors;
-                        job.video_skipped = video_skipped;
-                    });
-                    continue;
-                }
-                Ok(None) => {}
-                Err(_) => {}
-            }
-
-            let video_id = uuid::Uuid::new_v4().to_string();
             let result = runtime.block_on(index_video_with_sidecar(
-                &video_id,
                 &content_hash,
                 &video_path,
                 &output_dir_str,
