@@ -1,3 +1,6 @@
+use crate::sidecar::rpc::indexing::adapters::groq::TranscriptionClient;
+use crate::sidecar::rpc::indexing::adapters::store::VideoIndexStore;
+use crate::sidecar::rpc::indexing::embedding::build_embedding_text;
 use async_trait::async_trait;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -5,17 +8,13 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use tokio::task::JoinSet;
-use uuid::Uuid;
 
-use crate::sidecar::rpc::indexing::adapters::groq::TranscriptionClient;
-use crate::sidecar::rpc::indexing::adapters::store::{ChunkCreateInput, VideoIndexStore};
-
-#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub struct VideoIndexResult {
-    pub video_path: String,
+    pub content_hash: Option<String>,
+    pub path: String,
+    pub kind: String,
     pub indexed: bool,
-    pub chunks_created: usize,
     pub error: Option<String>,
 }
 
@@ -491,7 +490,6 @@ fn extract_transcript_text(transcript_payload: &Value) -> String {
 }
 
 async fn index_video_with_deps<D>(
-    video_id: &str,
     content_hash: &str,
     video_path: &str,
     output_dir: &str,
@@ -529,99 +527,73 @@ where
     let transcripts = deps.generate_transcripts(&artifacts).await;
     let frame_summaries = deps.generate_frame_summaries(&artifacts).await;
 
-    let mut cumulative_time = 0.0_f64;
-    let mut chunks_created = 0_usize;
-    let mut video_registered = false;
+    store
+        .create_video_asset(content_hash, "video", video_path)
+        .await?;
+
+    let mut transcript_idx = 0usize;
+    let mut frame_idx = 0usize;
 
     for artifact in &artifacts {
-        let Some(audio_path) = &artifact.audio_path else {
-            continue;
-        };
+        if let Some(audio_path) = &artifact.audio_path {
+            let audio_stem = Path::new(audio_path)
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or_default();
 
-        let audio_stem = Path::new(audio_path)
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap_or_default();
-
-        let Some(transcript_payload) = transcripts.get(audio_stem) else {
-            continue;
-        };
-
-        if !video_registered {
-            store
-                .create_video(video_id, content_hash, 0, video_path)
-                .await?;
-            video_registered = true;
+            if let Some(transcript_payload) = transcripts.get(audio_stem) {
+                let transcript_text = extract_transcript_text(transcript_payload);
+                if !transcript_text.is_empty() {
+                    store
+                        .create_video_asset_embeddings(
+                            content_hash,
+                            "video_transcript",
+                            &format!("video_transcript_{}", transcript_idx),
+                            &transcript_text,
+                        )
+                        .await?;
+                    transcript_idx += 1;
+                }
+            }
         }
-
-        let duration = transcript_payload
-            .get("duration")
-            .and_then(Value::as_f64)
-            .unwrap_or(chunk_duration_secs);
-        let transcript_text = extract_transcript_text(transcript_payload);
-
-        let start_time = cumulative_time;
-        let end_time = cumulative_time + duration;
-        cumulative_time = end_time;
-
-        let chunk_id = Uuid::new_v4().to_string();
-        let chunk_input = ChunkCreateInput {
-            video_id: video_id.to_string(),
-            chunk_id: chunk_id.clone(),
-            start_time: start_time.floor() as i64,
-            end_time: end_time.floor() as i64,
-            transcript: transcript_text.clone(),
-        };
-
-        store.create_chunk(&chunk_input).await?;
-        store
-            .create_video_chunk_relationship(video_id, &chunk_id)
-            .await?;
-        store
-            .create_transcript_node(&chunk_id, &transcript_text)
-            .await?;
-        store
-            .create_transcript_embeddings(&chunk_id, &transcript_payload.to_string())
-            .await?;
 
         let chunk_stem = Path::new(&artifact.chunk_path)
             .file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or_default()
             .to_string();
+
         if let Some(entries) = frame_summaries.get(&chunk_stem) {
-            let raw = Value::Array(entries.clone()).to_string();
-            store.create_frame_summary_node(&chunk_id, &raw).await?;
-            store
-                .create_frame_summary_embeddings(&chunk_id, &raw)
-                .await?;
-        }
-
-        chunks_created += 1;
-    }
-
-    if video_registered {
-        if let Err(error) = store
-            .update_video_chunk_count(video_id, chunks_created)
-            .await
-        {
-            eprintln!(
-                "[sidecar:index:video] warning: failed to update chunk count for video_id={} chunks={}: {}",
-                video_id, chunks_created, error
-            );
+            let embedding_text = entries
+                .iter()
+                .map(|entry| build_embedding_text(entry))
+                .filter(|text| !text.is_empty())
+                .collect::<Vec<_>>()
+                .join(" | ");
+            if !embedding_text.is_empty() {
+                store
+                    .create_video_asset_embeddings(
+                        content_hash,
+                        "video_frame_summary",
+                        &format!("video_frame_summary_{}", frame_idx),
+                        &embedding_text,
+                    )
+                    .await?;
+                frame_idx += 1;
+            }
         }
     }
 
     Ok(VideoIndexResult {
-        video_path: normalize_path(video_path),
-        indexed: chunks_created > 0,
-        chunks_created,
+        path: normalize_path(video_path),
+        content_hash: Some(content_hash.to_string()),
+        kind: "video".to_string(),
+        indexed: transcript_idx > 0 || frame_idx > 0,
         error: None,
     })
 }
 
 pub async fn index_video_with_sidecar<C>(
-    video_id: &str,
     content_hash: &str,
     video_path: &str,
     output_dir: &str,
@@ -634,7 +606,6 @@ where
 {
     let deps = SidecarVideoIndexerDeps { groq: groq.clone() };
     index_video_with_deps(
-        video_id,
         content_hash,
         video_path,
         output_dir,
@@ -644,6 +615,3 @@ where
     )
     .await
 }
-
-#[cfg(test)]
-mod property_tests;
