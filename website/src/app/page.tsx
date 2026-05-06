@@ -14,7 +14,7 @@ export default function Home() {
             <code>we are building "the-search-thing"</code>
             <br />
             <code>
-              because search should be <i>fast</i> and <i>semantic</i>
+              because search should be <i>fast</i> and <i>accurate</i>
             </code>
             <br />
           </p>
