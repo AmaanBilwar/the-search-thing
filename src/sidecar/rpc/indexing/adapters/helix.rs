@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use helix_rs::{HelixDB, HelixDBClient};
 use serde_json::{json, Value};
 use std::env;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::sidecar::rpc::indexing::adapters::store::{
     ExistingFileRecord, ExistingImageRecord, ImageIndexStore, TextIndexStore, VideoIndexStore,
@@ -68,6 +69,13 @@ impl HelixTextStore {
         None
     }
 
+    fn now_unix_secs() -> u64 {
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs()
+    }
+
     fn is_not_found_error(message: &str) -> bool {
         let lowered = message.to_ascii_lowercase();
         lowered.contains("graph error: no value found")
@@ -129,6 +137,7 @@ impl TextIndexStore for HelixTextStore {
             "unit_kind": unit_kind,
             "unit_key": unit_key,
             "content": content,
+            "created_at": Self::now_unix_secs(),
         });
         let client = self.client();
         let _: Value = client
@@ -193,6 +202,7 @@ impl ImageIndexStore for HelixTextStore {
             "unit_kind": unit_kind,
             "unit_key": unit_key,
             "content": content,
+            "created_at": Self::now_unix_secs(),
         });
         let client = self.client();
         let _: Value = client
@@ -236,6 +246,7 @@ impl VideoIndexStore for HelixTextStore {
             "unit_kind": unit_kind,
             "unit_key": unit_key,
             "content": content,
+            "created_at": Self::now_unix_secs(),
         });
         let client = self.client();
         let _: Value = client
