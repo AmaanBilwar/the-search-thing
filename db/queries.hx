@@ -3,7 +3,7 @@ QUERY CreateAsset(kind: String, path: String, content_hash: String) =>
     asset <- existing::UpsertN({
         kind: kind,
         content_hash: content_hash,
-        path: path,
+        path: path
     })
     RETURN asset
 
@@ -19,7 +19,7 @@ QUERY CreateAssetEmbeddingByHash(content_hash: String, unit_kind: String, unit_k
     embedding <- existing_embedding::UpsertV(Embed(content), {
         unit_kind: unit_kind,
         unit_key: unit_key,
-        content: content,
+        content: content
     })
     existing_edge <- E<HasAssetEmbedding>
     has_embedding <- existing_edge::UpsertE({})::From(asset)::To(embedding)
