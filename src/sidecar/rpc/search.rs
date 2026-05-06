@@ -187,7 +187,7 @@ fn normalize_timed_vector_query_result(
 async fn rust_helix_search_query(query: &str) -> Result<Value, String> {
     let endpoint = env::var("HELIX_ENDPOINT").unwrap_or_else(|_| "http://localhost".to_string());
     let port = env::var("HELIX_PORT")
-        .unwrap_or_else(|_| "7003".to_string())
+        .unwrap_or_else(|_| "6969".to_string())
         .parse::<u16>()
         .map_err(|e| format!("invalid HELIX_PORT: {}", e))?;
     let api_key = env::var("HELIX_API_KEY").ok();
@@ -208,11 +208,14 @@ async fn rust_helix_search_query(query: &str) -> Result<Value, String> {
     .await;
 
     let response = normalize_timed_vector_query_result("asset", raw)?;
-    let asset_nodes = response
+    let asset_nodes: Vec<Value> = response
         .get("assets")
         .and_then(Value::as_array)
         .cloned()
-        .unwrap_or_default();
+        .unwrap_or_default()
+        .into_iter()
+        .rev()
+        .collect();
 
     let mut seen_paths: HashSet<String> = HashSet::new();
     let mut results: Vec<Value> = Vec::new();
