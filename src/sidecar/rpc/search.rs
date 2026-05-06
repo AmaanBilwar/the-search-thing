@@ -208,7 +208,11 @@ async fn rust_helix_search_query(query: &str) -> Result<Value, String> {
     .await;
 
     let response = normalize_timed_vector_query_result("asset", raw)?;
-    let asset_nodes = response.as_array().cloned().unwrap_or_default();
+    let asset_nodes = response
+        .get("assets")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
 
     let mut seen_paths: HashSet<String> = HashSet::new();
     let mut results: Vec<Value> = Vec::new();
