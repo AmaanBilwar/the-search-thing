@@ -12,5 +12,8 @@ V::AssetEmbedding{
 
 E::HasAssetEmbedding {
     From: Asset,
-    To: AssetEmbedding
+    To: AssetEmbedding,
+    Properties: {
+        created_at: Date DEFAULT NOW,
+    }
 }
