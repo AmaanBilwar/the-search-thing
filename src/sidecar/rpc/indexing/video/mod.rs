@@ -566,7 +566,7 @@ where
         if let Some(entries) = frame_summaries.get(&chunk_stem) {
             let embedding_text = entries
                 .iter()
-                .map(|entry| build_embedding_text(entry))
+                .map(build_embedding_text)
                 .filter(|text| !text.is_empty())
                 .collect::<Vec<_>>()
                 .join(" | ");
