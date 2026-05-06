@@ -18,6 +18,7 @@ QUERY CreateAssetEmbeddingByHash(content_hash: String, unit_kind: String, unit_k
         ::WHERE(_::{unit_key}::EQ(unit_key))
     embedding <- existing_embedding::UpsertV(Embed(content), {
         unit_kind: unit_kind,
+        unit_key: unit_key,
         content: content,
     })
     existing_edge <- E<HasAssetEmbedding>

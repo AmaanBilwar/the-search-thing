@@ -5,6 +5,7 @@ N::Asset {
 }
 
 V::AssetEmbedding{
+    unit_key: String,
     unit_kind: String,
     content: String,
 }
