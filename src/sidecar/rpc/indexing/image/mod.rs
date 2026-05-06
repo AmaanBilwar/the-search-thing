@@ -1,4 +1,5 @@
 use crate::sidecar::rpc::indexing::adapters::groq::TranscriptionClient;
+use crate::sidecar::rpc::indexing::adapters::hash::PathHasher;
 use crate::sidecar::rpc::indexing::adapters::store::ImageIndexStore;
 use async_trait::async_trait;
 use serde_json::Value;
@@ -8,9 +9,9 @@ use uuid::Uuid;
 
 #[derive(Clone, Debug)]
 pub struct ImageIndexResult {
+    pub content_hash: Option<String>,
+    pub kind: String,
     pub path: String,
-    #[allow(dead_code)]
-    pub image_id: Option<String>,
     pub indexed: bool,
     pub error: Option<String>,
 }
@@ -234,6 +235,8 @@ where
 
     let mut results = Vec::new();
 
+    let hasher = crate::sidecar::rpc::indexing::adapters::hash::Sha256PathHasher;
+
     for path in paths {
         let normalized_path = normalize_path(&path);
         let path_obj = Path::new(&normalized_path);
@@ -246,7 +249,8 @@ where
             );
             results.push(ImageIndexResult {
                 path: normalized_path,
-                image_id: None,
+                content_hash: None,
+                kind: "image".to_string(),
                 indexed: false,
                 error: Some("Path not found".to_string()),
             });
@@ -258,7 +262,8 @@ where
             Err(error) => {
                 results.push(ImageIndexResult {
                     path: normalized_path,
-                    image_id: None,
+                    content_hash: None,
+                    kind: "image".to_string(),
                     indexed: false,
                     error: Some(error.to_string()),
                 });
@@ -266,12 +271,18 @@ where
             }
         };
 
-        let content_hash = {
-            use sha2::{Digest, Sha256};
-
-            let mut hasher = Sha256::new();
-            hasher.update(&image_bytes);
-            format!("{:x}", hasher.finalize())
+        let content_hash = match hasher.compute_file_hash(&normalized_path).await {
+            Ok(hash) => hash,
+            Err(error) => {
+                results.push(ImageIndexResult {
+                    path: normalized_path,
+                    content_hash: None,
+                    kind: "image".to_string(),
+                    indexed: false,
+                    error: Some(error),
+                });
+                continue;
+            }
         };
 
         let existing = match store.get_image_by_hash(&content_hash).await {
@@ -292,7 +303,8 @@ where
             );
             results.push(ImageIndexResult {
                 path: normalized_path,
-                image_id: Some(record.image_id),
+                content_hash: Some(content_hash.clone()),
+                kind: "image".to_string(),
                 indexed: false,
                 error: Some("Duplicate content hash".to_string()),
             });
@@ -313,7 +325,8 @@ where
                 );
                 results.push(ImageIndexResult {
                     path: normalized_path,
-                    image_id: None,
+                    content_hash: Some(content_hash.clone()),
+                    kind: "image".to_string(),
                     indexed: false,
                     error: Some(error),
                 });
@@ -322,10 +335,9 @@ where
         };
 
         let embedding_text = build_embedding_text(&summary_payload);
-        let summary_json = summary_payload.to_string();
 
         if let Err(error) = store
-            .create_image(&image_id, &content_hash, &summary_json, &normalized_path)
+            .create_image_asset(&content_hash, "image", &normalized_path)
             .await
         {
             eprintln!(
@@ -334,7 +346,8 @@ where
             );
             results.push(ImageIndexResult {
                 path: normalized_path,
-                image_id: Some(image_id),
+                content_hash: Some(content_hash.clone()),
+                kind: "image".to_string(),
                 indexed: false,
                 error: Some(error),
             });
@@ -342,7 +355,12 @@ where
         }
 
         if let Err(error) = store
-            .create_image_embeddings(&image_id, &embedding_text, &normalized_path)
+            .create_image_asset_embeddings(
+                &content_hash,
+                "image_caption",
+                "image_caption_0",
+                &embedding_text,
+            )
             .await
         {
             eprintln!(
@@ -351,7 +369,8 @@ where
             );
             results.push(ImageIndexResult {
                 path: normalized_path,
-                image_id: Some(image_id),
+                content_hash: Some(content_hash.clone()),
+                kind: "image".to_string(),
                 indexed: false,
                 error: Some(error),
             });
@@ -364,7 +383,8 @@ where
         );
         results.push(ImageIndexResult {
             path: normalized_path,
-            image_id: Some(image_id),
+            content_hash: Some(content_hash),
+            kind: "image".to_string(),
             indexed: true,
             error: None,
         });
