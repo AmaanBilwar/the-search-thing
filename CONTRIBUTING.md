@@ -10,6 +10,7 @@ This guide covers local setup, daily development workflow, and the frontend webs
 - Docker (for running Helix locally)
 - `ffmpeg` and `ffprobe` available on your `PATH`
 - Groq API key (for transcription + vision summaries)
+- Voyage ai api key
 
 ## Setup
 
@@ -20,10 +21,19 @@ cp .env.example .env
 ```
 
 Set these values in `.env`:
+```bash
+- `GEMINI_API_KEY`=
+- `OPENAI_API_KEY`=
+- `GROQ_API_KEY`=
+- `VOYAGE_API_KEY`=
+- `VOYAGE_EMBED_MODEL`=
+- `VOYAGE_RETRIEVAL_MODEL`=
 
-- `GROQ_API_KEY`
-- `HELIX_LOCAL=true`
-- `HELIX_PORT=7003` (or any available port)
+# helix
+HELIX_PORT=7003
+HELIX_LOCAL=True
+```
+
 
 ### 2) Start Helix locally
 
@@ -32,8 +42,6 @@ Make sure Docker is running, then:
 ```bash
 helix push dev
 ```
-
-> Note: `helix.toml` is already present, so you do **not** need to run `helix init`.
 
 ### 3) Install ffmpeg/ffprobe
 
@@ -74,15 +82,6 @@ npm --prefix client install
 npm --prefix client run dev
 ```
 
-## Runtime configuration
-
-The desktop app routes through the Rust sidecar JSON-RPC path by default.
-
-- `HELIX_ENDPOINT` (default: `http://localhost`)
-- `HELIX_PORT` (default: `7003`)
-- `HELIX_API_KEY` (optional, for secured Helix deployments)
-
-
 ## Usage notes
 
 ### Supported types
@@ -100,25 +99,8 @@ Ignored extensions/files live in `config/ignore.json`.
 
 - If you change Rust code, rebuild with:
   ```bash
-  maturin develop --release
-  ```
-- Build the sidecar with:
-  ```bash
   npm --prefix client run sidecar:build:debug
   ```
-- Electron uses IPC through the Rust sidecar for `index`, `index-status`, and `search` by default.
-- JSON-RPC route tests live in `tests/sidecar_jrpc.rs`.
-- Run JSON-RPC integration tests with:
-  ```bash
-  npm --prefix client run sidecar:test:jrpc
-  ```
-- Property-based sidecar tests for the video indexer live in:
-  `src/sidecar/rpc/indexing/video/property_tests.rs`
-- Run video indexer property tests with:
-  ```bash
-  cargo test --bin the-search-thing-sidecar sidecar::rpc::indexing::video::property_tests::
-  ```
-- Property tests in this repo follow a Zed-style randomized approach: seeded RNG, generated scenarios, and invariant assertions over orchestration behavior.
 
 ### Local app databases
 
@@ -136,8 +118,9 @@ Ignored extensions/files live in `config/ignore.json`.
 
 ## Frontend website (Next.js)
 
-The site lives in `website/` and is a standalone Next.js app.
+**DONT WASTE UR TIME HERE MAN DEADASS**
 
+The site lives in `website/` and is a standalone Next.js app.
 ```bash
 cd website
 npm install
