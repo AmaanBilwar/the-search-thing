@@ -11,12 +11,12 @@ QUERY GetAssetByHash(content_hash: String) =>
     asset <- N<Asset>({content_hash: content_hash})
     RETURN asset
 
-QUERY CreateAssetEmbeddingByHash(content_hash: String, unit_kind: String, unit_key: String, content: String, created_at: Date) =>
+QUERY CreateAssetEmbeddingByHash(content_hash: String, unit_kind: String, unit_key: String, content: String,vector: [F64], created_at: Date) =>
     asset <- N<Asset>({content_hash: content_hash})
     existing_embedding <- asset::Out<HasAssetEmbedding>
         ::WHERE(_::{unit_kind}::EQ(unit_kind))
         ::WHERE(_::{unit_key}::EQ(unit_key))
-    embedding <- existing_embedding::UpsertV(Embed(content), {
+    embedding <- existing_embedding::UpsertV(vector, { // this embed needs to leave, pass vectors directly as content
         unit_kind: unit_kind,
         unit_key: unit_key,
         content: content
@@ -25,7 +25,7 @@ QUERY CreateAssetEmbeddingByHash(content_hash: String, unit_kind: String, unit_k
     has_embedding <- existing_edge::UpsertE({created_at: created_at})::From(asset)::To(embedding)
     RETURN embedding
 
-QUERY SearchAssetEmbeddings(query: String) =>
-    embeddings <- SearchV<AssetEmbedding>(Embed(query), 50)
+QUERY SearchAssetEmbeddings(vector: [F64]) =>
+    embeddings <- SearchV<AssetEmbedding>(vector, 50) // this embed needs to leave, pass vectors directly as query
     assets <- embeddings::In<HasAssetEmbedding>
     RETURN assets
