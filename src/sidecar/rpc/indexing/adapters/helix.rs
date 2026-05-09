@@ -7,12 +7,14 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::sidecar::rpc::indexing::adapters::store::{
     ExistingFileRecord, ExistingImageRecord, ImageIndexStore, TextIndexStore, VideoIndexStore,
 };
+use crate::sidecar::rpc::indexing::adapters::voyage::{EmbeddingClient, VoyageClient};
 
 #[derive(Debug, Clone)]
 pub struct HelixTextStore {
     endpoint: String,
     port: u16,
     api_key: Option<String>,
+    voyage: VoyageClient,
 }
 
 impl HelixTextStore {
@@ -26,11 +28,13 @@ impl HelixTextStore {
         let api_key = env::var("HELIX_API_KEY")
             .ok()
             .filter(|v| !v.trim().is_empty());
+        let voyage = VoyageClient::from_env()?;
 
         Ok(Self {
             endpoint,
             port,
             api_key,
+            voyage,
         })
     }
 
@@ -133,6 +137,11 @@ impl HelixTextStore {
         lowered.contains("graph error: no value found")
             || lowered.contains("\"error\":\"graph error: no value found\"")
     }
+
+    async fn build_document_vector(&self, content: &str) -> Result<Vec<f64>, String> {
+        let vector = self.voyage.embed_document(content).await?;
+        Ok(vector.into_iter().map(f64::from).collect())
+    }
 }
 
 #[async_trait]
@@ -184,11 +193,13 @@ impl TextIndexStore for HelixTextStore {
         unit_key: &str,
         content: &str,
     ) -> Result<(), String> {
+        let vector = self.build_document_vector(content).await?;
         let payload = json!({
             "content_hash": content_hash,
             "unit_kind": unit_kind,
             "unit_key": unit_key,
             "content": content,
+            "vector": vector,
             "created_at": Self::now_rfc3339(),
         });
         let client = self.client();
@@ -249,11 +260,13 @@ impl ImageIndexStore for HelixTextStore {
         unit_key: &str,
         content: &str,
     ) -> Result<(), String> {
+        let vector = self.build_document_vector(content).await?;
         let payload = json!({
             "content_hash": content_hash,
             "unit_kind": unit_kind,
             "unit_key": unit_key,
             "content": content,
+            "vector": vector,
             "created_at": Self::now_rfc3339(),
         });
         let client = self.client();
@@ -293,11 +306,13 @@ impl VideoIndexStore for HelixTextStore {
         unit_key: &str,
         content: &str,
     ) -> Result<(), String> {
+        let vector = self.build_document_vector(content).await?;
         let payload = json!({
             "content_hash": content_hash,
             "unit_kind": unit_kind,
             "unit_key": unit_key,
             "content": content,
+            "vector": vector,
             "created_at": Self::now_rfc3339(),
         });
         let client = self.client();

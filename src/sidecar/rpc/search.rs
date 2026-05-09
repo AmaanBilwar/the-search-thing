@@ -10,6 +10,7 @@ use std::time::{Duration, Instant};
 use crate::sidecar::protocol::{
     err_response, ok_response, parse_params, JsonRpcRequest, JsonRpcResponse,
 };
+use crate::sidecar::rpc::indexing::adapters::voyage::{EmbeddingClient, VoyageClient};
 
 #[derive(Debug, Deserialize)]
 struct SearchQueryParams {
@@ -193,7 +194,11 @@ async fn rust_helix_search_query(query: &str) -> Result<Value, String> {
     let api_key = env::var("HELIX_API_KEY").ok();
 
     let client = HelixDB::new(Some(endpoint.as_str()), Some(port), api_key.as_deref());
-    let payload = json!({ "query": query });
+    let voyage = VoyageClient::from_env()?;
+    let vector = voyage.embed_query(query).await?;
+    let payload = json!({
+        "vector": vector.into_iter().map(f64::from).collect::<Vec<f64>>()
+    });
 
     let backend_timeout_ms = env::var("SIDECAR_SEARCH_BACKEND_TIMEOUT_MS")
         .ok()
