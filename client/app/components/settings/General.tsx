@@ -21,6 +21,8 @@ export default function General() {
     "window-placement": settings["window-placement"],
   });
   const [status, setStatus] = useState<"idle" | "saved" | "cleared">("idle");
+  const [clearIndexDialogOpen, setClearIndexDialogOpen] = useState(false);
+  const [clearIndexPending, setClearIndexPending] = useState(false);
 
   useEffect(() => {
     setDraftSettings({
@@ -47,6 +49,16 @@ export default function General() {
 
     return () => window.clearTimeout(timeoutId);
   }, [status]);
+
+  useEffect(() => {
+    if (!clearIndexDialogOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setClearIndexDialogOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [clearIndexDialogOpen]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -108,12 +120,16 @@ export default function General() {
       console.error("Failed to clear recent searches:", error);
     }
   };
-  const handleClearIndex = async () => {
+  const handleConfirmClearIndex = async () => {
+    setClearIndexPending(true);
     try {
       await searchApi.clearIndex();
       setStatus("cleared");
+      setClearIndexDialogOpen(false);
     } catch (error) {
       console.error("Failed to clear search index:", error);
+    } finally {
+      setClearIndexPending(false);
     }
   };
 
@@ -323,17 +339,73 @@ export default function General() {
         <div className="flex items-center justify-between gap-4">
           <div>
             <div className="text-sm text-zinc-200">Clear Index</div>
-            <div className="text-xs text-zinc-500">Clears your indexed data.</div>
+            <div className="text-xs text-zinc-500">
+              Permanently removes all indexed files and embeddings. You will need to run a full
+              re-index to search again.
+            </div>
           </div>
           <button
             type="button"
-            onClick={() => void handleClearIndex()}
+            onClick={() => setClearIndexDialogOpen(true)}
             className="h-7 px-3 rounded-md text-xs text-zinc-200 bg-zinc-700/60 hover:bg-zinc-700 transition-colors duration-150"
           >
             Clear
           </button>
         </div>
       </div>
+
+      {clearIndexDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <button
+            type="button"
+            className="absolute inset-0 cursor-default bg-black/60"
+            aria-label="Dismiss"
+            onClick={() => !clearIndexPending && setClearIndexDialogOpen(false)}
+          />
+          <div
+            className="relative z-10 w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-900/95 p-4 shadow-xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="clear-index-title"
+          >
+            <div id="clear-index-title" className="text-sm text-zinc-200">
+              Clear the entire search index?
+            </div>
+            <div className="text-xs text-zinc-400 mt-2 leading-relaxed">
+              This deletes every indexed asset and embedding in the database. The action cannot be
+              undone. Search will stay empty until you index your folders again.
+            </div>
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                disabled={clearIndexPending}
+                onClick={() => setClearIndexDialogOpen(false)}
+                className={cn(
+                  "text-xs transition-colors px-2 py-1 rounded border",
+                  clearIndexPending
+                    ? "text-zinc-600 border-zinc-800 cursor-not-allowed"
+                    : "text-zinc-400 hover:text-zinc-200 border-zinc-700 hover:border-zinc-500",
+                )}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={clearIndexPending}
+                onClick={() => void handleConfirmClearIndex()}
+                className={cn(
+                  "text-xs transition-colors px-2 py-1 rounded border",
+                  clearIndexPending
+                    ? "text-rose-300/50 border-rose-900/50 cursor-not-allowed"
+                    : "text-rose-200 border-rose-500/60 hover:border-rose-400",
+                )}
+              >
+                {clearIndexPending ? "Clearing…" : "Clear index"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
