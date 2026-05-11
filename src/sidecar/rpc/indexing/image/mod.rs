@@ -159,8 +159,8 @@ where
 
         if let Some(record) = existing {
             eprintln!(
-                "[sidecar:index:image] duplicate hash for {} (existing image_id={})",
-                normalized_path, record.image_id
+                "[sidecar:index:image] duplicate hash for {} (existing asset_id={})",
+                normalized_path, record.asset_id
             );
             results.push(ImageIndexResult {
                 path: normalized_path,

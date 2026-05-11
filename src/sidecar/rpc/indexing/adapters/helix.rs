@@ -6,7 +6,8 @@ use std::env;
 use std::sync::Mutex;
 
 use crate::sidecar::rpc::indexing::adapters::store::{
-    ExistingFileRecord, ExistingImageRecord, ImageIndexStore, TextIndexStore, VideoIndexStore,
+    ExistingFileRecord, ExistingImageRecord, ExistingVideoRecord, ImageIndexStore, TextIndexStore,
+    VideoIndexStore,
 };
 use crate::sidecar::rpc::indexing::adapters::voyage::{EmbeddingClient, VoyageClient};
 
@@ -197,7 +198,7 @@ impl ImageIndexStore for HelixTextStore {
                 }
             })?;
 
-        Ok(Self::extract_asset_id(&result).map(|image_id| ExistingImageRecord { image_id }))
+        Ok(Self::extract_asset_id(&result).map(|asset_id| ExistingImageRecord { asset_id }))
     }
 
     async fn create_image_asset(
@@ -246,6 +247,27 @@ impl ImageIndexStore for HelixTextStore {
 
 #[async_trait]
 impl VideoIndexStore for HelixTextStore {
+    async fn get_video_by_hash(
+        &self,
+        content_hash: &str,
+    ) -> Result<Option<ExistingVideoRecord>, String> {
+        let payload = json!({ "content_hash": content_hash });
+        let client = self.client();
+        let result: Value = client
+            .query("GetAssetByHash", &payload)
+            .await
+            .map_err(|e| e.to_string())
+            .or_else(|error| {
+                if Self::is_not_found_error(&error) {
+                    Ok(Value::Null)
+                } else {
+                    Err(error)
+                }
+            })?;
+
+        Ok(Self::extract_asset_id(&result).map(|asset_id| ExistingVideoRecord { asset_id }))
+    }
+
     async fn create_video_asset(
         &self,
         content_hash: &str,

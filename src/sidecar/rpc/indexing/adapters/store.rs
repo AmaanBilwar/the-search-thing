@@ -7,7 +7,12 @@ pub struct ExistingFileRecord {
 
 #[derive(Debug, Clone)]
 pub struct ExistingImageRecord {
-    pub image_id: String,
+    pub asset_id: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct ExistingVideoRecord {
+    pub asset_id: String,
 }
 
 #[async_trait]
@@ -58,6 +63,11 @@ pub trait ImageIndexStore: Send + Sync {
 
 #[async_trait]
 pub trait VideoIndexStore: Send + Sync {
+    async fn get_video_by_hash(
+        &self,
+        content_hash: &str,
+    ) -> Result<Option<ExistingVideoRecord>, String>;
+
     async fn create_video_asset(
         &self,
         content_hash: &str,

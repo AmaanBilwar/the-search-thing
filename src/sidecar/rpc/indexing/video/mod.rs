@@ -500,6 +500,30 @@ async fn index_video_with_deps<D>(
 where
     D: VideoIndexerDeps,
 {
+    let existing = match store.get_video_by_hash(content_hash).await {
+        Ok(existing) => existing,
+        Err(error) => {
+            eprintln!(
+                "[sidecar:index:video] hash lookup failed for {}: {}",
+                video_path, error
+            );
+            None
+        }
+    };
+    if let Some(record) = existing {
+        eprintln!(
+            "[sidecar:index:video] duplicate hash for {} (existing asset_id={})",
+            video_path, record.asset_id
+        );
+        return Ok(VideoIndexResult {
+            path: normalize_path(video_path),
+            content_hash: Some(content_hash.to_string()),
+            kind: "video".to_string(),
+            indexed: false,
+            error: Some("Duplicate content hash".to_string()),
+        });
+    }
+
     let normalized_out_dir = normalize_path(output_dir);
     let chunks_dir = format!("{}/chunks", normalized_out_dir);
     let audio_dir = format!("{}/audio", normalized_out_dir);
