@@ -1,9 +1,9 @@
 use async_trait::async_trait;
+use chrono::{SecondsFormat, Utc};
 use helix_rs::{HelixDB, HelixDBClient};
 use serde_json::{json, Value};
 use std::env;
 use std::sync::Mutex;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::sidecar::rpc::indexing::adapters::store::{
     ExistingFileRecord, ExistingImageRecord, ImageIndexStore, TextIndexStore, VideoIndexStore,
@@ -72,63 +72,8 @@ impl HelixTextStore {
         None
     }
 
-    fn now_rfc3339() -> String {
-        let secs = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
-
-        let sec = (secs % 60) as u32;
-        let min = ((secs / 60) % 60) as u32;
-        let hour = ((secs / 3600) % 24) as u32;
-        let mut days = secs / 86400;
-
-        let mut year = 1970u32;
-        loop {
-            let diy = if year.is_multiple_of(4)
-                && (!year.is_multiple_of(100) || year.is_multiple_of(400))
-            {
-                366u64
-            } else {
-                365u64
-            };
-            if days < diy {
-                break;
-            }
-            days -= diy;
-            year += 1;
-        }
-
-        let leap =
-            year.is_multiple_of(4) && (!year.is_multiple_of(100) || year.is_multiple_of(400));
-        let month_days: [u64; 12] = [
-            31,
-            if leap { 29 } else { 28 },
-            31,
-            30,
-            31,
-            30,
-            31,
-            31,
-            30,
-            31,
-            30,
-            31,
-        ];
-        let mut month = 1u32;
-        for &md in &month_days {
-            if days < md {
-                break;
-            }
-            days -= md;
-            month += 1;
-        }
-        let day = days + 1;
-
-        format!(
-            "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
-            year, month, day, hour, min, sec
-        )
+    fn current_timestamp_rfc3339() -> String {
+        Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true)
     }
 
     fn is_not_found_error(message: &str) -> bool {
@@ -221,7 +166,7 @@ impl TextIndexStore for HelixTextStore {
             "unit_key": unit_key,
             "content": content,
             "vector": vector,
-            "created_at": Self::now_rfc3339(),
+            "created_at": Self::current_timestamp_rfc3339(),
         });
         let client = self.client();
         let _: Value = client
@@ -288,7 +233,7 @@ impl ImageIndexStore for HelixTextStore {
             "unit_key": unit_key,
             "content": content,
             "vector": vector,
-            "created_at": Self::now_rfc3339(),
+            "created_at": Self::current_timestamp_rfc3339(),
         });
         let client = self.client();
         let _: Value = client
@@ -334,7 +279,7 @@ impl VideoIndexStore for HelixTextStore {
             "unit_key": unit_key,
             "content": content,
             "vector": vector,
-            "created_at": Self::now_rfc3339(),
+            "created_at": Self::current_timestamp_rfc3339(),
         });
         let client = self.client();
         let _: Value = client
