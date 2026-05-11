@@ -2,7 +2,7 @@ export default function Home() {
   return (
     <main className="flex flex-col">
       <section className="min-h-screen w-full flex flex-col px-12 py-16">
-        <div className="max-w-2xl w-full flex flex-col items-start text-left whitespace-nowrap">
+        <div className="max-w-2xl w-full flex flex-col items-start text-left">
           <h1 className="text-4xl font-sans-code font-bold mb-8">
             <code>the-search-thing</code>
           </h1>
@@ -20,7 +20,7 @@ export default function Home() {
               <i className="font-bold">accurate</i>
             </code>
           </p>
-          <div className="pt-6">
+          <div className="mt-6">
             <code>checkout our progress:</code>{" "}
             <a
               target="_blank"
@@ -31,10 +31,7 @@ export default function Home() {
               https://github.com/amaanbilwar/the-search-thing
             </a>
           </div>
-          <div>
-            <br />
-            <br />
-            <br />
+          <div className="mt-12">
             <code className="italic font-light opacity-45">
               this project is very early but we are excited to share it with you
             </code>
