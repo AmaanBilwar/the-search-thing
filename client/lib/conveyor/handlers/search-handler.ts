@@ -48,6 +48,15 @@ export const registerSearchHandlers = () => {
     return response.data;
   });
 
+  handle("clear-index", async () => {
+    if (!useSidecarForIndexing) {
+      throw new Error(
+        "Clear index requires the Rust sidecar (USE_RUST_SIDECAR_INDEXING must not be false).",
+      );
+    }
+    return sidecarClient.clearIndex();
+  });
+
   // System operations
   handle("open-file-dialog", async () => {
     const result = await dialog.showOpenDialog({

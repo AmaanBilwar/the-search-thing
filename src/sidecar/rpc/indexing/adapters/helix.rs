@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use helix_rs::{HelixDB, HelixDBClient};
 use serde_json::{json, Value};
 use std::env;
+use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::sidecar::rpc::indexing::adapters::store::{
@@ -9,12 +10,12 @@ use crate::sidecar::rpc::indexing::adapters::store::{
 };
 use crate::sidecar::rpc::indexing::adapters::voyage::{EmbeddingClient, VoyageClient};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct HelixTextStore {
     endpoint: String,
     port: u16,
     api_key: Option<String>,
-    voyage: VoyageClient,
+    voyage: Mutex<Option<VoyageClient>>,
 }
 
 impl HelixTextStore {
@@ -28,13 +29,11 @@ impl HelixTextStore {
         let api_key = env::var("HELIX_API_KEY")
             .ok()
             .filter(|v| !v.trim().is_empty());
-        let voyage = VoyageClient::from_env()?;
-
         Ok(Self {
             endpoint,
             port,
             api_key,
-            voyage,
+            voyage: Mutex::new(None),
         })
     }
 
@@ -139,8 +138,30 @@ impl HelixTextStore {
     }
 
     async fn build_document_vector(&self, content: &str) -> Result<Vec<f64>, String> {
-        let vector = self.voyage.embed_document(content).await?;
+        let voyage = {
+            let mut slot = self
+                .voyage
+                .lock()
+                .map_err(|e| format!("voyage client lock poisoned: {}", e))?;
+            match slot.as_mut() {
+                Some(client) => client.clone(),
+                None => {
+                    let client = VoyageClient::from_env()?;
+                    *slot = Some(client.clone());
+                    client
+                }
+            }
+        };
+        let vector = voyage.embed_document(content).await?;
         Ok(vector.into_iter().map(f64::from).collect())
+    }
+
+    pub async fn clear_search_index(&self) -> Result<Value, String> {
+        let client = self.client();
+        client
+            .query("ClearSearchIndex", &json!({}))
+            .await
+            .map_err(|e| e.to_string())
     }
 }
 

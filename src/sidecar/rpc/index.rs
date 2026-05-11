@@ -277,6 +277,15 @@ fn get_job(job_id: &str) -> Result<Option<IndexJobStatus>, String> {
     Ok(jobs.get(job_id).cloned())
 }
 
+fn list_running_index_jobs() -> Result<Vec<(String, String)>, String> {
+    let jobs = store().lock().map_err(|e| e.to_string())?;
+    Ok(jobs
+        .values()
+        .filter(|j| j.status == "running")
+        .map(|j| (j.job_id.clone(), j.dir.clone()))
+        .collect())
+}
+
 fn format_image_result_error(path: &str, error: &str) -> String {
     format!("Image indexing failed for {}: {}", path, error)
 }
@@ -664,6 +673,82 @@ pub fn handle_status(request: &JsonRpcRequest) -> JsonRpcResponse {
             -32603,
             "Index status failed",
             Some(json!({ "reason": error })),
+        ),
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct IndexClearParams {}
+
+pub fn handle_clear(request: &JsonRpcRequest) -> JsonRpcResponse {
+    let _: IndexClearParams = match parse_params(request) {
+        Ok(parsed) => parsed,
+        Err(error_response) => return error_response,
+    };
+
+    let running = match list_running_index_jobs() {
+        Ok(jobs) => jobs,
+        Err(error) => {
+            return err_response(
+                request.id.clone(),
+                -32603,
+                "Index clear failed",
+                Some(json!({ "reason": error })),
+            );
+        }
+    };
+    if !running.is_empty() {
+        let running_jobs: Vec<serde_json::Value> = running
+            .iter()
+            .map(|(job_id, dir)| json!({ "job_id": job_id, "dir": dir }))
+            .collect();
+        return err_response(
+            request.id.clone(),
+            -32603,
+            "Index clear failed",
+            Some(json!({
+                "reason": "Cannot clear index while indexing job(s) are still running; wait for them to finish first.",
+                "running_jobs": running_jobs,
+            })),
+        );
+    }
+
+    let store = match HelixTextStore::from_env() {
+        Ok(store) => store,
+        Err(error) => {
+            return err_response(
+                request.id.clone(),
+                -32603,
+                "Index clear failed",
+                Some(json!({ "reason": error })),
+            );
+        }
+    };
+
+    let runtime = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
+        Ok(rt) => rt,
+        Err(error) => {
+            return err_response(
+                request.id.clone(),
+                -32603,
+                "Index clear failed",
+                Some(json!({
+                    "reason": format!("failed to init runtime: {}", error),
+                })),
+            );
+        }
+    };
+
+    match runtime.block_on(store.clear_search_index()) {
+        Ok(_) => ok_response(request.id.clone(), json!({ "ok": true })),
+        Err(message) => err_response(
+            request.id.clone(),
+            -32603,
+            "Index clear failed",
+            Some(json!({ "reason": message })),
         ),
     }
 }
