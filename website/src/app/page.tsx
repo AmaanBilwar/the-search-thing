@@ -11,12 +11,14 @@ export default function Home() {
               <span className="font-semibold">hi everyone,</span>
             </code>
             <br />
-            <code>we are building "the-search-thing"</code>
-            <br />
             <code>
-              because search should be <i>fast</i> and <i>accurate</i>
+              we are building <span className="underline">the-search-thing</span>
             </code>
             <br />
+            <code>
+              because search should be <i className="font-bold">fast</i> and{" "}
+              <i className="font-bold">accurate</i>
+            </code>
           </p>
           <div className="pt-6">
             <code>checkout our progress:</code>{" "}
@@ -28,6 +30,15 @@ export default function Home() {
             >
               https://github.com/amaanbilwar/the-search-thing
             </a>
+          </div>
+          <div>
+            <br />
+            <br />
+            <br />
+            <code className="italic font-light opacity-45">
+              this project is very early but we are excited to share it with you
+            </code>
+            <br />
           </div>
         </div>
       </section>
