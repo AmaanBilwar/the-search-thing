@@ -667,3 +667,52 @@ pub fn handle_status(request: &JsonRpcRequest) -> JsonRpcResponse {
         ),
     }
 }
+
+#[derive(Debug, Deserialize)]
+struct IndexClearParams {}
+
+pub fn handle_clear(request: &JsonRpcRequest) -> JsonRpcResponse {
+    let _: IndexClearParams = match parse_params(request) {
+        Ok(parsed) => parsed,
+        Err(error_response) => return error_response,
+    };
+
+    let store = match HelixTextStore::from_env() {
+        Ok(store) => store,
+        Err(error) => {
+            return err_response(
+                request.id.clone(),
+                -32603,
+                "Index clear failed",
+                Some(json!({ "reason": error })),
+            );
+        }
+    };
+
+    let runtime = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
+        Ok(rt) => rt,
+        Err(error) => {
+            return err_response(
+                request.id.clone(),
+                -32603,
+                "Index clear failed",
+                Some(json!({
+                    "reason": format!("failed to init runtime: {}", error),
+                })),
+            );
+        }
+    };
+
+    match runtime.block_on(store.clear_search_index()) {
+        Ok(_) => ok_response(request.id.clone(), json!({ "ok": true })),
+        Err(message) => err_response(
+            request.id.clone(),
+            -32603,
+            "Index clear failed",
+            Some(json!({ "reason": message })),
+        ),
+    }
+}

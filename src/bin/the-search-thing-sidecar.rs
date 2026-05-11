@@ -22,6 +22,7 @@ fn handle_request(request: JsonRpcRequest) -> JsonRpcResponse {
         }
         "index.start" => sidecar::rpc::index::handle_start(&request),
         "index.status" => sidecar::rpc::index::handle_status(&request),
+        "index.clear" => sidecar::rpc::index::handle_clear(&request),
         "search.query" => sidecar::rpc::search::handle_query(&request),
         _ => err_response(
             request.id,

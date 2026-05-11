@@ -5,6 +5,10 @@ export const searchIpcSchema = {
     args: z.tuple([z.string()]),
     return: z.object({ success: z.boolean(), job_id: z.string() }),
   },
+  "clear-index": {
+    args: z.tuple([]),
+    return: z.object({ ok: z.boolean() }),
+  },
   "index-status": {
     args: z.tuple([z.string()]),
     return: z.object({
