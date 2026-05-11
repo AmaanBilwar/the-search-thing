@@ -54,11 +54,13 @@ export default function General() {
     if (!clearIndexDialogOpen) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setClearIndexDialogOpen(false);
+      if (event.key === "Escape" && !clearIndexPending) {
+        setClearIndexDialogOpen(false);
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [clearIndexDialogOpen]);
+  }, [clearIndexDialogOpen, clearIndexPending]);
 
   useEffect(() => {
     const root = document.documentElement;
