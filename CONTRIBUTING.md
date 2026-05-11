@@ -131,8 +131,6 @@ npm --prefix client run dev
 
 ## Frontend website (Next.js)
 
-**DONT WASTE UR TIME HERE MAN DEADASS**
-
 The site lives in `website/` and is a standalone Next.js app.
 ```bash
 cd website
