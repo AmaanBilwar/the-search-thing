@@ -108,6 +108,14 @@ export default function General() {
       console.error("Failed to clear recent searches:", error);
     }
   };
+  const handleClearIndex = async () => {
+    try {
+      await searchApi.clearIndex();
+      setStatus("cleared");
+    } catch (error) {
+      console.error("Failed to clear search index:", error);
+    }
+  };
 
   return (
     <div
@@ -307,6 +315,19 @@ export default function General() {
           <button
             type="button"
             onClick={() => void handleClearRecentSearches()}
+            className="h-7 px-3 rounded-md text-xs text-zinc-200 bg-zinc-700/60 hover:bg-zinc-700 transition-colors duration-150"
+          >
+            Clear
+          </button>
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="text-sm text-zinc-200">Clear Index</div>
+            <div className="text-xs text-zinc-500">Clears your indexed data.</div>
+          </div>
+          <button
+            type="button"
+            onClick={() => void handleClearIndex()}
             className="h-7 px-3 rounded-md text-xs text-zinc-200 bg-zinc-700/60 hover:bg-zinc-700 transition-colors duration-150"
           >
             Clear
