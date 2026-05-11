@@ -142,6 +142,14 @@ impl HelixTextStore {
         let vector = self.voyage.embed_document(content).await?;
         Ok(vector.into_iter().map(f64::from).collect())
     }
+
+    pub async fn clear_search_index(&self) -> Result<Value, String> {
+        let client = self.client();
+        client
+            .query("ClearSearchIndex", &json!({}))
+            .await
+            .map_err(|e| e.to_string())
+    }
 }
 
 #[async_trait]

@@ -23,4 +23,5 @@ export class SearchApi extends ConveyorApi {
   addSearchHistory = (input: SearchHistoryInsert) => this.invoke("search-history/add", input);
   getRecentSearches = (limit = 20) => this.invoke("search-history/recent", limit);
   pruneSearchHistory = (maxItems: number) => this.invoke("search-history/prune", maxItems);
+  clearIndex = () => this.invoke("clear-index");
 }
