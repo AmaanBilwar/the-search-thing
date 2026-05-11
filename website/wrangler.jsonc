@@ -10,8 +10,9 @@
   },
   "services": [
     {
+      // Self-reference: service name must match `name` above (OpenNext caching / worker fetch).
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "website",
+      "service": "the-search-thing",
     },
   ],
   "images": {
