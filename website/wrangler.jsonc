@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
-  "name": "the-search-thing-website",
+  "name": "the-search-thing",
   "compatibility_date": "2026-05-11",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
