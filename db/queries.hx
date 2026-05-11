@@ -29,3 +29,8 @@ QUERY SearchAssetEmbeddings(vector: [F64]) =>
     embeddings <- SearchV<AssetEmbedding>(vector, 50) // this embed needs to leave, pass vectors directly as query
     assets <- embeddings::In<HasAssetEmbedding>
     RETURN assets
+
+QUERY ClearSearchIndex() =>
+    DROP N<Asset>::Out<HasAssetEmbedding>
+    DROP N<Asset>
+    RETURN "cleared"
