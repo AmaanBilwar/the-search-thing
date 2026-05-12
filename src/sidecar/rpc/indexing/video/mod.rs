@@ -578,9 +578,6 @@ where
         .unwrap_or_default()
         .replace(['#', '_', '-', '.'], " ");
     let mut embedding_units: Vec<(&str, String, String)> = Vec::new();
-    if !filename_text.trim().is_empty() {
-        embedding_units.push(("file_path", "file_path".to_string(), filename_text.clone()));
-    }
 
     let mut transcript_idx = 0usize;
     let mut frame_idx = 0usize;
@@ -637,6 +634,10 @@ where
             indexed: false,
             error: None,
         });
+    }
+
+    if !filename_text.trim().is_empty() {
+        embedding_units.push(("file_path", "file_path".to_string(), filename_text));
     }
 
     if !asset_exists {
