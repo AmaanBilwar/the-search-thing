@@ -1,28 +1,15 @@
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::{SystemTime, UNIX_EPOCH};
-
 use crate::sidecar::rpc::fs::walk_and_get_files_content;
 use crate::sidecar::rpc::indexing::adapters::hash::PathHasher;
 use crate::sidecar::rpc::indexing::adapters::store::TextIndexStore;
+use std::path::Path;
 
-static FILE_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
-
-#[allow(dead_code)] // for path and file_id
 #[derive(Debug, Clone)]
 pub struct TextIndexResult {
-    pub path: String,
-    pub file_id: Option<String>,
     pub indexed: bool,
+    pub kind: String,
+    pub content_hash: Option<String>,
+    pub path: String,
     pub error: Option<String>,
-}
-
-fn next_file_id() -> String {
-    let seq = FILE_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos();
-    format!("file-{:x}-{:x}", nanos, seq)
 }
 
 fn normalize_paths(file_paths: Vec<String>) -> Vec<String> {
@@ -51,8 +38,9 @@ pub async fn file_indexer(
             Err(error) => {
                 results.push(TextIndexResult {
                     path: path.clone(),
-                    file_id: None,
                     indexed: false,
+                    kind: "file".to_string(),
+                    content_hash: None,
                     error: Some(error),
                 });
                 continue;
@@ -65,8 +53,9 @@ pub async fn file_indexer(
                 Err(error) => {
                     results.push(TextIndexResult {
                         path: file_path,
-                        file_id: None,
                         indexed: false,
+                        kind: "file".to_string(),
+                        content_hash: None,
                         error: Some(error),
                     });
                     continue;
@@ -77,57 +66,83 @@ pub async fn file_indexer(
                 Ok(existing) => existing,
                 Err(error) => {
                     results.push(TextIndexResult {
-                        path: file_path,
-                        file_id: None,
                         indexed: false,
+                        kind: "file".to_string(),
+                        path: file_path,
+                        content_hash: Some(content_hash.clone()),
                         error: Some(format!("store lookup failed: {}", error)),
                     });
                     continue;
                 }
             };
 
-            if let Some(record) = existing {
+            if let Some(_record) = existing {
                 results.push(TextIndexResult {
-                    path: file_path,
-                    file_id: Some(record.file_id),
                     indexed: false,
+                    kind: "file".to_string(),
+                    path: file_path,
+                    content_hash: Some(content_hash),
                     error: Some("Duplicate content hash".to_string()),
                 });
                 continue;
             }
 
-            let file_id = next_file_id();
-
+            let kind = "file";
             if let Err(error) = store
-                .create_file(&file_id, &content_hash, &content, &file_path)
+                .create_file_asset(&content_hash, kind, &file_path)
                 .await
             {
                 results.push(TextIndexResult {
                     path: file_path,
-                    file_id: Some(file_id),
                     indexed: false,
+                    kind: kind.to_string(),
+                    content_hash: Some(content_hash.clone()),
                     error: Some(error),
                 });
                 continue;
             }
 
             if let Err(error) = store
-                .create_file_embeddings(&file_id, &content, &file_path)
+                .create_file_asset_embeddings(&content_hash, "file_body", "file_body", &content)
                 .await
             {
                 results.push(TextIndexResult {
                     path: file_path,
-                    file_id: Some(file_id),
                     indexed: false,
+                    kind: kind.to_string(),
+                    content_hash: Some(content_hash.clone()),
                     error: Some(error),
                 });
                 continue;
+            }
+
+            let filename_text = Path::new(&file_path)
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or_default()
+                .replace(['#', '_', '-', '.'], " ");
+            if !filename_text.trim().is_empty() {
+                if let Err(error) = store
+                    .create_file_asset_embeddings(
+                        &content_hash,
+                        "file_path",
+                        "file_path",
+                        &filename_text,
+                    )
+                    .await
+                {
+                    eprintln!(
+                        "[sidecar:index:text] warning: failed to create path embedding for {}: {}",
+                        file_path, error
+                    );
+                }
             }
 
             results.push(TextIndexResult {
                 path: file_path,
-                file_id: Some(file_id),
                 indexed: true,
+                kind: kind.to_string(),
+                content_hash: Some(content_hash),
                 error: None,
             });
         }

@@ -17,7 +17,6 @@ use crate::sidecar::protocol::{
 use crate::sidecar::rpc::indexing::adapters::groq::GroqClient;
 use crate::sidecar::rpc::indexing::adapters::hash::{PathHasher, Sha256PathHasher};
 use crate::sidecar::rpc::indexing::adapters::helix::HelixTextStore;
-use crate::sidecar::rpc::indexing::adapters::store::VideoIndexStore;
 use crate::sidecar::rpc::indexing::image::image_indexer_with_sidecar;
 use crate::sidecar::rpc::indexing::text::file_indexer;
 use crate::sidecar::rpc::indexing::video::index_video_with_sidecar;
@@ -278,6 +277,15 @@ fn get_job(job_id: &str) -> Result<Option<IndexJobStatus>, String> {
     Ok(jobs.get(job_id).cloned())
 }
 
+fn list_running_index_jobs() -> Result<Vec<(String, String)>, String> {
+    let jobs = store().lock().map_err(|e| e.to_string())?;
+    Ok(jobs
+        .values()
+        .filter(|j| j.status == "running")
+        .map(|j| (j.job_id.clone(), j.dir.clone()))
+        .collect())
+}
+
 fn format_image_result_error(path: &str, error: &str) -> String {
     format!("Image indexing failed for {}: {}", path, error)
 }
@@ -401,7 +409,7 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
         let video_found = video_files.len();
         let mut video_indexed = 0usize;
         let mut video_errors = 0usize;
-        let mut video_skipped = 0usize;
+        let video_skipped = 0usize;
         let mut first_video_error: Option<String> = None;
 
         let output_dir = env::current_dir()
@@ -435,28 +443,7 @@ fn spawn_rust_index_job(job_id: String, dir: String) {
                 }
             };
 
-            let existing = runtime.block_on(store.get_video_by_hash(&content_hash));
-            match existing {
-                Ok(Some(_)) => {
-                    video_skipped += 1;
-                    eprintln!(
-                        "[sidecar:index] job {} skipping duplicate video {}",
-                        job_id, video_path
-                    );
-                    let _ = update_job(&job_id, |job| {
-                        job.video_indexed = video_indexed;
-                        job.video_errors = video_errors;
-                        job.video_skipped = video_skipped;
-                    });
-                    continue;
-                }
-                Ok(None) => {}
-                Err(_) => {}
-            }
-
-            let video_id = uuid::Uuid::new_v4().to_string();
             let result = runtime.block_on(index_video_with_sidecar(
-                &video_id,
                 &content_hash,
                 &video_path,
                 &output_dir_str,
@@ -686,6 +673,82 @@ pub fn handle_status(request: &JsonRpcRequest) -> JsonRpcResponse {
             -32603,
             "Index status failed",
             Some(json!({ "reason": error })),
+        ),
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct IndexClearParams {}
+
+pub fn handle_clear(request: &JsonRpcRequest) -> JsonRpcResponse {
+    let _: IndexClearParams = match parse_params(request) {
+        Ok(parsed) => parsed,
+        Err(error_response) => return error_response,
+    };
+
+    let running = match list_running_index_jobs() {
+        Ok(jobs) => jobs,
+        Err(error) => {
+            return err_response(
+                request.id.clone(),
+                -32603,
+                "Index clear failed",
+                Some(json!({ "reason": error })),
+            );
+        }
+    };
+    if !running.is_empty() {
+        let running_jobs: Vec<serde_json::Value> = running
+            .iter()
+            .map(|(job_id, dir)| json!({ "job_id": job_id, "dir": dir }))
+            .collect();
+        return err_response(
+            request.id.clone(),
+            -32603,
+            "Index clear failed",
+            Some(json!({
+                "reason": "Cannot clear index while indexing job(s) are still running; wait for them to finish first.",
+                "running_jobs": running_jobs,
+            })),
+        );
+    }
+
+    let store = match HelixTextStore::from_env() {
+        Ok(store) => store,
+        Err(error) => {
+            return err_response(
+                request.id.clone(),
+                -32603,
+                "Index clear failed",
+                Some(json!({ "reason": error })),
+            );
+        }
+    };
+
+    let runtime = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
+        Ok(rt) => rt,
+        Err(error) => {
+            return err_response(
+                request.id.clone(),
+                -32603,
+                "Index clear failed",
+                Some(json!({
+                    "reason": format!("failed to init runtime: {}", error),
+                })),
+            );
+        }
+    };
+
+    match runtime.block_on(store.clear_search_index()) {
+        Ok(_) => ok_response(request.id.clone(), json!({ "ok": true })),
+        Err(message) => err_response(
+            request.id.clone(),
+            -32603,
+            "Index clear failed",
+            Some(json!({ "reason": message })),
         ),
     }
 }

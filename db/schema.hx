@@ -1,106 +1,19 @@
-// file node
-// doesnt account for cases when files are too large to embed in one go
-// not sure if a limit like that exists
-N::File {
-    INDEX file_id: String,
+N::Asset {
     INDEX content_hash: String,
-    content: String,
-    path: String
-}
-
-N::Image {
-    INDEX image_id: String,
-    INDEX content_hash: String,
-
-    content: String,
-    path: String
-}
-
-N::Video {
-    INDEX video_id: String,
-    INDEX content_hash: String,
-    no_of_chunks: U8,
-    path: String
-}
-
-N::Chunk {
-    INDEX video_id: String,
-    INDEX chunk_id: String,
-    start_time: I16,
-    end_time: I16,
-    transcript: String,
-}
-
-N::Transcript{
-    INDEX transcript_id: ID,
-    chunk_id: String,
-    content: String
-}
-
-N::FrameSummary {
-    INDEX frame_summary_id: ID,
-    chunk_id: String,
-    content: String
-}
-
-E::Has{
-    From: Video,
-    To: Chunk
-}
-
-E::HasTranscript{
-    From: Chunk,
-    To: Transcript
-}
-
-E::HasFrameSummary{
-    From: Chunk,
-    To: FrameSummary
-}
-
-E::HasTranscriptEmbeddings {
-    From: Chunk,
-    To: TranscriptEmbeddings
-}
-
-E::HasFrameSummaryEmbeddings {
-    From: Chunk,
-    To: FrameSummaryEmbeddings
-}
-
-// file to file embeddings edge
-E::HasFileEmbeddings{
-    From: File,
-    To: FileEmbeddings
-}
-
-E::HasImageEmbeddings{
-    From: Image,
-    To: ImageEmbeddings
-}
-
-V::TranscriptEmbeddings {
-    chunk_id: String,
-    content: String
-}
-
-V::FrameSummaryEmbeddings {
-    chunk_id: String,
-    content: String
-}
-
-// file embeddings vector
-V::FileEmbeddings{
-    INDEX file_id: String,
-    content: String,
+    kind: String,
     path: String,
 }
 
-V::ImageEmbeddings{
-    INDEX image_id: String,
+V::AssetEmbedding{
+    unit_key: String,
+    unit_kind: String,
     content: String,
-    path: String,
 }
 
-
-// last resort is to have a single vector type for all fiels
+E::HasAssetEmbedding {
+    From: Asset,
+    To: AssetEmbedding,
+    Properties: {
+        created_at: Date DEFAULT NOW,
+    }
+}

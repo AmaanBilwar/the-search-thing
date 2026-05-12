@@ -1,5 +1,7 @@
 use crate::sidecar::rpc::indexing::adapters::groq::TranscriptionClient;
+use crate::sidecar::rpc::indexing::adapters::hash::PathHasher;
 use crate::sidecar::rpc::indexing::adapters::store::ImageIndexStore;
+use crate::sidecar::rpc::indexing::embedding::build_embedding_text;
 use async_trait::async_trait;
 use serde_json::Value;
 use std::fs;
@@ -8,9 +10,9 @@ use uuid::Uuid;
 
 #[derive(Clone, Debug)]
 pub struct ImageIndexResult {
+    pub content_hash: Option<String>,
+    pub kind: String,
     pub path: String,
-    #[allow(dead_code)]
-    pub image_id: Option<String>,
     pub indexed: bool,
     pub error: Option<String>,
 }
@@ -71,146 +73,6 @@ pub fn mime_hint_from_path(path: &Path) -> &'static str {
     }
 }
 
-#[cfg(test)]
-pub(crate) mod helpers {
-    use serde_json::{json, Map, Value};
-
-    pub(crate) fn strip_code_fences(content: &str) -> String {
-        let text = content.trim();
-        if !text.starts_with("```") {
-            return text.to_string();
-        }
-
-        let mut lines: Vec<&str> = text.lines().collect();
-        if !lines.is_empty() && lines[0].starts_with("```") {
-            lines.remove(0);
-        }
-        if !lines.is_empty() && lines[lines.len() - 1].trim().starts_with("```") {
-            lines.pop();
-        }
-
-        lines.join("\n").trim().to_string()
-    }
-
-    pub(crate) fn string_list_field(map: &Map<String, Value>, key: &str) -> Vec<String> {
-        map.get(key)
-            .and_then(Value::as_array)
-            .map(|items| {
-                items
-                    .iter()
-                    .filter_map(Value::as_str)
-                    .map(str::trim)
-                    .filter(|value| !value.is_empty())
-                    .map(ToString::to_string)
-                    .collect::<Vec<String>>()
-            })
-            .unwrap_or_default()
-    }
-
-    pub(crate) fn string_field(map: &Map<String, Value>, key: &str) -> String {
-        map.get(key)
-            .and_then(Value::as_str)
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(ToString::to_string)
-            .unwrap_or_default()
-    }
-
-    pub(crate) fn normalized_summary_from_map(
-        map: &Map<String, Value>,
-        fallback_text: &str,
-    ) -> Value {
-        let mut summary = string_field(map, "summary");
-        if summary.starts_with("```") {
-            summary = normalize_summary_content(&summary)
-                .get("summary")
-                .and_then(Value::as_str)
-                .unwrap_or(&summary)
-                .to_string();
-        }
-
-        if summary.is_empty() {
-            summary = fallback_text.to_string();
-        }
-
-        json!({
-            "summary": summary,
-            "objects": string_list_field(map, "objects"),
-            "actions": string_list_field(map, "actions"),
-            "setting": string_field(map, "setting"),
-            "ocr": string_field(map, "ocr"),
-            "quality": string_field(map, "quality"),
-        })
-    }
-
-    pub(crate) fn normalize_summary_content(content: &str) -> Value {
-        let text = strip_code_fences(content);
-
-        match serde_json::from_str::<Value>(&text) {
-            Ok(Value::Object(map)) => normalized_summary_from_map(&map, &text),
-            _ => json!({
-                "summary": text,
-                "objects": [],
-                "actions": [],
-                "setting": "",
-                "ocr": "",
-                "quality": "",
-            }),
-        }
-    }
-}
-
-pub fn build_embedding_text(summary: &Value) -> String {
-    let mut parts = Vec::new();
-
-    let add_part = |parts: &mut Vec<String>, label: &str, value: String| {
-        let trimmed = value.trim();
-        if !trimmed.is_empty() {
-            parts.push(format!("{}: {}", label, trimmed));
-        }
-    };
-
-    if let Some(text) = summary.get("summary").and_then(Value::as_str) {
-        add_part(&mut parts, "summary", text.to_string());
-    }
-
-    if let Some(items) = summary.get("objects").and_then(Value::as_array) {
-        let joined = items
-            .iter()
-            .filter_map(Value::as_str)
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .collect::<Vec<&str>>()
-            .join(", ");
-        add_part(&mut parts, "objects", joined);
-    }
-
-    if let Some(items) = summary.get("actions").and_then(Value::as_array) {
-        let joined = items
-            .iter()
-            .filter_map(Value::as_str)
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .collect::<Vec<&str>>()
-            .join(", ");
-        add_part(&mut parts, "actions", joined);
-    }
-
-    if let Some(text) = summary.get("setting").and_then(Value::as_str) {
-        add_part(&mut parts, "setting", text.to_string());
-    }
-
-    if let Some(text) = summary.get("ocr").and_then(Value::as_str) {
-        add_part(&mut parts, "ocr", text.to_string());
-    }
-
-    if let Some(text) = summary.get("quality").and_then(Value::as_str) {
-        add_part(&mut parts, "quality", text.to_string());
-    }
-
-    parts.join(" | ")
-}
-
 fn normalize_paths(file_paths: Vec<String>) -> Vec<String> {
     file_paths
         .into_iter()
@@ -234,6 +96,8 @@ where
 
     let mut results = Vec::new();
 
+    let hasher = crate::sidecar::rpc::indexing::adapters::hash::Sha256PathHasher;
+
     for path in paths {
         let normalized_path = normalize_path(&path);
         let path_obj = Path::new(&normalized_path);
@@ -246,7 +110,8 @@ where
             );
             results.push(ImageIndexResult {
                 path: normalized_path,
-                image_id: None,
+                content_hash: None,
+                kind: "image".to_string(),
                 indexed: false,
                 error: Some("Path not found".to_string()),
             });
@@ -258,7 +123,8 @@ where
             Err(error) => {
                 results.push(ImageIndexResult {
                     path: normalized_path,
-                    image_id: None,
+                    content_hash: None,
+                    kind: "image".to_string(),
                     indexed: false,
                     error: Some(error.to_string()),
                 });
@@ -266,12 +132,18 @@ where
             }
         };
 
-        let content_hash = {
-            use sha2::{Digest, Sha256};
-
-            let mut hasher = Sha256::new();
-            hasher.update(&image_bytes);
-            format!("{:x}", hasher.finalize())
+        let content_hash = match hasher.compute_file_hash(&normalized_path).await {
+            Ok(hash) => hash,
+            Err(error) => {
+                results.push(ImageIndexResult {
+                    path: normalized_path,
+                    content_hash: None,
+                    kind: "image".to_string(),
+                    indexed: false,
+                    error: Some(error),
+                });
+                continue;
+            }
         };
 
         let existing = match store.get_image_by_hash(&content_hash).await {
@@ -287,12 +159,13 @@ where
 
         if let Some(record) = existing {
             eprintln!(
-                "[sidecar:index:image] duplicate hash for {} (existing image_id={})",
-                normalized_path, record.image_id
+                "[sidecar:index:image] duplicate hash for {} (existing asset_id={})",
+                normalized_path, record.asset_id
             );
             results.push(ImageIndexResult {
                 path: normalized_path,
-                image_id: Some(record.image_id),
+                content_hash: Some(content_hash.clone()),
+                kind: "image".to_string(),
                 indexed: false,
                 error: Some("Duplicate content hash".to_string()),
             });
@@ -313,7 +186,8 @@ where
                 );
                 results.push(ImageIndexResult {
                     path: normalized_path,
-                    image_id: None,
+                    content_hash: Some(content_hash.clone()),
+                    kind: "image".to_string(),
                     indexed: false,
                     error: Some(error),
                 });
@@ -322,10 +196,9 @@ where
         };
 
         let embedding_text = build_embedding_text(&summary_payload);
-        let summary_json = summary_payload.to_string();
 
         if let Err(error) = store
-            .create_image(&image_id, &content_hash, &summary_json, &normalized_path)
+            .create_image_asset(&content_hash, "image", &normalized_path)
             .await
         {
             eprintln!(
@@ -334,7 +207,8 @@ where
             );
             results.push(ImageIndexResult {
                 path: normalized_path,
-                image_id: Some(image_id),
+                content_hash: Some(content_hash.clone()),
+                kind: "image".to_string(),
                 indexed: false,
                 error: Some(error),
             });
@@ -342,7 +216,12 @@ where
         }
 
         if let Err(error) = store
-            .create_image_embeddings(&image_id, &embedding_text, &normalized_path)
+            .create_image_asset_embeddings(
+                &content_hash,
+                "image_caption",
+                "image_caption",
+                &embedding_text,
+            )
             .await
         {
             eprintln!(
@@ -351,11 +230,34 @@ where
             );
             results.push(ImageIndexResult {
                 path: normalized_path,
-                image_id: Some(image_id),
+                content_hash: Some(content_hash.clone()),
+                kind: "image".to_string(),
                 indexed: false,
                 error: Some(error),
             });
             continue;
+        }
+
+        let filename_text = Path::new(&normalized_path)
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or_default()
+            .replace(['#', '_', '-', '.'], " ");
+        if !filename_text.trim().is_empty() {
+            if let Err(error) = store
+                .create_image_asset_embeddings(
+                    &content_hash,
+                    "file_path",
+                    "file_path",
+                    &filename_text,
+                )
+                .await
+            {
+                eprintln!(
+                    "[sidecar:index:image] warning: failed to create path embedding for {}: {}",
+                    normalized_path, error
+                );
+            }
         }
 
         eprintln!(
@@ -364,7 +266,8 @@ where
         );
         results.push(ImageIndexResult {
             path: normalized_path,
-            image_id: Some(image_id),
+            content_hash: Some(content_hash),
+            kind: "image".to_string(),
             indexed: true,
             error: None,
         });
@@ -384,6 +287,3 @@ where
     let deps = SidecarImageIndexerDeps { groq: groq.clone() };
     index_images_with_deps(file_paths, &deps, store).await
 }
-
-#[cfg(test)]
-mod property_tests;

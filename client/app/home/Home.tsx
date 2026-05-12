@@ -51,14 +51,7 @@ export default function Home() {
       setQuery(effectiveQuery);
     }
 
-    const lastResultsEmpty = (searchResults?.results?.length ?? 0) === 0;
     setHasInteracted(true);
-
-    if (hasSearched && lastResultsEmpty) {
-      setAwaitingIndexing(true);
-      return;
-    }
-
     setIsLoading(true);
     try {
       const res = await search.search(effectiveQuery);

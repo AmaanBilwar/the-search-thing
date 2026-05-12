@@ -17,7 +17,7 @@ the-search-thing is a local-first search system that makes your files, images, a
 
 ## Contributing
 
-See `CONTRIBUTING.md` for architecture overview, setup, dev workflow, and frontend website instructions.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, dev workflow, and frontend website instructions.
 
 ## License
 

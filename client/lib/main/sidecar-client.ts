@@ -278,6 +278,10 @@ class SidecarClient {
     });
   }
 
+  async clearIndex() {
+    return this.call<{ ok: boolean }>("index.clear", {});
+  }
+
   async indexStatus(jobId: string) {
     return this.call<{
       job_id: string;

@@ -34,10 +34,19 @@ cp .env.example .env
 ```
 
 Set these values in `.env`:
+```bash
+- `GEMINI_API_KEY`=
+- `OPENAI_API_KEY`=
+- `GROQ_API_KEY`=
+- `VOYAGE_API_KEY`=
+- `VOYAGE_EMBED_MODEL`=
+- `VOYAGE_RETRIEVAL_MODEL`=
 
-- `GROQ_API_KEY`
-- `HELIX_LOCAL=true`
-- `HELIX_PORT=7003` (or any available port)
+# helix
+HELIX_PORT=6969
+HELIX_LOCAL=True
+```
+
 
 ### 2) Start Helix locally
 
@@ -86,15 +95,6 @@ npm --prefix client install
 npm --prefix client run dev
 ```
 
-## Runtime configuration
-
-The desktop app routes through the Rust sidecar JSON-RPC path by default.
-
-- `HELIX_ENDPOINT` (default: `http://localhost`)
-- `HELIX_PORT` (default: `7003`)
-- `HELIX_API_KEY` (optional, for secured Helix deployments)
-
-
 ## Usage notes
 
 ### Supported types
@@ -110,12 +110,10 @@ The desktop app routes through the Rust sidecar JSON-RPC path by default.
 
 ## Development notes
 
-- Build the sidecar with:
+- If you change Rust code, rebuild with:
   ```bash
   npm --prefix client run sidecar:build:debug
   ```
-- Electron uses IPC through the Rust sidecar for `index`, `index-status`, and `search` by default.
-- JSON-RPC route tests live in `tests/sidecar_jrpc.rs`.
 
 ### Local app databases
 
@@ -134,7 +132,6 @@ The desktop app routes through the Rust sidecar JSON-RPC path by default.
 ## Frontend website (Next.js)
 
 The site lives in `website/` and is a standalone Next.js app.
-
 ```bash
 cd website
 npm install

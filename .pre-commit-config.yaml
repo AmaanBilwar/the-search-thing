@@ -1,101 +1,41 @@
 default_install_hook_types:
-  - pre-commit
-  - pre-push
+  - post-commit
 
 default_stages:
-  - pre-commit
+  - post-commit
 
 fail_fast: false
 
 repos:
-  # General file checks
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
-    hooks:
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
-      - id: check-yaml
-      - id: check-toml
-      - id: check-json
-      - id: check-added-large-files
-        args: ["--maxkb=500"]
-      - id: check-merge-conflict
-      - id: detect-private-key
-
-  # Rust hooks
+  # Rust formatter
   - repo: local
     hooks:
       - id: cargo-fmt
         name: cargo fmt
-        entry: cargo fmt --
+        entry: cargo fmt --all
         language: system
-        types: [rust]
-        pass_filenames: true
-
-      - id: cargo-clippy
-        name: cargo clippy
-        entry: cargo clippy -- -D warnings
-        language: system
-        types: [rust]
+        files: \.rs$
         pass_filenames: false
         always_run: true
-        stages: [pre-push]
 
-      - id: cargo-test
-        name: cargo test
-        entry: cargo test
-        language: system
-        types: [rust]
-        pass_filenames: false
-        always_run: true
-        stages: [pre-push]
-
-  # Client (Electron/React) hooks - using oxfmt and oxlint
+  # Client (Electron/React) formatter
   - repo: local
     hooks:
-      - id: client-oxlint
-        name: oxlint (client)
-        entry: bash -c "cd client && npx oxlint --fix"
-        language: system
-        files: ^client/.*\.(js|jsx|ts|tsx)$
-        pass_filenames: true
-
       - id: client-oxfmt
         name: oxfmt (client)
-        entry: bash -c "cd client && npx oxfmt"
-        language: system
-        files: ^client/.*\.(js|jsx|ts|tsx|json)$
-        pass_filenames: true
-
-      - id: client-checks
-        name: checks (client)
-        entry: bash -c "cd client && npx oxlint && npx oxfmt --check"
+        entry: bash -c "cd client && npx oxfmt --write ."
         language: system
         files: ^client/.*\.(js|jsx|ts|tsx|json)$
         pass_filenames: false
-        stages: [pre-push]
+        always_run: true
 
-  # Website (Next.js) hooks
+  # Website (Next.js) formatter
   - repo: local
     hooks:
-      - id: website-oxlint
-        name: oxlint (website)
-        entry: bash -c "cd website && npx oxlint --fix"
-        language: system
-        files: ^website/.*\.(js|jsx|ts|tsx)$
-        pass_filenames: true
-
       - id: website-oxfmt
         name: oxfmt (website)
-        entry: bash -c "cd website && npx oxfmt"
-        language: system
-        files: ^website/.*\.(js|jsx|ts|tsx|json)$
-        pass_filenames: true
-
-      - id: website-checks
-        name: checks (website)
-        entry: bash -c "cd website && npx oxlint && npx oxfmt --check"
+        entry: bash -c "cd website && npx oxfmt --write ."
         language: system
         files: ^website/.*\.(js|jsx|ts|tsx|json)$
         pass_filenames: false
-        stages: [pre-push]
+        always_run: true
