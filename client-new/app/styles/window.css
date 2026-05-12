@@ -1,0 +1,99 @@
+:root {
+  --window-icon-height: 16px;
+  --window-title-margin: 42px;
+  --window-titlebar-height: 40px;
+  --window-titlebar-font-size: 13px;
+  --window-scrollbar-width: 12px;
+  --window-mac-titlebar-controls-margin: 80px;
+  --window-background-transition-duration: 0.3s;
+  --window-c-popup-font-weight: 500;
+}
+
+/* Ayu dark — matches index.html bootstrap before data-theme is set */
+:root.dark[data-theme="dark"],
+:root.dark:not([data-theme]) {
+  color-scheme: dark;
+  --window-titlebar-font-weight: 500;
+  --window-c-popup-font-weight: 500;
+  --window-c-background: #0d1017;
+  --window-c-titlebar-background: #141821;
+  --window-c-titlebar-border: transparent;
+  --window-c-text: #bfbdb6c8;
+  --window-c-hover: #1f2735;
+  --window-c-popup-background: #141821;
+  --window-c-popup-border: #1b1f29;
+  --window-c-popup-shadow: #00000080;
+  --window-c-separator: #1b1f2940;
+  --window-c-control-hover: #0000003d;
+  --window-c-control-close-hover: #d95757;
+  --window-c-scrollbar-track: #10141cc6;
+  --window-c-scrollbar-thumb: #555e7363;
+  --window-c-scrollbar-thumb-hover: #6c7380;
+  --window-c-text-shadow: #000000a8;
+}
+
+:root.dark[data-theme="gruvbox-dark"] {
+  color-scheme: dark;
+  --window-titlebar-font-weight: 500;
+  --window-c-popup-font-weight: 500;
+  --window-c-background: #282828;
+  --window-c-titlebar-background: #32302f;
+  --window-c-titlebar-border: #504945;
+  --window-c-text: #ebdbb2c8;
+  --window-c-hover: #504945;
+  --window-c-popup-background: #3c3836;
+  --window-c-popup-border: #504945;
+  --window-c-popup-shadow: #00000080;
+  --window-c-separator: #665c5440;
+  --window-c-control-hover: #0000003d;
+  --window-c-control-close-hover: #fb4934;
+  --window-c-scrollbar-track: #1d2021c6;
+  --window-c-scrollbar-thumb: #92837463;
+  --window-c-scrollbar-thumb-hover: #a89984;
+  --window-c-text-shadow: #000000a8;
+}
+
+:root.light[data-theme="light"],
+:root.light:not([data-theme]) {
+  color-scheme: light;
+  --window-titlebar-font-weight: 500;
+  --window-c-popup-font-weight: 500;
+  --window-c-background: #f8f9fa;
+  --window-c-titlebar-background: #fafafa;
+  --window-c-titlebar-border: #6b7d8f1f;
+  --window-c-text: #5c6166c8;
+  --window-c-hover: #e8ebef;
+  --window-c-popup-background: #fafafa;
+  --window-c-popup-border: #dde2e8;
+  --window-c-popup-shadow: hsla(213, 14%, 40%, 0.12);
+  --window-c-separator: #828e9f33;
+  --window-c-control-hover: #0000001a;
+  --window-c-control-close-hover: #e65050;
+  --window-c-control-close-hover-text: #fff;
+  --window-c-scrollbar-track: #eceef1;
+  --window-c-scrollbar-thumb: #959ca4;
+  --window-c-scrollbar-thumb-hover: #828e9f;
+  --window-c-text-shadow: transparent;
+}
+
+:root.light[data-theme="gruvbox-light"] {
+  color-scheme: light;
+  --window-titlebar-font-weight: 500;
+  --window-c-popup-font-weight: 500;
+  --window-c-background: #fbf1c7;
+  --window-c-titlebar-background: #ebdbb2;
+  --window-c-titlebar-border: #d5c4a180;
+  --window-c-text: #3c3836c8;
+  --window-c-hover: #d5c4a1;
+  --window-c-popup-background: #ebdbb2;
+  --window-c-popup-border: #bdae93;
+  --window-c-popup-shadow: hsla(28, 25%, 22%, 0.12);
+  --window-c-separator: #92837440;
+  --window-c-control-hover: #0000001a;
+  --window-c-control-close-hover: #cc241d;
+  --window-c-control-close-hover-text: #fbf1c7;
+  --window-c-scrollbar-track: #ebdbb2;
+  --window-c-scrollbar-thumb: #bdae93;
+  --window-c-scrollbar-thumb-hover: #928374;
+  --window-c-text-shadow: transparent;
+}

@@ -1,0 +1,224 @@
+/* Semantic colors: Ayu (`ayu` npm) + Gruvbox (classic palette). Theme via `html[data-theme]`. */
+
+@import "tailwindcss";
+@source '@/app';
+@source '@/lib';
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+}
+
+@layer base {
+  :root {
+    /* Ayu light: ui.bg, editor.fg, panel.bg, accent, error */
+    --background: #f8f9fa;
+    --foreground: #5c6166;
+    --card: #fafafa;
+    --card-foreground: #3d4349;
+    --popover: #fafafa;
+    --popover-foreground: #3d4349;
+    --primary: #2d333b;
+    --primary-foreground: #f8f9fa;
+    --secondary: #eceef1;
+    --secondary-foreground: #3d4349;
+    --muted: #eceef1;
+    --muted-foreground: #828e9f;
+    --accent: #f29718;
+    --accent-foreground: #804b00;
+    --destructive: #e65050;
+    --destructive-foreground: #fffaf8;
+    --border: #dde2e8;
+    --input: #dde2e8;
+    --ring: #f29718;
+    --chart-1: #55b4d4;
+    --chart-2: #86b300;
+    --chart-3: #f2a300;
+    --chart-4: #a37acc;
+    --chart-5: #ff7e33;
+    --radius: 0.5rem;
+  }
+
+  /* Ayu light — html.light[data-theme="light"] or legacy html.light without data-theme */
+  html.light[data-theme="light"],
+  html.light:not([data-theme]) {
+    --background: #f8f9fa;
+    --foreground: #5c6166;
+    --card: #fafafa;
+    --card-foreground: #3d4349;
+    --popover: #fcfcfc;
+    --popover-foreground: #3d4349;
+    --primary: #2d333b;
+    --primary-foreground: #f8f9fa;
+    --secondary: #eceef1;
+    --secondary-foreground: #3d4349;
+    --muted: #e8eaed;
+    --muted-foreground: #828e9f;
+    --accent: #f29718;
+    --accent-foreground: #804b00;
+    --destructive: #e65050;
+    --destructive-foreground: #fffaf8;
+    --border: #dde2e8;
+    --input: #cfd6dd;
+    --ring: #f29718;
+    --chart-1: #55b4d4;
+    --chart-2: #86b300;
+    --chart-3: #f2a300;
+    --chart-4: #a37acc;
+    --chart-5: #ff7e33;
+    --color-zinc-50: #2d333b;
+    --color-zinc-100: #3a4047;
+    --color-zinc-200: #5c6166;
+    --color-zinc-300: #656b71;
+    --color-zinc-400: #72787e;
+    --color-zinc-500: #828e9f;
+    --color-zinc-600: #959ca4;
+    --color-zinc-700: #b0b6bd;
+    --color-zinc-800: #d3d8de;
+    --color-zinc-900: #e8ebef;
+    --color-zinc-950: #f8f9fa;
+  }
+
+  /* Gruvbox light (morhetz/gruvbox) */
+  html.light[data-theme="gruvbox-light"] {
+    --background: #fbf1c7;
+    --foreground: #3c3836;
+    --card: #ebdbb2;
+    --card-foreground: #282828;
+    --popover: #f2e5bc;
+    --popover-foreground: #282828;
+    --primary: #d65d0e;
+    --primary-foreground: #fbf1c7;
+    --secondary: #ebdbb2;
+    --secondary-foreground: #3c3836;
+    --muted: #ebdbb2;
+    --muted-foreground: #665c54;
+    --accent: #d79921;
+    --accent-foreground: #282828;
+    --destructive: #cc241d;
+    --destructive-foreground: #fbf1c7;
+    --border: #d5c4a1;
+    --input: #d5c4a1;
+    --ring: #d65d0e;
+    --chart-1: #9d0006;
+    --chart-2: #79740e;
+    --chart-3: #b57614;
+    --chart-4: #076678;
+    --chart-5: #8f3f71;
+    --color-zinc-50: #282828;
+    --color-zinc-100: #3c3836;
+    --color-zinc-200: #504945;
+    --color-zinc-300: #665c54;
+    --color-zinc-400: #7c6f64;
+    --color-zinc-500: #928374;
+    --color-zinc-600: #a89984;
+    --color-zinc-700: #bdae93;
+    --color-zinc-800: #d5c4a1;
+    --color-zinc-900: #ebdbb2;
+    --color-zinc-950: #fbf1c7;
+  }
+
+  /* Ayu dark — html.dark[data-theme="dark"] or legacy without data-theme */
+  html.dark[data-theme="dark"],
+  html.dark:not([data-theme]) {
+    --background: #0d1017;
+    --foreground: #bfbdb6;
+    --card: #141821;
+    --card-foreground: #e8e7e3;
+    --popover: #141821;
+    --popover-foreground: #e8e7e3;
+    --primary: #e6b450;
+    --primary-foreground: #2a1f00;
+    --secondary: #1b1f29;
+    --secondary-foreground: #bfbdb6;
+    --muted: #1b1f29;
+    --muted-foreground: #8b92a0;
+    --accent: #e6b450;
+    --accent-foreground: #2a1f00;
+    --destructive: #d95757;
+    --destructive-foreground: #fff4f4;
+    --border: #1b1f29;
+    --input: #1b1f29;
+    --ring: #e6b450;
+    --chart-1: #39bae6;
+    --chart-2: #aad94c;
+    --chart-3: #ffb454;
+    --chart-4: #d2a6ff;
+    --chart-5: #ff8f40;
+    --color-zinc-50: #ecebe8;
+    --color-zinc-100: #d6d4ce;
+    --color-zinc-200: #bfbdb6;
+    --color-zinc-300: #a3a5ad;
+    --color-zinc-400: #8b92a0;
+    --color-zinc-500: #6c7380;
+    --color-zinc-600: #555e73;
+    --color-zinc-700: #313848;
+    --color-zinc-800: #141821;
+    --color-zinc-900: #10141c;
+    --color-zinc-950: #0d1017;
+  }
+
+  /* Gruvbox dark */
+  html.dark[data-theme="gruvbox-dark"] {
+    --background: #282828;
+    --foreground: #ebdbb2;
+    --card: #3c3836;
+    --card-foreground: #ebdbb2;
+    --popover: #32302f;
+    --popover-foreground: #ebdbb2;
+    --primary: #fe8019;
+    --primary-foreground: #282828;
+    --secondary: #504945;
+    --secondary-foreground: #ebdbb2;
+    --muted: #504945;
+    --muted-foreground: #a89984;
+    --accent: #fabd2f;
+    --accent-foreground: #282828;
+    --destructive: #fb4934;
+    --destructive-foreground: #282828;
+    --border: #504945;
+    --input: #504945;
+    --ring: #fe8019;
+    --chart-1: #fb4934;
+    --chart-2: #b8bb26;
+    --chart-3: #fabd2f;
+    --chart-4: #83a598;
+    --chart-5: #d3869b;
+    --color-zinc-50: #fbf1c7;
+    --color-zinc-100: #ebdbb2;
+    --color-zinc-200: #d5c4a1;
+    --color-zinc-300: #bdae93;
+    --color-zinc-400: #a89984;
+    --color-zinc-500: #928374;
+    --color-zinc-600: #7c6f64;
+    --color-zinc-700: #665c54;
+    --color-zinc-800: #504945;
+    --color-zinc-900: #3c3836;
+    --color-zinc-950: #282828;
+  }
+}
