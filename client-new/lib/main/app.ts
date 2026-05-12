@@ -13,8 +13,8 @@ import { createGeneralSettingsStore } from "@/lib/storage/general-settings-db-st
 import type { GeneralSettingsState, WindowPlacementSetting } from "@/lib/storage/general-settings";
 import type { KeybindMap } from "@/lib/storage/keybind-store";
 
-const WINDOW_WIDTH = 800;
-const WINDOW_HEIGHT = 450;
+const WINDOW_WIDTH = 1200;
+const WINDOW_HEIGHT = 650;
 
 let mainWindow: BrowserWindow | null = null;
 let generalSettingsStore: ReturnType<typeof createGeneralSettingsStore> | null = null;
