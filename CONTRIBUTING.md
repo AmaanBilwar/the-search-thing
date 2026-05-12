@@ -43,7 +43,7 @@ Set these values in `.env`:
 - `VOYAGE_RETRIEVAL_MODEL`=
 
 # helix
-HELIX_PORT=7003
+HELIX_PORT=6969
 HELIX_LOCAL=True
 ```
 
