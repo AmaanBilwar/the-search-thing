@@ -83,6 +83,28 @@ impl HelixTextStore {
             || lowered.contains("\"error\":\"graph error: no value found\"")
     }
 
+    fn has_embedding_payload(value: &Value) -> bool {
+        if value.is_null() {
+            return false;
+        }
+
+        if let Some(array) = value.as_array() {
+            return !array.is_empty();
+        }
+
+        if let Some(obj) = value.as_object() {
+            if obj.contains_key("unit_kind")
+                || obj.contains_key("unit_key")
+                || obj.contains_key("content")
+            {
+                return true;
+            }
+            return obj.values().any(Self::has_embedding_payload);
+        }
+
+        true
+    }
+
     async fn build_document_vector(&self, content: &str) -> Result<Vec<f64>, String> {
         let voyage = {
             let mut slot = self
@@ -266,6 +288,24 @@ impl VideoIndexStore for HelixTextStore {
             })?;
 
         Ok(Self::extract_asset_id(&result).map(|asset_id| ExistingVideoRecord { asset_id }))
+    }
+
+    async fn video_asset_has_embeddings(&self, content_hash: &str) -> Result<bool, String> {
+        let payload = json!({ "content_hash": content_hash });
+        let client = self.client();
+        let result: Value = client
+            .query("GetAssetEmbeddingsByHash", &payload)
+            .await
+            .map_err(|e| e.to_string())
+            .or_else(|error| {
+                if Self::is_not_found_error(&error) {
+                    Ok(Value::Null)
+                } else {
+                    Err(error)
+                }
+            })?;
+
+        Ok(Self::has_embedding_payload(&result))
     }
 
     async fn create_video_asset(

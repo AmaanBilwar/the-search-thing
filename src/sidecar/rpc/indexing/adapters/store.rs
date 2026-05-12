@@ -67,6 +67,7 @@ pub trait VideoIndexStore: Send + Sync {
         &self,
         content_hash: &str,
     ) -> Result<Option<ExistingVideoRecord>, String>;
+    async fn video_asset_has_embeddings(&self, content_hash: &str) -> Result<bool, String>;
 
     async fn create_video_asset(
         &self,

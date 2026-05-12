@@ -510,19 +510,40 @@ where
             None
         }
     };
-    if let Some(record) = existing {
+    let asset_exists = if let Some(record) = existing {
+        let has_embeddings = match store.video_asset_has_embeddings(content_hash).await {
+            Ok(value) => value,
+            Err(error) => {
+                eprintln!(
+                    "[sidecar:index:video] warning: embedding lookup failed for {} (asset_id={}): {}",
+                    video_path, record.asset_id, error
+                );
+                true
+            }
+        };
+
+        if has_embeddings {
+            eprintln!(
+                "[sidecar:index:video] duplicate hash for {} (existing asset_id={})",
+                video_path, record.asset_id
+            );
+            return Ok(VideoIndexResult {
+                path: normalize_path(video_path),
+                content_hash: Some(content_hash.to_string()),
+                kind: "video".to_string(),
+                indexed: false,
+                error: Some("Duplicate content hash".to_string()),
+            });
+        }
+
         eprintln!(
-            "[sidecar:index:video] duplicate hash for {} (existing asset_id={})",
+            "[sidecar:index:video] retrying incomplete asset for {} (asset_id={} has no embeddings)",
             video_path, record.asset_id
         );
-        return Ok(VideoIndexResult {
-            path: normalize_path(video_path),
-            content_hash: Some(content_hash.to_string()),
-            kind: "video".to_string(),
-            indexed: false,
-            error: Some("Duplicate content hash".to_string()),
-        });
-    }
+        true
+    } else {
+        false
+    };
 
     let normalized_out_dir = normalize_path(output_dir);
     let chunks_dir = format!("{}/chunks", normalized_out_dir);
@@ -551,25 +572,14 @@ where
     let transcripts = deps.generate_transcripts(&artifacts).await;
     let frame_summaries = deps.generate_frame_summaries(&artifacts).await;
 
-    store
-        .create_video_asset(content_hash, "video", video_path)
-        .await?;
-
     let filename_text = Path::new(video_path)
         .file_stem()
         .and_then(|s| s.to_str())
         .unwrap_or_default()
         .replace(['#', '_', '-', '.'], " ");
+    let mut embedding_units: Vec<(&str, String, String)> = Vec::new();
     if !filename_text.trim().is_empty() {
-        if let Err(error) = store
-            .create_video_asset_embeddings(content_hash, "file_path", "file_path", &filename_text)
-            .await
-        {
-            eprintln!(
-                "[sidecar:index:video] warning: failed to create path embedding for {}: {}",
-                video_path, error
-            );
-        }
+        embedding_units.push(("file_path", "file_path".to_string(), filename_text.clone()));
     }
 
     let mut transcript_idx = 0usize;
@@ -585,14 +595,11 @@ where
             if let Some(transcript_payload) = transcripts.get(audio_stem) {
                 let transcript_text = extract_transcript_text(transcript_payload);
                 if !transcript_text.is_empty() {
-                    store
-                        .create_video_asset_embeddings(
-                            content_hash,
-                            "video_transcript",
-                            &format!("video_transcript_{}", transcript_idx),
-                            &transcript_text,
-                        )
-                        .await?;
+                    embedding_units.push((
+                        "video_transcript",
+                        format!("video_transcript_{}", transcript_idx),
+                        transcript_text,
+                    ));
                     transcript_idx += 1;
                 }
             }
@@ -612,17 +619,49 @@ where
                 .collect::<Vec<_>>()
                 .join(" | ");
             if !embedding_text.is_empty() {
-                store
-                    .create_video_asset_embeddings(
-                        content_hash,
-                        "video_frame_summary",
-                        &format!("video_frame_summary_{}", frame_idx),
-                        &embedding_text,
-                    )
-                    .await?;
+                embedding_units.push((
+                    "video_frame_summary",
+                    format!("video_frame_summary_{}", frame_idx),
+                    embedding_text,
+                ));
                 frame_idx += 1;
             }
         }
+    }
+
+    if embedding_units.is_empty() {
+        return Ok(VideoIndexResult {
+            path: normalize_path(video_path),
+            content_hash: Some(content_hash.to_string()),
+            kind: "video".to_string(),
+            indexed: false,
+            error: None,
+        });
+    }
+
+    if !asset_exists {
+        store
+            .create_video_asset(content_hash, "video", video_path)
+            .await?;
+    }
+
+    for (unit_kind, unit_key, content) in &embedding_units {
+        if *unit_kind == "file_path" {
+            if let Err(error) = store
+                .create_video_asset_embeddings(content_hash, unit_kind, unit_key, content)
+                .await
+            {
+                eprintln!(
+                    "[sidecar:index:video] warning: failed to create path embedding for {}: {}",
+                    video_path, error
+                );
+            }
+            continue;
+        }
+
+        store
+            .create_video_asset_embeddings(content_hash, unit_kind, unit_key, content)
+            .await?;
     }
 
     Ok(VideoIndexResult {

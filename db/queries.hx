@@ -11,6 +11,11 @@ QUERY GetAssetByHash(content_hash: String) =>
     asset <- N<Asset>({content_hash: content_hash})
     RETURN asset
 
+QUERY GetAssetEmbeddingsByHash(content_hash: String) =>
+    asset <- N<Asset>({content_hash: content_hash})
+    embeddings <- asset::Out<HasAssetEmbedding>
+    RETURN embeddings
+
 QUERY CreateAssetEmbeddingByHash(content_hash: String, unit_kind: String, unit_key: String, content: String,vector: [F64], created_at: Date) =>
     asset <- N<Asset>({content_hash: content_hash})
     existing_embedding <- asset::Out<HasAssetEmbedding>
