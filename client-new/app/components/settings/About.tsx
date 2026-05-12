@@ -20,7 +20,7 @@ export default function About() {
       <div className="items-center flex flex-col">
         <p className="text-lg text-zinc-200">the-search-thing</p>
         <p className="text-sm text-zinc-500 font-semibold">v0.1.0</p>
-        <p className="text-xs text-zinc-500 py-2">the search company</p>
+        <p className="text-xs text-zinc-500 py-2">THE SEARCH COMPANY</p>
       </div>
     </div>
   );
