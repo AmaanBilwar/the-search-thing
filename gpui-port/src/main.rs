@@ -1,10 +1,10 @@
 use gpui::{
     actions, div, fill, point, prelude::*, px, relative, rgb, rgba, size, App, Application, Bounds,
-    ClipboardItem, Context, CursorStyle, ElementId, ElementInputHandler, Entity,
+    ClipboardItem, Context, CursorStyle, Decorations, ElementId, ElementInputHandler, Entity,
     EntityInputHandler, FocusHandle, Focusable, GlobalElementId, KeyBinding, KeystrokeEvent,
     LayoutId, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent, PaintQuad, Pixels, Point,
-    ShapedLine, SharedString, Style, TextRun, UTF16Selection, UnderlineStyle, Window, WindowBounds,
-    WindowControlArea, WindowOptions,
+    ShapedLine, SharedString, Style, TextRun, TitlebarOptions, UTF16Selection, UnderlineStyle,
+    Window, WindowBounds, WindowControlArea, WindowDecorations, WindowOptions,
 };
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
@@ -34,7 +34,40 @@ actions!(
     ]
 );
 
-actions!(search_window, [RunSearch, Quit]);
+actions!(search_window, [RunSearch, OpenSettings, Quit]);
+
+struct SettingsDialog {
+    is_open: bool,
+    settings: Settings,
+}
+
+struct Settings {
+    search_directory: PathBuf,
+}
+impl Settings {
+    fn new() -> Self {
+        Self {
+            search_directory: PathBuf::new(),
+        }
+    }
+}
+
+impl SettingsDialog {
+    fn new() -> Self {
+        Self {
+            is_open: false,
+            settings: Settings::new(),
+        }
+    }
+
+    fn open(&mut self) {
+        self.is_open = true;
+    }
+
+    fn close(&mut self) {
+        self.is_open = false;
+    }
+}
 
 struct TextInput {
     focus_handle: FocusHandle,
@@ -65,15 +98,6 @@ impl TextInput {
 
     fn text(&self) -> String {
         self.content.to_string()
-    }
-
-    fn set_text(&mut self, text: impl Into<SharedString>, cx: &mut Context<Self>) {
-        self.content = text.into();
-        let len = self.content.len();
-        self.selected_range = len..len;
-        self.selection_reversed = false;
-        self.marked_range = None;
-        cx.notify();
     }
 
     fn left(&mut self, _: &Left, _: &mut Window, cx: &mut Context<Self>) {
@@ -870,19 +894,13 @@ struct SearchWindow {
     text_input: Entity<TextInput>,
     results: Vec<SearchResult>,
     selected_result: Option<usize>,
-    recent_searches: Vec<SharedString>,
     status: SharedString,
-    backend: SharedString,
+    settings_dialog: SettingsDialog,
 }
 
 impl SearchWindow {
     fn query(&self, cx: &App) -> String {
         self.text_input.read(cx).text()
-    }
-
-    fn set_query(&mut self, query: String, cx: &mut Context<Self>) {
-        self.text_input
-            .update(cx, |input, cx| input.set_text(query, cx));
     }
 
     fn run_search(&mut self, cx: &mut Context<Self>) {
@@ -907,12 +925,6 @@ impl SearchWindow {
                     })
                     .collect();
 
-                let q: SharedString = query.clone().into();
-                if !self.recent_searches.iter().any(|existing| existing == &q) {
-                    self.recent_searches.insert(0, q);
-                    self.recent_searches.truncate(10);
-                }
-
                 self.selected_result = None;
                 self.status = format!("Found {} result(s)", self.results.len()).into();
             }
@@ -929,9 +941,35 @@ impl SearchWindow {
         cx.notify();
     }
 
+    fn on_open_settings(&mut self, _: &OpenSettings, _window: &mut Window, cx: &mut Context<Self>) {
+        self.settings_dialog.open();
+        cx.notify();
+    }
+
+    fn on_close_settings(
+        &mut self,
+        _: &MouseUpEvent,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.settings_dialog.close();
+        cx.notify();
+    }
+
     fn on_search_click(&mut self, _: &MouseUpEvent, _window: &mut Window, cx: &mut Context<Self>) {
         self.run_search(cx);
         cx.notify();
+    }
+
+    /// Client-side decorations (common on Linux Wayland): GPUI does not paint system controls;
+    /// use compositor move + our control hit targets.
+    fn on_title_bar_drag(
+        &mut self,
+        _: &MouseDownEvent,
+        window: &mut Window,
+        _: &mut Context<Self>,
+    ) {
+        window.start_window_move();
     }
 
     fn on_minimize(&mut self, _: &MouseUpEvent, window: &mut Window, _: &mut Context<Self>) {
@@ -948,123 +986,108 @@ impl SearchWindow {
 }
 
 impl Render for SearchWindow {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let selected = self.selected_result.and_then(|i| self.results.get(i));
 
-        let left_list = if self.results.is_empty() {
-            div().children(self.recent_searches.iter().map(|query| {
-                let query_text = query.to_string();
-                div()
-                    .px_2()
-                    .py_2()
-                    .rounded_md()
-                    .bg(rgb(0x18181b))
-                    .hover(|d| d.bg(rgb(0x27272a)).cursor_pointer())
-                    .child(div().text_sm().truncate().child(query.clone()))
-                    .on_mouse_up(
-                        MouseButton::Left,
-                        cx.listener(move |this, _, _, cx| {
-                            this.set_query(query_text.clone(), cx);
-                            this.run_search(cx);
-                            cx.notify();
-                        }),
-                    )
-            }))
-        } else {
-            div().children(self.results.iter().enumerate().map(|(index, result)| {
-                let is_selected = self.selected_result == Some(index);
-                div()
-                    .px_2()
-                    .py_2()
-                    .rounded_md()
-                    .bg(if is_selected {
-                        rgb(0x3f3f46)
-                    } else {
-                        rgb(0x18181b)
-                    })
-                    .hover(|d| d.bg(rgb(0x27272a)).cursor_pointer())
-                    .child(div().text_sm().truncate().child(result.path.clone()))
-                    .child(
-                        div()
-                            .text_xs()
-                            .text_color(rgb(0xa1a1aa))
-                            .child(result.label.clone()),
-                    )
-                    .on_mouse_up(
-                        MouseButton::Left,
-                        cx.listener(move |this, _, _, cx| {
-                            this.selected_result = Some(index);
-                            cx.notify();
-                        }),
-                    )
-            }))
-        };
+        let client_side_chrome = matches!(window.window_decorations(), Decorations::Client { .. });
+
+        let left_list = div().children(self.results.iter().enumerate().map(|(index, result)| {
+            let is_selected = self.selected_result == Some(index);
+            div()
+                .px_2()
+                .py_2()
+                .rounded_md()
+                .bg(if is_selected {
+                    rgb(0x3f3f46)
+                } else {
+                    rgb(0x18181b)
+                })
+                .hover(|d| d.bg(rgb(0x27272a)).cursor_pointer())
+                .child(div().text_sm().truncate().child(result.path.clone()))
+                .child(
+                    div()
+                        .text_xs()
+                        .text_color(rgb(0xa1a1aa))
+                        .child(result.label.clone()),
+                )
+                .on_mouse_up(
+                    MouseButton::Left,
+                    cx.listener(move |this, _, _, cx| {
+                        this.selected_result = Some(index);
+                        cx.notify();
+                    }),
+                )
+        }));
 
         div()
+            .relative()
             .size_full()
             .bg(rgb(0x09090b))
             .text_color(rgb(0xe4e4e7))
             .flex()
             .flex_col()
             .on_action(cx.listener(Self::on_run_search))
-            .child(
-                div()
-                    .h(px(38.0))
-                    .w_full()
-                    .bg(rgb(0x18181b))
-                    .border_b_1()
-                    .border_color(rgb(0x27272a))
-                    .flex()
-                    .items_center()
-                    .justify_between()
-                    .px_3()
-                    .child(
-                        div()
-                            .flex_1()
-                            .window_control_area(WindowControlArea::Drag)
-                            .text_sm()
-                            .text_color(rgb(0xa1a1aa))
-                            .child("the-search-thing"),
-                    )
-                    .child(
-                        div()
-                            .flex()
-                            .gap_2()
-                            .child(
-                                div()
-                                    .px_2()
-                                    .py_1()
-                                    .rounded_sm()
-                                    .bg(rgb(0x3f3f46))
-                                    .window_control_area(WindowControlArea::Min)
-                                    .hover(|d| d.bg(rgb(0x52525b)).cursor_pointer())
-                                    .child("_")
-                                    .on_mouse_up(MouseButton::Left, cx.listener(Self::on_minimize)),
-                            )
-                            .child(
-                                div()
-                                    .px_2()
-                                    .py_1()
-                                    .rounded_sm()
-                                    .bg(rgb(0x3f3f46))
-                                    .window_control_area(WindowControlArea::Max)
-                                    .hover(|d| d.bg(rgb(0x52525b)).cursor_pointer())
-                                    .child("□")
-                                    .on_mouse_up(MouseButton::Left, cx.listener(Self::on_maximize)),
-                            )
-                            .child(
-                                div()
-                                    .px_2()
-                                    .py_1()
-                                    .rounded_sm()
-                                    .bg(rgb(0x7f1d1d))
-                                    .window_control_area(WindowControlArea::Close)
-                                    .hover(|d| d.bg(rgb(0x991b1b)).cursor_pointer())
-                                    .child("×")
-                                    .on_mouse_up(MouseButton::Left, cx.listener(Self::on_close)),
-                            ),
-                    ),
-            )
+            .on_action(cx.listener(Self::on_open_settings))
+            .when(client_side_chrome, |this| {
+                this.child(
+                    div()
+                        .h(px(38.0))
+                        .w_full()
+                        .bg(rgb(0x18181b))
+                        .flex()
+                        .items_center()
+                        .justify_between()
+                        .px_3()
+                        .child(
+                            div()
+                                .flex_1()
+                                .window_control_area(WindowControlArea::Drag)
+                                .cursor(CursorStyle::OpenHand)
+                                .text_sm()
+                                .text_color(rgb(0xa1a1aa))
+                                .child("the-search-thing")
+                                .on_mouse_down(MouseButton::Left, cx.listener(Self::on_title_bar_drag)),
+                        )
+                        .child(
+                            div()
+                                .flex()
+                                .gap_2()
+                                .child(
+                                    div()
+                                        .px_3()
+                                        .py_1()
+                                        .rounded_sm()
+                                        .bg(rgb(0x3f3f46))
+                                        .window_control_area(WindowControlArea::Min)
+                                        .hover(|d| d.bg(rgb(0x52525b)).cursor_pointer())
+                                        .child("_")
+                                        .on_mouse_up(MouseButton::Left, cx.listener(Self::on_minimize)),
+                                )
+                                .child(
+                                    div()
+                                        .px_2()
+                                        .py_1()
+                                        .rounded_sm()
+                                        .bg(rgb(0x3f3f46))
+                                        .window_control_area(WindowControlArea::Max)
+                                        .hover(|d| d.bg(rgb(0x52525b)).cursor_pointer())
+                                        .child("□")
+                                        .on_mouse_up(MouseButton::Left, cx.listener(Self::on_maximize)),
+                                )
+                                .child(
+                                    div()
+                                        .px_2()
+                                        .py_1()
+                                        .rounded_sm()
+                                        .bg(rgb(0x7f1d1d))
+                                        .window_control_area(WindowControlArea::Close)
+                                        .hover(|d| d.bg(rgb(0x991b1b)).cursor_pointer())
+                                        .child("×")
+                                        .on_mouse_up(MouseButton::Left, cx.listener(Self::on_close)),
+                                ),
+                        ),
+                )
+            })
             .child(
                 div()
                     .h(px(58.0))
@@ -1078,8 +1101,6 @@ impl Render for SearchWindow {
                             .flex_1()
                             .rounded_md()
                             .bg(rgb(0x27272a))
-                            .border_1()
-                            .border_color(rgb(0x3f3f46))
                             .child(self.text_input.clone()),
                     )
                     .child(
@@ -1087,8 +1108,8 @@ impl Render for SearchWindow {
                             .px_3()
                             .py_2()
                             .rounded_md()
-                            .bg(rgb(0x2563eb))
-                            .hover(|d| d.bg(rgb(0x1d4ed8)).cursor_pointer())
+                            .bg(rgb(0x52525b))
+                            .hover(|d| d.bg(rgb(0x71717a)).cursor_pointer())
                             .child("Search")
                             .on_mouse_up(MouseButton::Left, cx.listener(Self::on_search_click)),
                     ),
@@ -1098,8 +1119,6 @@ impl Render for SearchWindow {
                     div()
                         .size_full()
                         .rounded_lg()
-                        .border_1()
-                        .border_color(rgb(0x3f3f46))
                         .bg(rgb(0x18181b))
                         .flex()
                         .overflow_hidden()
@@ -1109,15 +1128,7 @@ impl Render for SearchWindow {
                                 .h_full()
                                 .min_h_0()
                                 .p_2()
-                                .border_r_1()
-                                .border_color(rgb(0x3f3f46))
-                                .child(div().text_xs().text_color(rgb(0xa1a1aa)).child(
-                                    if self.results.is_empty() {
-                                        "Recent Searches"
-                                    } else {
-                                        "Results"
-                                    },
-                                ))
+                                .child(div().text_xs().text_color(rgb(0xa1a1aa)).child("Results"))
                                 .child(left_list),
                         )
                         .child(div().flex_1().h_full().p_4().child(
@@ -1147,7 +1158,7 @@ impl Render for SearchWindow {
                                     .items_center()
                                     .justify_center()
                                     .text_color(rgb(0xa1a1aa))
-                                    .child("Type in search box, click-select text, press Enter")
+                                    .child("Select a result or run a search")
                             },
                         )),
                 ),
@@ -1157,16 +1168,56 @@ impl Render for SearchWindow {
                     .h(px(56.0))
                     .px_4()
                     .bg(rgb(0x111113))
-                    .border_t_1()
-                    .border_color(rgb(0x27272a))
                     .flex()
                     .items_center()
                     .justify_between()
                     .text_sm()
                     .text_color(rgb(0xa1a1aa))
                     .child(self.status.clone())
-                    .child(self.backend.clone()),
             )
+            .when(self.settings_dialog.is_open, |this| {
+                this.child(
+                    div()
+                        .size_full()
+                        .absolute()
+                        .top_0()
+                        .left_0()
+                        .bg(rgba(0x00000099))
+                        .flex()
+                        .items_center()
+                        .justify_center()
+                        .child(
+                            div()
+                                .w(px(440.0))
+                                .rounded_lg()
+                                .bg(rgb(0x18181b))
+                                .p_4()
+                                .flex()
+                                .flex_col()
+                                .gap_3()
+                                .child(div().text_lg().child("Settings"))
+                                .child(div().text_sm().text_color(rgb(0xa1a1aa)).child(
+                                    format!(
+                                        "Search directory: {}",
+                                        self.settings_dialog.settings.search_directory.display()
+                                    ),
+                                ))
+                                .child(
+                                    div()
+                                        .px_3()
+                                        .py_2()
+                                        .rounded_md()
+                                        .bg(rgb(0x3f3f46))
+                                        .cursor_pointer()
+                                        .child("Close")
+                                        .on_mouse_up(
+                                            MouseButton::Left,
+                                            cx.listener(Self::on_close_settings),
+                                        ),
+                                ),
+                        ),
+                )
+            })
     }
 }
 
@@ -1191,6 +1242,8 @@ fn main() {
             KeyBinding::new("end", End, None),
             KeyBinding::new("ctrl-cmd-space", ShowCharacterPalette, None),
             KeyBinding::new("enter", RunSearch, None),
+            KeyBinding::new("ctrl-s", OpenSettings, None),
+            KeyBinding::new("cmd-s", OpenSettings, None),
             KeyBinding::new("cmd-q", Quit, None),
             KeyBinding::new("ctrl-q", Quit, None),
         ]);
@@ -1199,7 +1252,11 @@ fn main() {
 
         cx.open_window(
             WindowOptions {
-                titlebar: None,
+                titlebar: Some(TitlebarOptions {
+                    title: Some("the-search-thing".into()),
+                    ..Default::default()
+                }),
+                window_decorations: Some(WindowDecorations::Server),
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
                 ..Default::default()
             },
@@ -1211,9 +1268,8 @@ fn main() {
                     text_input: text_input.clone(),
                     results: vec![],
                     selected_result: None,
-                    recent_searches: vec![],
                     status: "Ready".into(),
-                    backend: "Not connected".into(),
+                    settings_dialog: SettingsDialog::new(),
                 });
 
                 window.focus(&text_input.read(cx).focus_handle(cx));
