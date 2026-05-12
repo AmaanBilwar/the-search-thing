@@ -83,21 +83,24 @@ impl HelixTextStore {
             || lowered.contains("\"error\":\"graph error: no value found\"")
     }
 
-    fn has_non_path_embedding(value: &Value) -> bool {
+    fn has_video_completion_marker(value: &Value) -> bool {
         if value.is_null() {
             return false;
         }
 
         if let Some(array) = value.as_array() {
-            return array.iter().any(Self::has_non_path_embedding);
+            return array.iter().any(Self::has_video_completion_marker);
         }
 
         if let Some(obj) = value.as_object() {
-            if let Some(unit_kind) = obj.get("unit_kind").and_then(Value::as_str) {
-                return unit_kind != "file_path";
+            if let (Some(unit_kind), Some(unit_key)) = (
+                obj.get("unit_kind").and_then(Value::as_str),
+                obj.get("unit_key").and_then(Value::as_str),
+            ) {
+                return unit_kind == "video_index_state" && unit_key == "complete";
             }
 
-            return obj.values().any(Self::has_non_path_embedding);
+            return obj.values().any(Self::has_video_completion_marker);
         }
 
         false
@@ -303,7 +306,7 @@ impl VideoIndexStore for HelixTextStore {
                 }
             })?;
 
-        Ok(Self::has_non_path_embedding(&result))
+        Ok(Self::has_video_completion_marker(&result))
     }
 
     async fn create_video_asset(

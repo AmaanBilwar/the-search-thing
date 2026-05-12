@@ -665,6 +665,15 @@ where
             .await?;
     }
 
+    store
+        .create_video_asset_embeddings(
+            content_hash,
+            "video_index_state",
+            "complete",
+            "video indexing complete",
+        )
+        .await?;
+
     Ok(VideoIndexResult {
         path: normalize_path(video_path),
         content_hash: Some(content_hash.to_string()),
