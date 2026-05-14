@@ -43,6 +43,17 @@ fn write_response(stdout: &mut io::StdoutLock<'_>, response: JsonRpcResponse) ->
 fn main() {
     dotenv::dotenv().ok();
 
+    if std::env::var("THE_SEARCH_THING_IPC_MODE")
+        .map(|v| v == "native")
+        .unwrap_or(false)
+    {
+        if let Err(e) = sidecar::native_ipc::run_stdio_loop() {
+            eprintln!("[sidecar:native] fatal: {e}");
+            std::process::exit(1);
+        }
+        return;
+    }
+
     let stdin = io::stdin();
     let mut stdout = io::stdout().lock();
 
