@@ -81,7 +81,7 @@ A **native GPU-accelerated UI toolkit** (Rust). The demo app lives under `the-se
 
 At startup:
 
-1. Load `.env` (`dotenv`).
+1. Load `.env.local` then `.env` (`dotenv`): local-first so secrets in `.env.local` apply when both files define the same key (crate only sets unset vars).
 2. If `THE_SEARCH_THING_IPC_MODE=native` → run **`native_ipc::run_stdio_loop()`** and exit when stdin closes.
 3. Else → existing **NDJSON JSON-RPC** loop.
 
