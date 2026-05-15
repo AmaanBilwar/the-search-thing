@@ -34,8 +34,8 @@ client/resources/
 
 linux/
 .ruff_cache/
-videos/output_indexer/
-videos/thumbnails/
+client/videos/output_indexer/
+client/videos/thumbnails/
 backend.spec
 backend/build/backend/
 lazygit
