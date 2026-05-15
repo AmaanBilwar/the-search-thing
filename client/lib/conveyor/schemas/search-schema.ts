@@ -91,5 +91,9 @@ export const searchIpcSchema = {
   "get-file-icon": {
     args: z.tuple([z.string()]),
     return: z.string(),
-  }
+  },
+  "read-file-content": {
+    args: z.tuple([z.string()]),
+    return: z.string(),
+  },
 };
