@@ -419,7 +419,7 @@ const Results: React.FC<ResultsWithContextProps> = ({
                   <div className="text-zinc-300 whitespace-pre-wrap break-words overflow-y-auto overflow-x-hidden min-h-0 flex-1 text-sm font-mono leading-relaxed">
                     {fileContent === null ? (
                       <span className="text-zinc-500 italic">Loading…</span>
-                    ) : fileContent ? (
+                    ) : fileContent !== "" ?(
                       fileContent
                     ) : (
                       <span className="text-zinc-500 italic">No preview available.</span>
