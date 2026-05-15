@@ -132,14 +132,12 @@ const Results: React.FC<ResultsWithContextProps> = ({
             }
           } else {
             // All done (or last dir failed)
-            const delay = status.status === "completed" ? 3000 : 5000;
+            // Don't dismiss — UI stays until user starts typing
+            const delay = status.status === "completed" ? 1500 : 2000;
             setTimeout(() => {
               if (!isActive) return;
               setCurrentJobId(null);
-              setIndexingLocation(null);
-              setDirIndexed(null);
-              setJobStatus(null);
-              setAwaitingIndexing(false);
+              // keep awaitingIndexing + indexingLocation so UI stays visible
             }, delay);
           }
         }
@@ -269,30 +267,40 @@ const Results: React.FC<ResultsWithContextProps> = ({
 
     return (
       <div className="flex flex-col w-full h-full p-5 gap-4 overflow-hidden">
-        {/* Phase header */}
-        <div className="flex items-center gap-2.5 flex-none">
-          {spinning && (
-            <svg className="animate-spin h-4 w-4 text-blue-400 flex-none" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-          )}
-          {allComplete && <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-none" />}
-          {allDone && !allComplete && <XCircle className="h-4 w-4 text-red-400 flex-none" />}
-          <span className="text-zinc-200 text-sm font-medium">
-            {allComplete
-              ? `All ${dirsQueued.length === 1 ? "directory" : `${dirsQueued.length} directories`} indexed`
-              : allDone
-              ? "Indexing failed"
-              : jobStatus
-              ? phaseLabels[jobStatus.phase] || jobStatus.phase
-              : "Starting…"}
-          </span>
-          {dirsQueued.length > 1 && !allDone && (
-            <span className="text-zinc-600 text-xs">
-              {currentDirIndex + 1} / {dirsQueued.length}
+        {/* Phase header + Add More on right */}
+        <div className="flex items-center justify-between gap-2.5 flex-none">
+          <div className="flex items-center gap-2.5">
+            {spinning && (
+              <svg className="animate-spin h-4 w-4 text-blue-400 flex-none" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
+            {allComplete && <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-none" />}
+            {allDone && !allComplete && <XCircle className="h-4 w-4 text-red-400 flex-none" />}
+            <span className="text-zinc-200 text-sm font-medium">
+              {allComplete
+                ? `All ${dirsQueued.length === 1 ? "directory" : `${dirsQueued.length} directories`} indexed`
+                : allDone
+                ? "Indexing failed"
+                : jobStatus
+                ? phaseLabels[jobStatus.phase] || jobStatus.phase
+                : "Starting…"}
             </span>
-          )}
+            {dirsQueued.length > 1 && !allDone && (
+              <span className="text-zinc-600 text-xs">
+                {currentDirIndex + 1} / {dirsQueued.length}
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={handleAddMoreDirs}
+            className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-200 border border-zinc-600 hover:border-zinc-400 px-2.5 py-1 rounded-md transition-colors flex-none"
+          >
+            <Plus className="h-3 w-3" />
+            Add directories
+          </button>
         </div>
 
         {/* Directory list */}
@@ -359,26 +367,14 @@ const Results: React.FC<ResultsWithContextProps> = ({
           })}
         </div>
 
-        {/* Add more button */}
-        {!allDone && (
-          <button
-            type="button"
-            onClick={handleAddMoreDirs}
-            className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-zinc-300 transition-colors self-start flex-none"
-          >
-            <Plus className="h-3 w-3" />
-            Add more directories
-          </button>
-        )}
-
-        {/* Progress bars */}
+        {/* Progress bars — centered */}
         {jobStatus && !allDone && (
-          <div className="flex flex-col gap-3 w-full max-w-xs flex-none">
+          <div className="flex flex-col gap-3 w-full max-w-xs mx-auto flex-none mt-2">
             {progressBar("Text", jobStatus.text_found, jobStatus.text_indexed, jobStatus.text_errors, jobStatus.text_skipped)}
             {progressBar("Video", jobStatus.video_found, jobStatus.video_indexed, jobStatus.video_errors, jobStatus.video_skipped)}
             {progressBar("Image", jobStatus.image_found, jobStatus.image_indexed, jobStatus.image_errors, jobStatus.image_skipped)}
             {jobStatus.message && (
-              <div className="text-zinc-600 text-xs">{jobStatus.message}</div>
+              <div className="text-zinc-600 text-xs text-center">{jobStatus.message}</div>
             )}
             {jobStatus.error && (
               <div className="text-red-400 text-xs bg-red-950/30 rounded px-2.5 py-1.5">
