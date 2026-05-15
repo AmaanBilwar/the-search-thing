@@ -270,6 +270,17 @@ async fn rust_helix_search_query(query: &str) -> Result<Value, String> {
     }))
 }
 
+pub fn search_query_value(query: &str) -> Result<Value, String> {
+    let runtime = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
+        Ok(rt) => rt,
+        Err(error) => return Err(format!("failed to init runtime: {}", error)),
+    };
+    runtime.block_on(rust_helix_search_query(query))
+}
+
 pub fn handle_query(request: &JsonRpcRequest) -> JsonRpcResponse {
     let parsed: SearchQueryParams = match parse_params(request) {
         Ok(parsed) => parsed,
@@ -278,22 +289,7 @@ pub fn handle_query(request: &JsonRpcRequest) -> JsonRpcResponse {
 
     let started = Instant::now();
 
-    let runtime = match tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-    {
-        Ok(rt) => rt,
-        Err(error) => {
-            return err_response(
-                request.id.clone(),
-                -32603,
-                "Search query failed",
-                Some(json!({ "reason": format!("failed to init runtime: {}", error) })),
-            )
-        }
-    };
-
-    match runtime.block_on(rust_helix_search_query(&parsed.q)) {
+    match search_query_value(&parsed.q) {
         Ok(result) => {
             let count = result
                 .get("results")
