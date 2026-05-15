@@ -8,6 +8,27 @@ import { useAppContext } from "../AppContext";
 
 type ResultItem = SearchResultItem;
 
+const iconCache = new Map<string, string>();
+
+function FileIcon({ path, ext }: { path: string; ext: string }) {
+  const conveyor = useConveyor();
+  const fallback = fileIcons[ext.toLowerCase()] || fileIcons.txt;
+  const [src, setSrc] = useState<string>(fallback);
+
+  useEffect(() => {
+    if (iconCache.has(path)) {
+      setSrc(iconCache.get(path)!);
+      return;
+    }
+    conveyor.search.getFileIcon(path).then((dataUrl) => {
+      iconCache.set(path, dataUrl);
+      setSrc(dataUrl);
+    }).catch(() => {});
+  }, [path]);
+
+  return <img src={src} className="w-5 h-5" alt="" />;
+}
+
 const phaseLabels: Record<string, string> = {
   scan_text: "Scanning text files",
   index_text: "Indexing text files",
@@ -324,11 +345,7 @@ const Results: React.FC<ResultsWithContextProps> = ({
                   }`}
                 >
                   <div className="pr-2 shrink-0">
-                    <img
-                      src={fileIcons[getFileExt(result.path).toLowerCase()] || fileIcons.txt}
-                      className="w-5 h-5"
-                      alt=""
-                    />
+                    <FileIcon path={result.path} ext={getFileExt(result.path)} />
                   </div>
                   <div className="min-w-0 flex-1 text-zinc-100 truncate" title={result.path}>
                     {getFileName(result.path)}
