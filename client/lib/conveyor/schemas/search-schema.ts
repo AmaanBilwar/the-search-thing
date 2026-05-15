@@ -88,4 +88,8 @@ export const searchIpcSchema = {
     args: z.tuple([z.string()]),
     return: z.null(),
   },
+  "get-file-icon": {
+    args: z.tuple([z.string()]),
+    return: z.string(),
+  }
 };
