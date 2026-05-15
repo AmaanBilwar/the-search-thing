@@ -40,8 +40,15 @@ fn write_response(stdout: &mut io::StdoutLock<'_>, response: JsonRpcResponse) ->
     stdout.flush()
 }
 
+fn load_repo_env_files() {
+    // Like Next/Vite: `.env.local` wins over `.env`. `dotenv` only sets vars that are not
+    // already present, so load local-first then `.env` fills defaults without overwriting locals.
+    let _ = dotenv::from_filename(".env.local");
+    let _ = dotenv::dotenv();
+}
+
 fn main() {
-    dotenv::dotenv().ok();
+    load_repo_env_files();
 
     if std::env::var("THE_SEARCH_THING_IPC_MODE")
         .map(|v| v == "native")
