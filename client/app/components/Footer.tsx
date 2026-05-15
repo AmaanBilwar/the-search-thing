@@ -49,10 +49,11 @@ export default function Footer() {
     };
   }, [isPopoverOpen]);
 
-  // Poll job status every 2 seconds
+  // Poll job status every 2 seconds — only when footer owns the job
   useEffect(() => {
-    if (!currentJobId) {
-      setJobStatus(null);
+    if (!currentJobId || indexingLocation !== "footer") {
+      // Only clear jobStatus if Results isn't using it
+      if (!currentJobId && indexingLocation !== "results") setJobStatus(null);
       return;
     }
 
@@ -92,6 +93,7 @@ export default function Footer() {
     };
   }, [
     currentJobId,
+    indexingLocation,
     search,
     setCurrentJobId,
     setIndexingLocation,
@@ -101,18 +103,17 @@ export default function Footer() {
   ]);
 
   const handleStartIndexing = useCallback(async () => {
-    const res = await search.openFileDialog();
+    const dirs = await search.openFileDialog();
 
-    if (!res || res.length === 0) return;
+    if (!dirs || dirs.length === 0) return;
 
     setIsIndexing(true);
     setErrorMessage("");
     try {
-      const indexRes = await search.index(res);
-      console.error("Index response:", indexRes);
+      const indexRes = await search.index(dirs[0]);
       if (indexRes.success && indexRes.job_id) {
         setCurrentJobId(indexRes.job_id);
-        setDirIndexed(res);
+        setDirIndexed(dirs[0]);
         setIndexingLocation("footer");
         setErrorMessage("");
       } else if (!indexRes.job_id) {

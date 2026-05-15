@@ -14,6 +14,9 @@ interface AppContextType {
   setDirIndexed: (dir: string | null) => void;
   jobStatus: IndexJobStatus | null;
   setJobStatus: (status: IndexJobStatus | null) => void;
+  // queue (managed by Results; exposed so Footer can skip polling)
+  indexQueueLength: number;
+  setIndexQueueLength: (n: number) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -25,6 +28,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [indexingLocation, setIndexingLocation] = useState<"results" | "footer" | null>(null);
   const [dirIndexed, setDirIndexed] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<IndexJobStatus | null>(null);
+  const [indexQueueLength, setIndexQueueLength] = useState(0);
 
   return (
     <AppContext.Provider
@@ -41,6 +45,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setDirIndexed,
         jobStatus,
         setJobStatus,
+        indexQueueLength,
+        setIndexQueueLength,
       }}
     >
       {children}
