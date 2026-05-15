@@ -52,6 +52,7 @@ const Results: React.FC<ResultsWithContextProps> = ({
   onRecentSearchSelect,
 }) => {
   const [selectedItem, setSelectedItem] = useState<ResultItem | null>(null);
+  const [fileContent, setFileContent] = useState<string | null>(null);
   const [brokenImagePaths, setBrokenImagePaths] = useState<Set<string>>(new Set());
   const [hasInitiatedIndexing, setHasInitiatedIndexing] = useState(false);
   const hasOpenedDialogRef = useRef(false);
@@ -73,8 +74,24 @@ const Results: React.FC<ResultsWithContextProps> = ({
 
   useEffect(() => {
     setSelectedItem(null);
+    setFileContent(null);
     setBrokenImagePaths(new Set());
   }, [searchResults]);
+
+  useEffect(() => {
+    if (!selectedItem || selectedItem.label === "image" || selectedItem.label === "video") {
+      setFileContent(null);
+      return;
+    }
+    if (selectedItem.content) {
+      setFileContent(selectedItem.content);
+      return;
+    }
+    setFileContent(null);
+    search.readFileContent(selectedItem.path)
+      .then(setFileContent)
+      .catch(() => setFileContent("(Could not read file content)"));
+  }, [selectedItem]);
 
   useEffect(() => {
     if (!hasSearched) {
@@ -340,8 +357,8 @@ const Results: React.FC<ResultsWithContextProps> = ({
                       handleOpen(result.path);
                     }
                   }}
-                  className={`flex flex-row p-2 rounded-xl cursor-pointer hover:bg-zinc-800 transition-colors border-b border-zinc-800 ${
-                    selectedItem?.path === result.path ? "bg-zinc-700" : ""
+                  className={`flex flex-row p-2 rounded-xl cursor-pointer hover:bg-zinc-700/60 transition-colors border-b border-zinc-800 ${
+                    selectedItem?.path === result.path ? "bg-zinc-600/70 ring-1 ring-zinc-500/40" : ""
                   }`}
                 >
                   <div className="pr-2 shrink-0">
@@ -361,8 +378,8 @@ const Results: React.FC<ResultsWithContextProps> = ({
           {selectedItem ? (
             <div className="pl-4 py-2 h-full min-w-0">
               {selectedItem.label === "image" ? (
-                <div className="p-5 rounded-2xl h-full bg-zinc-900/60 overflow-hidden flex flex-col min-h-0">
-                  <div className="w-full h-[320px] rounded-xl overflow-hidden mb-4 bg-zinc-950 flex items-center justify-center shrink-0">
+                <div className="p-4 rounded-2xl h-full bg-zinc-900/60 overflow-hidden flex flex-col min-h-0">
+                  <div className="w-full h-[255px] rounded-xl overflow-hidden bg-zinc-950 flex items-center justify-center shrink-0">
                     {!brokenImagePaths.has(selectedItem.path) ? (
                       <img
                         src={toImageSrc(selectedItem.path)}
@@ -376,9 +393,6 @@ const Results: React.FC<ResultsWithContextProps> = ({
                       </div>
                     )}
                   </div>
-                  <div className="text-zinc-300 whitespace-pre-wrap break-words overflow-y-auto overflow-x-hidden min-h-0 flex-1">
-                    {selectedItem.content ?? "No preview available for this result."}
-                  </div>
                   <div
                     className="text-zinc-400 text-xs mt-3 truncate shrink-0"
                     title={selectedItem.path}
@@ -387,15 +401,12 @@ const Results: React.FC<ResultsWithContextProps> = ({
                   </div>
                 </div>
               ) : selectedItem.label === "video" && selectedItem.thumbnail_url ? (
-                <div className="p-5 rounded-2xl h-full bg-zinc-900/60 overflow-hidden flex flex-col min-h-0">
+                <div className="p-4 rounded-2xl h-full bg-zinc-900/60 overflow-hidden flex flex-col min-h-0">
                   <img
                     src={toImageSrc(selectedItem.thumbnail_url)}
                     alt=""
-                    className="w-full h-[320px] object-contain rounded-xl bg-zinc-950 shrink-0"
+                    className="w-full h-[255px] object-contain rounded-xl bg-zinc-950 shrink-0"
                   />
-                  <div className="text-zinc-300 whitespace-pre-wrap break-words overflow-y-auto overflow-x-hidden min-h-0 flex-1 mt-4">
-                    {selectedItem.content ?? "No preview available for this result."}
-                  </div>
                   <div
                     className="text-zinc-400 text-xs mt-3 truncate shrink-0"
                     title={selectedItem.path}
@@ -404,9 +415,21 @@ const Results: React.FC<ResultsWithContextProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="p-5 rounded-2xl h-full bg-zinc-700/60 overflow-hidden flex flex-col min-h-0">
-                  <div className="text-zinc-300 whitespace-pre-wrap break-words overflow-y-auto overflow-x-hidden min-h-0 flex-1">
-                    {selectedItem.content ?? "No preview available for this result."}
+                <div className="p-5 rounded-2xl h-full bg-zinc-900/60 overflow-hidden flex flex-col min-h-0">
+                  <div className="text-zinc-300 whitespace-pre-wrap break-words overflow-y-auto overflow-x-hidden min-h-0 flex-1 text-sm font-mono leading-relaxed">
+                    {fileContent === null ? (
+                      <span className="text-zinc-500 italic">Loading…</span>
+                    ) : fileContent ? (
+                      fileContent
+                    ) : (
+                      <span className="text-zinc-500 italic">No preview available.</span>
+                    )}
+                  </div>
+                  <div
+                    className="text-zinc-400 text-xs mt-3 truncate shrink-0"
+                    title={selectedItem.path}
+                  >
+                    {selectedItem.path}
                   </div>
                 </div>
               )}
