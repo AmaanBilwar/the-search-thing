@@ -1,5 +1,5 @@
 import { handle } from "@/lib/main/shared";
-import { dialog, shell } from "electron";
+import { app, dialog, nativeImage, shell } from "electron";
 import axios from "axios";
 import { sidecarClient } from "@/lib/main/sidecar-client";
 
@@ -68,5 +68,10 @@ export const registerSearchHandlers = () => {
   handle("open-file", async (filePath: string) => {
     await shell.openPath(filePath);
     return null;
+  });
+
+  handle("get-file-icon", async (filePath: string) => {
+    const icon = await app.getFileIcon(filePath, { size: "normal" });
+    return icon.toDataURL();
   });
 };
