@@ -19,6 +19,7 @@ export class SearchApi extends ConveyorApi {
   // system methods
   openFileDialog = () => this.invoke("open-file-dialog");
   openFile = (filePath: string) => this.invoke("open-file", filePath);
+  getFileIcon = (filePath: string): Promise<string> => this.invoke("get-file-icon", filePath);
 
   addSearchHistory = (input: SearchHistoryInsert) => this.invoke("search-history/add", input);
   getRecentSearches = (limit = 20) => this.invoke("search-history/recent", limit);
