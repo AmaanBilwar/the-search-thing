@@ -110,8 +110,8 @@ const Results: React.FC<ResultsWithContextProps> = ({
           const nextIdx = activeDirIdx + 1;
           const queue = dirsQueuedRef.current;
 
-          if (nextIdx < queue.length && status.status === "completed") {
-            // Advance to next dir
+          if (nextIdx < queue.length) {
+            // Advance to next dir regardless of current dir's outcome
             try {
               const nextDir = queue[nextIdx];
               const indexRes = await search.index(nextDir);
@@ -131,14 +131,11 @@ const Results: React.FC<ResultsWithContextProps> = ({
               console.error("Failed to start next indexing job:", err);
             }
           } else {
-            // All done (or last dir failed)
-            // Don't dismiss — UI stays until user starts typing
-            const delay = status.status === "completed" ? 1500 : 2000;
+            // All dirs processed — clear job but keep UI visible until user types
             setTimeout(() => {
               if (!isActive) return;
               setCurrentJobId(null);
-              // keep awaitingIndexing + indexingLocation so UI stays visible
-            }, delay);
+            }, 1000);
           }
         }
       } catch (err) {
@@ -260,10 +257,15 @@ const Results: React.FC<ResultsWithContextProps> = ({
 
   // Indexing UI
   if (indexingLocation === "results" && awaitingIndexing) {
-    const allDone = currentDirIndex >= dirsQueued.length - 1 &&
-      (jobStatus?.status === "completed" || jobStatus?.status === "failed");
-    const allComplete = allDone && jobStatus?.status === "completed";
-    const spinning = !jobStatus || (jobStatus.status !== "completed" && jobStatus.status !== "failed");
+    const isTerminal = (s: DirStatus) => s === "done" || s === "error";
+    const allDone =
+      dirsQueued.length > 0 &&
+      !currentJobId &&
+      dirStatuses.length === dirsQueued.length &&
+      dirStatuses.every(isTerminal);
+    const allComplete = allDone && dirStatuses.every((s) => s === "done");
+    const hasFailed = dirStatuses.some((s) => s === "error");
+    const spinning = !!currentJobId && (!jobStatus || (jobStatus.status !== "completed" && jobStatus.status !== "failed"));
 
     return (
       <div className="flex flex-col w-full h-full p-5 gap-4 overflow-hidden">
@@ -278,11 +280,12 @@ const Results: React.FC<ResultsWithContextProps> = ({
             )}
             {allComplete && <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-none" />}
             {allDone && !allComplete && <XCircle className="h-4 w-4 text-red-400 flex-none" />}
+            {!allDone && hasFailed && <XCircle className="h-3.5 w-3.5 text-red-400 flex-none opacity-60" />}
             <span className="text-zinc-200 text-sm font-medium">
-              {allComplete
-                ? `All ${dirsQueued.length === 1 ? "directory" : `${dirsQueued.length} directories`} indexed`
-                : allDone
-                ? "Indexing failed"
+              {allDone
+                ? allComplete
+                  ? `${dirsQueued.length === 1 ? "Directory" : `All ${dirsQueued.length} directories`} indexed`
+                  : `Done — ${dirStatuses.filter((s) => s === "error").length} director${dirStatuses.filter((s) => s === "error").length === 1 ? "y" : "ies"} failed`
                 : jobStatus
                 ? phaseLabels[jobStatus.phase] || jobStatus.phase
                 : "Starting…"}

@@ -52,7 +52,8 @@ export default function Footer() {
   // Poll job status every 2 seconds — only when footer owns the job
   useEffect(() => {
     if (!currentJobId || indexingLocation !== "footer") {
-      if (!currentJobId) setJobStatus(null);
+      // Only clear jobStatus if Results isn't using it
+      if (!currentJobId && indexingLocation !== "results") setJobStatus(null);
       return;
     }
 
